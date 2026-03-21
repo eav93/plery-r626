@@ -105,9 +105,9 @@
           ]
         },
         {
-          "id": "wireguade_client",
-          "name": "SHpack.wireguade_client",
-          "urls": "wireguade_client.html"
+          "id": "wireguard_client",
+          "name": "SHpack.wireguard_client",
+          "urls": "wireguard_client.html"
         }
       ]
     },

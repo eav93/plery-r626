@@ -15,7 +15,7 @@ config timeserver ntp
 config ac ac
 
 config language language
-	option language en
+	option language ru
 	option changed 1
 
 config kickout kickout

@@ -127,8 +127,8 @@ define(function(require, exports) {
 
 					if (y.childs && y.childs.length > 0) {
 						menu_html += '<li class="item-has-children" id="menu_' + y.id + '">';
-						menu_html += '<a class="iconfont" sh_lang="' + y.name + '">' + sh_lang[
-							nowLang] + '</a>';
+						menu_html += '<a class="iconfont" sh_lang="' + y.name + '"><span>' + sh_lang[
+							nowLang] + '</span></a>';
 						var childsLast = JSON.stringify(y.childs);
 						if (childsLast.indexOf(pageflag) > -1) {
 							menu_html += '<ul class="sub-menu">';

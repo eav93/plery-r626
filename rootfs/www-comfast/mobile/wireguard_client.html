@@ -31,10 +31,10 @@
         }
 	</style>
 </head>
-<body module="wireguade_client" device="mobile" id="mbox_container">
+<body module="wireguard_client" device="mobile" id="mbox_container">
 <header class="is-fixed">
     <span class="goback" et="tap:prev"><i et="tap:prev" class="icon-prev"></i></span>
-    <label sh_lang="SHpack.wireguade_client"></label>
+    <label sh_lang="SHpack.wireguard_client"></label>
     <a class="header_menu" href="#"><span class="menu_icon"></span></a>
 </header>
 <main class="main_content container-fluid">
@@ -42,46 +42,46 @@
         <div class="find_dis">
             <div class="shbox clearfix">
                 <div class="shbox_border topData">
-                    <label class="title" sh_lang="SHpack.wireguade_client"></label>
+                    <label class="title" sh_lang="SHpack.wireguard_client"></label>
                     <ul class="clearfix shbox_cont"> 
                         <li class="list clearfix">
-                            <label class="left" sh_lang="SHpack.wireguade_switch"></label>
+                            <label class="left" sh_lang="SHpack.wireguard_switch"></label>
                             <span class="right">
-                                <select id="wireguade_switch" et="change:enableConfig" class="text">
+                                <select id="wireguard_switch" et="change:enableConfig" class="text">
                                     <option sh_lang="SHpack.enable" value="1"></option>
                                     <option sh_lang="SHpack.disable" value="0"></option>
                                 </select>
                             </span>
                         </li>
                         <li class="list clearfix">
-                            <label class="left" sh_lang="SHpack.wireguade_public"></label>
+                            <label class="left" sh_lang="SHpack.wireguard_public"></label>
                             <span class="right">
-                                <input type="text" id="wireguade_public_1" class="text require isBase64 isNULL">
+                                <input type="text" id="wireguard_public_1" class="text require isBase64 isNULL">
                             </span>
                         </li>
                             <li class="list clearfix">
-                                <label class="left" sh_lang="SHpack.wireguade_Private"></label>
+                                <label class="left" sh_lang="SHpack.wireguard_Private"></label>
                                 <span class="right">
-                                    <input type="password" id="wireguade_Private" class="text require isBase64 isNULL" style="padding-right: 20px;">
+                                    <input type="password" id="wireguard_Private" class="text require isBase64 isNULL" style="padding-right: 20px;">
                                     <label et="click:check_key" class="iconfont hidden_ssid" data-value="1"></label>
                                 </span>
                             </li>
                             <li class="list clearfix">
-                                <label class="left" sh_lang="SHpack.wireguade_keyadd"></label>
+                                <label class="left" sh_lang="SHpack.wireguard_keyadd"></label>
                                 <span class="right">
-                                    <button class="btn btn-warning" et="click:get_key" sh_lang="SHpack.wireguade_keyadd"></button>
+                                    <button class="btn btn-warning" et="click:get_key" sh_lang="SHpack.wireguard_keyadd"></button>
                                 </span>
                             </li>
                             <li class="list clearfix">
-                                <label class="left" sh_lang="SHpack.wireguade_port"></label>
+                                <label class="left" sh_lang="SHpack.wireguard_port"></label>
                                 <span class="right">
-                                    <input type="text" id="wireguade_port" class="text require isNum isNULL" name="_@1_65535">
+                                    <input type="text" id="wireguard_port" class="text require isNum isNULL" name="_@1_65535">
                                 </span>
                             </li>
                             <li class="list clearfix">
                                 <label class="left" sh_lang="SHpack.ip"></label>
                                 <span class="right place">
-                                    <input type="text" id="wireguade_ip" class="text require is_wg_ip isNULL">
+                                    <input type="text" id="wireguard_ip" class="text require is_wg_ip isNULL">
                                     <div class="tip" sh_lang="SHeg.gwip"></div>
                                 </span>
                             </li>
@@ -89,73 +89,73 @@
                     </ul>
                 </div>
                 <div class="shbox_border">
-                    <label class="title" sh_lang="SHpack.wireguade_dui"></label>
+                    <label class="title" sh_lang="SHpack.wireguard_dui"></label>
                     <ul class="clearfix shbox_cont"> 
                         <li class="list clearfix">
-                            <label class="left" sh_lang="SHpack.wireguade_describe"></label>
+                            <label class="left" sh_lang="SHpack.wireguard_describe"></label>
                             <span class="right">
-                                <input type="text" id="wireguade_describe" class="text require">
+                                <input type="text" id="wireguard_describe" class="text require">
                             </span>
                         </li>
                         <li class="list clearfix">
-                            <label class="left" sh_lang="SHpack.wireguade_public"></label>
+                            <label class="left" sh_lang="SHpack.wireguard_public"></label>
                             <span class="right">
-                                <input type="text" id="wireguade_public" class="text require isBase64 isNULL">
+                                <input type="text" id="wireguard_public" class="text require isBase64 isNULL">
                             </span>
                         </li>
                         <li class="list clearfix">
-                            <label class="left" sh_lang="SHpack.wireguade_Private"></label>
+                            <label class="left" sh_lang="SHpack.wireguard_Private"></label>
                             <span class="right">
-                                <input type="password" id="wireguade_Private_2" class="text require isBase64 isNULL" style="padding-right: 20px;">
+                                <input type="password" id="wireguard_Private_2" class="text require isBase64 isNULL" style="padding-right: 20px;">
                                 <label et="click:check_key" class="iconfont hidden_ssid" data-value="1"></label>
                             </span>
                         </li>
                         
                         <li class="list clearfix">
-                            <label class="left" sh_lang="SHpack.wireguade_shared"></label>
+                            <label class="left" sh_lang="SHpack.wireguard_shared"></label>
                             <span class="right">
-                                <input type="password" id="wireguade_shared" class="text require isBase64" style="padding-right: 20px;">
+                                <input type="password" id="wireguard_shared" class="text require isBase64" style="padding-right: 20px;">
                                 <label et="click:check_key" class="iconfont hidden_ssid" data-value="1"></label>
                             </span>
                         </li>
                         <li class="list clearfix">
-                            <label class="left" sh_lang="SHpack.wireguade_keyadd"></label>
+                            <label class="left" sh_lang="SHpack.wireguard_keyadd"></label>
                             <span class="right">
-                                <button class="btn btn-warning" et="click:get_key_2" sh_lang="SHpack.wireguade_keyadd"></button>
+                                <button class="btn btn-warning" et="click:get_key_2" sh_lang="SHpack.wireguard_keyadd"></button>
                             </span>
                         </li>
                         <li class="list clearfix">
-                            <label class="left" sh_lang="SHpack.wireguade_allowip"></label>
+                            <label class="left" sh_lang="SHpack.wireguard_allowip"></label>
                             <span class="right place">
-                                <input type="text" id="wireguade_allowip" class="text require is_wg_ip isNULL">
+                                <input type="text" id="wireguard_allowip" class="text require is_wg_ip isNULL">
                                 <div class="tip" sh_lang="SHeg.gwip"></div>
                             </span>
                         </li>
                         <li class="list clearfix">
-                            <label class="left" sh_lang="SHpack.wireguade_selectip"></label>
+                            <label class="left" sh_lang="SHpack.wireguard_selectip"></label>
                             <span class="right">
-                                <select id="wireguade_selectip" class="text">
+                                <select id="wireguard_selectip" class="text">
                                     <option sh_lang="SHpack.enable" value="1"></option>
                                     <option sh_lang="SHpack.disable" value="0"></option>
                                 </select>
                             </span>
                         </li>
                         <li class="list clearfix">
-                            <label class="left" sh_lang="SHpack.wireguade_host"></label>
+                            <label class="left" sh_lang="SHpack.wireguard_host"></label>
                             <span class="right">
-                                <input type="text" id="wireguade_host" class="text require isEnglish">
+                                <input type="text" id="wireguard_host" class="text require isEnglish">
                             </span>
                         </li>
                         <li class="list clearfix">
-                            <label class="left" sh_lang="SHpack.wireguade_port_d"></label>
+                            <label class="left" sh_lang="SHpack.wireguard_port_d"></label>
                             <span class="right">
-                                <input type="text" id="wireguade_port_d" class="text require isNum_null" name="_@1_65535">
+                                <input type="text" id="wireguard_port_d" class="text require isNum_null" name="_@1_65535">
                             </span>
                         </li>
                         <li class="list clearfix">
-                            <label class="left" sh_lang="SHpack.wireguade_keepalive"></label>
+                            <label class="left" sh_lang="SHpack.wireguard_keepalive"></label>
                             <span class="right">
-                                <input type="text" id="wireguade_keepalive" class="text require isNum_null" name="_@0_25">
+                                <input type="text" id="wireguard_keepalive" class="text require isNum_null" name="_@0_25">
                             </span>
                         </li>
                     </ul>
