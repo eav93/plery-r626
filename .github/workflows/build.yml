@@ -22,7 +22,7 @@ jobs:
       - name: Set firmware version
         run: |
           COMMIT_SHORT=$(git rev-parse --short HEAD)
-          VERSION="Plery-R626-V2.0.1.4-EU-${COMMIT_SHORT}"
+          VERSION="Plery-R626-eav93-${COMMIT_SHORT}"
           echo "FIRMWARE_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "Firmware version: $VERSION"
 

@@ -30,7 +30,7 @@ FWTOOL_DIR="fwtool"
 FWTOOL="$FWTOOL_DIR/fwtool"
 FWTOOL_REPO="https://git.openwrt.org/project/fwtool.git"
 FWTOOL_COMMIT="04cd252e4e9394ffacd51f56f1f124abc534f715"
-BASE_VERSION="Plery-R626-V2.0.1.4-EU"
+BASE_VERSION="Plery-R626-eav93"
 
 # ---- Colors ----
 RED='\033[0;31m'
@@ -132,5 +132,5 @@ echo "    File:    $OUTPUT"
 echo "    Size:    $FINAL_SIZE bytes ($(echo "scale=1; $FINAL_SIZE / 1048576" | bc) MB)"
 echo "    Version: $FIRMWARE_VERSION"
 echo ""
-echo "    Flash via web:  http://192.168.2.1/computer/upgrade.html"
-echo "    Flash via SSH:  scp -O $OUTPUT root@192.168.2.1:/tmp/fw.bin && ssh root@192.168.2.1 'sysupgrade -n /tmp/fw.bin'"
+echo "    Flash via web:  http://192.168.0.1/computer/upgrade.html"
+echo "    Flash via SSH:  scp -O $OUTPUT root@192.168.0.1:/tmp/fw.bin && ssh root@192.168.0.1 'sysupgrade -n /tmp/fw.bin'"
