@@ -1,4 +1,5 @@
 dist/
+fwtool/
 *.squashfs
 .DS_Store
 .idea/

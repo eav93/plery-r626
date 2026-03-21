@@ -26,7 +26,10 @@ OUTPUT="$DIST_DIR/${1:-Plery-R626-custom.bin}"
 KERNEL="kernel.bin"
 ROOTFS_DIR="rootfs"
 METADATA="metadata.json"
-FWTOOL="./fwtool"
+FWTOOL_DIR="fwtool"
+FWTOOL="$FWTOOL_DIR/fwtool"
+FWTOOL_REPO="https://git.openwrt.org/project/fwtool.git"
+FWTOOL_COMMIT="04cd252e4e9394ffacd51f56f1f124abc534f715"
 BASE_VERSION="Plery-R626-V2.0.1.4-EU"
 
 # ---- Colors ----
@@ -45,8 +48,12 @@ log "Checking dependencies..."
 command -v mksquashfs >/dev/null 2>&1 || err "mksquashfs not found. Install: brew install squashfs / apt install squashfs-tools"
 
 if [ ! -x "$FWTOOL" ]; then
-    warn "fwtool binary not found, compiling..."
+    log "Fetching fwtool from $FWTOOL_REPO..."
+    git clone -q "$FWTOOL_REPO" "$FWTOOL_DIR" 2>/dev/null || true
+    cd "$FWTOOL_DIR"
+    git checkout -q "$FWTOOL_COMMIT"
     cc -o fwtool fwtool.c -Wall -O2 || err "Failed to compile fwtool"
+    cd "$SCRIPT_DIR"
 fi
 
 [ -f "$KERNEL" ]   || err "kernel.bin not found"
