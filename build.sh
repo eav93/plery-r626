@@ -20,7 +20,9 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
-OUTPUT="${1:-Plery-R626-custom.bin}"
+DIST_DIR="dist"
+mkdir -p "$DIST_DIR"
+OUTPUT="$DIST_DIR/${1:-Plery-R626-custom.bin}"
 KERNEL="kernel.bin"
 ROOTFS_DIR="rootfs"
 METADATA="metadata.json"
