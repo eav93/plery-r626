@@ -1,0 +1,18 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=99
+
+start() {
+	/usr/bin/led_control &
+}
+
+stop() {
+	killall -9 led_control
+}
+
+restart()
+{
+	stop
+	start
+}

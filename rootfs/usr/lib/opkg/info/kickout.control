@@ -1,0 +1,8 @@
+Package: kickout
+Version: 0.1-1
+Depends: libc, libubox, libuci, libblobmsg-json, libubus, shared
+Source: feeds/kickout/kickout
+Section: kickout
+Architecture: mipsel_24kc
+Installed-Size: 4216
+Description:  This package contains Wireless roam kickout

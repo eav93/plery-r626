@@ -1,0 +1,15 @@
+#!/bin/sh /etc/rc.common
+
+START=50
+STOP=50
+
+USE_PROCD=1
+
+status_dir=/tmp/status
+start_service() {
+	mkdir -p ${status_dir}
+	workmode=`uci get network.workmode`
+	[ -n "${workmode}" ] && {
+		echo ${workmode} >${status_dir}/workmode
+	}
+}

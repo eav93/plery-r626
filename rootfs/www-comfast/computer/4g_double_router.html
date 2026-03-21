@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <title></title>
+    <link type="image/x-icon" href="/images/favicon.ico" rel="shortcut icon"/>
+    <link rel="stylesheet" href="/css/shreset.css"/>
+    <link rel="stylesheet" href="/css/pc/shap.css"/>
+</head>
+<body module="4g_double_router" device="computer" id="mbox_container">
+<div class="container-fluid header">
+    <div class="row">
+        <div class="logo"><a id="logo_herf" target="_blank"><img src="/images/logo.png"></a></div>
+        <ul class="out">
+            <li id="login_out">
+                <a href="#"><i class="iconfont icon-tuichu"></i><span sh_lang="SHpack.logout"></span></a>
+            </li>
+        </ul>
+    </div>
+</div>
+<div class="wapper clearfix">
+    <div class="subMenu clearfix" id="subMenu">
+        <ul class="navigation clearfix"></ul>
+    </div><!--#submenu-->
+
+    <div class="content_box clearfix">
+        <div class="content clearfix">
+            <div class="wizard">
+                <div class="shstep"></div>
+                <div class="wizard_man">
+                    <div class="wizard_box">
+                        <div class="shbox clearfix">
+                            <div class="shbox_border">
+                                <label class="title" sh_lang="SHpack.wan_set"></label>
+                                <ul class="clearfix">
+                                    <ul class="radio_tabs four clearfix">
+                                        <li><input type="radio" id="card_addr_id" name="addr_ip"
+                                                   value="card"><label for="card_addr_id" sh_lang="SHpack.apn_mode"></label>
+                                        </li>
+                                        <li><input type="radio" id="pppoe_addr_id" name="addr_ip" value="pppoe"><label
+                                                for="pppoe_addr_id" sh_lang="SHpack.pppoe"></label></li>
+                                        <li><input type="radio" id="static_addr_id" name="addr_ip" value="static"><label
+                                                for="static_addr_id" sh_lang="SHpack.staAddress"></label></li>
+                                        <li><input type="radio" id="dhcp_addr_id" name="addr_ip"
+                                                                  value="dhcp"><label for="dhcp_addr_id" sh_lang="SHpack.dyAddress"></label>
+                                        </li>
+                                    </ul>
+                                    <div class="radio_boxs">
+                                        <div class="tabbox_cont cont">
+                                            <div id="has_sim_box">
+                                                <div class="list clearfix">
+                                                    <label class="left" sh_lang="SHpack.protocol"></label>
+                                                    <span class="right place">
+                                                        <select class="text" id="lte_protocol">
+                                                            <option value="qmi">qmi</option>
+                                                            <option value="ppp_quectel">ppp_quectel</option>
+                                                        </select>
+                                                    </span>
+                                                </div>
+                                                <div class="list clearfix">
+                                                    <label class="left" sh_lang="SHpack.apninfo"></label>
+                                                    <span class="right place">
+                                                        <select class="text" id="apn_detect" et="change:apn_detect">
+                                                            <option value="1" sh_lang="SHpack.apn_auto"></option>
+                                                            <option value="0" sh_lang="SHpack.apn_nanual"></option>
+                                                        </select>
+                                                    </span>
+                                                </div>
+                                                <div id="apn_msg" class="list hidden">
+                                                    <div class="clearfix">
+                                                        <label class="left" sh_lang="SHpack.apn"></label>
+                                                        <span class="right place">
+                                                            <input type="text" class="text require isNonull" id="lte_apn">
+                                                        </span>
+                                                    </div>
+                                                    <div class="list clearfix">
+                                                        <label class="left" sh_lang="SHpack.apn_user"></label>
+                                                        <span class="right place">
+                                                            <input type="text" class="text" id="lte_username">
+                                                        </span>
+                                                    </div>
+                                                    <div class="list clearfix">
+                                                        <label class="left" sh_lang="SHpack.apn_psd"></label>
+                                                        <span class="right place">
+                                                            <input type="text" class="text" id="lte_password">
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <ul class="tabbox_cont cont">
+                                            <li class="list clearfix">
+                                                <label class="left" sh_lang="SHpack.pppoe_name"></label>
+                                                <span class="right place">
+                                                    <input type="text" id="pppoe_user_id"
+                                                           class="text require isPPPoeName" autocomplete="off">
+                                                    <div class="tip" sh_lang="SHeg.max63char"></div>
+                                                </span>
+                                            </li>
+                                            <li class="list clearfix">
+                                                <label class="left" sh_lang="SHpack.pppoe_psd"></label>
+                                                <span class="right place">
+                                                    <input type="password" id="pppoe_pwd_id"
+                                                           class="text require isPPPoePwd" autocomplete="off">
+                                                    <div class="tip" sh_lang="SHeg.max63char"></div>
+                                                </span>
+                                            </li>
+                                            <li class="list clearfix">
+                                                <label class="left">MTU</label>
+                                                <span class="right place">
+                                                    <input type="text" id="mtu" sh_lang="SHeg.ismtu"
+                                                           class="text require isMTU" autocomplete="off">
+                                                    <div class="tip" sh_lang="SHeg.ismtu"></div>
+                                                </span>
+                                            </li>
+                                            <li class="list clearfix">
+                                                <label class="left" sh_lang="SHpack.pppoe_sever_name"></label>
+                                                <span class="right place">
+                                                    <input type="text" id="pppoe_server_id"
+                                                           class="text require isServerName" autocomplete="off">
+                                                    <div class="tip" sh_lang="SHeg.max63char"></div>
+                                                </span>
+                                            </li>
+                                        </ul>
+                                        <ul class="tabbox_cont cont">
+                                            <li class="list clearfix">
+                                                <label class="left" sh_lang="SHpack.ip_addr"></label>
+                                                <span class="right place">
+                                                    <input type="text" id="static_ip_id"
+                                                           class="text require isIp" autocomplete="off">
+                                                    <div class="tip" sh_lang="SHeg.ip"></div>
+                                                </span>
+                                            </li>
+                                            <li class="list clearfix">
+                                                <label class="left" sh_lang="SHpack.netmask"></label>
+                                                <span class="right place">
+                                                    <select type="text" class="text" id="static_netmask_id">
+                                                        <option value="255.255.255.252">255.255.255.252</option>
+                                                        <option value="255.255.255.248">255.255.255.248</option>
+                                                        <option value="255.255.255.240">255.255.255.240</option>
+                                                        <option value="255.255.255.224">255.255.255.224</option>
+                                                        <option value="255.255.255.192">255.255.255.192</option>
+                                                        <option value="255.255.255.128">255.255.255.128</option>
+                                                        <option value="255.255.255.0" selected>255.255.255.0</option>
+                                                        <option value="255.255.254.0">255.255.254.0</option>
+                                                        <option value="255.255.252.0">255.255.252.0</option>
+                                                        <option value="255.255.248.0">255.255.248.0</option>
+                                                        <option value="255.255.240.0">255.255.240.0</option>
+                                                        <option value="255.255.224.0">255.255.224.0</option>
+                                                        <option value="255.255.192.0">255.255.192.0</option>
+                                                        <option value="255.255.128.0">255.255.128.0</option>
+                                                        <option value="255.255.0.0">255.255.0.0</option>
+                                                        <option value="255.254.0.0">255.254.0.0</option>
+                                                        <option value="255.252.0.0">255.252.0.0</option>
+                                                        <option value="255.248.0.0">255.248.0.0</option>
+                                                        <option value="255.240.0.0">255.240.0.0</option>
+                                                        <option value="255.224.0.0">255.224.0.0</option>
+                                                        <option value="255.192.0.0">255.192.0.0</option>
+                                                        <option value="255.128.0.0">255.128.0.0</option>
+                                                        <option value="255.0.0.0">255.0.0.0</option>
+                                                    </select>
+                                                </span>
+                                            </li>
+                                            <li class="list clearfix">
+                                                <label class="left" sh_lang="SHpack.gateway"></label>
+                                                <span class="right place">
+                                                    <input type="text" id="static_gateway_id"
+                                                           class="text require isGateway" autocomplete="off">
+                                                    <div class="tip" sh_lang="SHeg.gateway"></div>
+                                                </span>
+                                            </li>
+                                            <li class="list clearfix">
+                                                <label class="left" sh_lang="SHpack.dns"></label>
+                                                <span class="right place">
+                                                    <input type="text" id="static_dns_id"
+                                                           class="text require isDNS" autocomplete="off">
+                                                    <div class="tip" sh_lang="SHeg.dns"></div>
+                                                </span>
+                                            </li>
+                                        </ul>
+                                        <ul class="tabbox_cont cont hide">
+                                            <li class="list clearfix">
+                                                <label class="left" sh_lang="SHpack.ip_addr"></label>
+                                                <span class="right place">
+                                                    <input class="text" id="dhcp_ip_id" disabled type="text">
+                                                    <div class="tip" sh_lang="SHeg.auto"></div>
+                                                </span>
+                                            </li>
+                                            <li class="list clearfix">
+                                                <label class="left" sh_lang="SHpack.netmask"></label>
+                                                <span class="right place">
+                                                    <input class="text" id="dhcp_netmask_id" disabled type="text">
+                                                    <div class="tip" sh_lang="SHeg.auto"></div>
+                                                </span>
+                                            </li>
+                                            <li class="list clearfix">
+                                                <label class="left" sh_lang="SHpack.gateway"></label>
+                                                <span class="right place">
+                                                    <input class="text" id="dhcp_gateway_id" disabled type="text">
+                                                    <div class="tip" sh_lang="SHeg.auto"></div>
+                                                </span>
+                                            </li>
+                                            <li class="list clearfix">
+                                                <label class="left" sh_lang="SHpack.dns"></label>
+                                                <span class="right place">
+                                                    <input class="text" id="dhcp_dns_id" disabled type="text">
+                                                    <div class="tip" sh_lang="SHeg.auto"></div>
+                                                </span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </ul>
+                            </div>
+                        </div>
+                        <a class="btn btn-warning" et="click:next" sh_lang="SHpack.next"></a>
+                    </div>
+                    <div class="wizard_box hide">
+                        <div class="shbox clearfix">
+                            <div class="shbox_border">
+                                <label class="title" sh_lang="SHpack.lan_set"></label>
+                                <ul class="clearfix shbox_cont">
+                                    <li class="list clearfix">
+                                        <label class="left" sh_lang="SHpack.ip_addr"></label>
+                                        <span class="right place">
+                                            <input type="text" id="lan_ip_id" class="text require isIp"
+                                                   autocomplete="off">
+                                            <div class="tip" sh_lang="SHeg.ip"></div>
+                                        </span>
+                                    </li>
+                                    <li class="list clearfix">
+                                        <label class="left" sh_lang="SHpack.netmask"></label>
+                                        <span class="right place">
+                                            <select class="text" id="lan_netmask_id">
+                                                <option value="255.255.255.252">255.255.255.252</option>
+                                                <option value="255.255.255.248">255.255.255.248</option>
+                                                <option value="255.255.255.240">255.255.255.240</option>
+                                                <option value="255.255.255.224">255.255.255.224</option>
+                                                <option value="255.255.255.192">255.255.255.192</option>
+                                                <option value="255.255.255.128">255.255.255.128</option>
+                                                <option value="255.255.255.0">255.255.255.0</option>
+                                                <option value="255.255.254.0">255.255.254.0</option>
+                                                <option value="255.255.252.0">255.255.252.0</option>
+                                                <option value="255.255.248.0">255.255.248.0</option>
+                                                <option value="255.255.240.0">255.255.240.0</option>
+                                                <option value="255.255.224.0">255.255.224.0</option>
+                                                <option value="255.255.192.0">255.255.192.0</option>
+                                                <option value="255.255.128.0">255.255.128.0</option>
+                                                <option value="255.255.0.0">255.255.0.0</option>
+                                                <option value="255.254.0.0">255.254.0.0</option>
+                                                <option value="255.252.0.0">255.252.0.0</option>
+                                                <option value="255.248.0.0">255.248.0.0</option>
+                                                <option value="255.240.0.0">255.240.0.0</option>
+                                                <option value="255.224.0.0">255.224.0.0</option>
+                                                <option value="255.192.0.0">255.192.0.0</option>
+                                                <option value="255.128.0.0">255.128.0.0</option>
+                                                <option value="255.0.0.0">255.0.0.0</option>
+                                            </select>
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <span class="btn" et="click:prev" sh_lang="SHpack.prev"></span>
+                        <span class="btn btn-warning" et="click:next" sh_lang="SHpack.next"></span>
+                    </div>
+                    <div class="wizard_box w24g hide">
+                        <div class="shbox clearfix">
+                            <div class="shbox_border">
+                                <label class="title" sh_lang="SHpack.wifi24g"></label>
+                                <ul class="clearfix shbox_cont">
+                                    <li class="list clearfix">
+                                        <label class="left" sh_lang="SHpack.ssid"></label>
+                                        <span class="right place">
+                                            <input type="text" id="ssid_id_24g" class="text require isSSID"
+                                                   autocomplete="off">
+                                            <div class="tip" sh_lang="SHeg.max32char"></div>
+                                        </span>
+                                    </li>
+                                    <li class="list">
+                                        <label class="left" sh_lang="SHpack.ssid_pwd"></label>
+                                        <span class="right place">
+                                            <input type="text" id="psk_id_24g" class="text require isSSIDPwd"
+                                                   autocomplete="off">
+                                            <div class="tip" sh_lang="SHeg.emp832char"></div>
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="shbox clearfix">
+                            <div class="shbox_border">
+                                <label class="title" sh_lang="SHpack.advanced"></label>
+                                <ul class="clearfix shbox_cont">
+                                    <li class="list clearfix">
+                                        <label class="left" sh_lang="SHpack.bandwidth"></label>
+                                        <span class="right">
+                                        <select class="text" id="bandwidth_24g"></select>
+                                    </span>
+                                    </li>
+                                    <li class="list clearfix">
+                                        <label class="left" sh_lang="SHpack.country"></label>
+                                        <span class="right">
+                                        <select id="country_24g" class="text country" et="change:country_channel">
+                                            <option value="UK" sh_lang="SHpack.country_es"></option>
+                                            <option value="CN" sh_lang="SHpack.country_cn"></option>
+                                            <option value="US" sh_lang="SHpack.country_us"></option>
+                                            <option value="GB" sh_lang="SHpack.country_eu"></option>
+                                        </select>
+                                    </span>
+                                    </li>
+                                    <li class="list clearfix">
+                                        <label class="left" sh_lang="SHpack.channels"></label>
+                                        <span class="right">
+                                        <select class="text" id="channels_24g">
+                                        </select>
+                                    </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <span class="btn" et="click:prev" sh_lang="SHpack.prev"></span>
+                        <span class="btn btn-warning" et="click:nextend" sh_lang="SHpack.next"></span>
+                    </div>
+                    <div class="wizard_box w58g hide">
+                        <div class="shbox clearfix">
+                            <div class="shbox_border">
+                                <label class="title" sh_lang="SHpack.wifi58g"></label>
+                                <ul class="clearfix shbox_cont">
+                                    <li class="list clearfix">
+                                        <label class="left" sh_lang="SHpack.ssid"></label>
+                                        <span class="right place">
+                                            <input type="text" id="ssid_id_58g" class="text require isSSID"
+                                                   autocomplete="off">
+                                            <div class="tip" sh_lang="SHeg.max32char"></div>
+                                        </span>
+                                    </li>
+                                    <li class="list clearfix">
+                                        <label class="left" sh_lang="SHpack.ssid_pwd"></label>
+                                        <span class="right place">
+                                            <input type="text" id="psk_id_58g" class="text require isSSIDPwd"
+                                                   autocomplete="off">
+                                            <div class="tip" sh_lang="SHeg.emp832char"></div>
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="shbox clearfix">
+                            <div class="shbox_border">
+                                <label class="title" sh_lang="SHpack.advanced"></label>
+                                <ul class="clearfix shbox_cont">
+                                    <li class="list clearfix">
+                                        <label class="left" sh_lang="SHpack.bandwidth"></label>
+                                        <span class="right">
+                                        <select class="text" et="change:htmode_channel" id="bandwidth_58g"></select>
+                                    </span>
+                                    </li>
+                                    <li class="list clearfix">
+                                        <label class="left" sh_lang="SHpack.country"></label>
+                                        <span class="right">
+                                        <select id="country_58g" class="text country" et="change:country_channel">
+                                            <option value="UK" sh_lang="SHpack.country_es"></option>
+                                            <option value="CN" sh_lang="SHpack.country_cn"></option>
+                                            <option value="US" sh_lang="SHpack.country_us"></option>
+                                            <option value="GB" sh_lang="SHpack.country_eu"></option>
+                                        </select>
+                                    </span>
+                                    </li>
+                                    <li class="list clearfix">
+                                        <label class="left" sh_lang="SHpack.channels"></label>
+                                        <span class="right">
+                                        <select class="text" id="channels_58g"></select>
+                                    </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <span class="btn" et="click:prev" sh_lang="SHpack.prev"></span>
+                        <span class="btn btn-warning" et="click:nextend" sh_lang="SHpack.next"></span>
+                    </div>
+                    <div class="wizard_box hide">
+                        <div class="shbox clearfix">
+                            <div class="shbox_border">
+                                <label class="title" sh_lang="SHpack.router"></label>
+                                <ul class="clearfix shbox_cont" id="readSet"></ul>
+                            </div>
+                        </div>
+                        <span class="btn" et="click:prev" sh_lang="SHpack.prev"></span>
+                        <span class="btn btn-warning" et="click:setmode" sh_lang="SHpack.finish"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="copyright" sh_lang="SHpack.copyright1"></div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName], function (page) {
+            page.init();
+        });
+    }
+</script>

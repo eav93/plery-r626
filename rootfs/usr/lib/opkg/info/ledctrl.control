@@ -1,0 +1,8 @@
+Package: ledctrl
+Version: 0.1-1
+Depends: libc, zlib
+Source: package/ledctrl
+Section: net
+Architecture: mipsel_24kc
+Installed-Size: 1678
+Description:  This package for CPE led control

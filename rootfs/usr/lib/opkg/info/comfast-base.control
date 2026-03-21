@@ -1,0 +1,8 @@
+Package: comfast-base
+Version: 1.0-1
+Depends: libc, swconfig, pptpd, dropbear, nginx, firewall
+Source: package/comfast/comfast-base
+Section: comfast-base
+Architecture: mipsel_24kc
+Installed-Size: 50446
+Description:  Provides change file

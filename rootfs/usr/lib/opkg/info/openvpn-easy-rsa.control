@@ -1,0 +1,10 @@
+Package: openvpn-easy-rsa
+Version: 3.0.8-3
+Depends: libc, openssl-util
+Source: feeds/packages/net/openvpn-easy-rsa
+License: GPL-2.0
+Section: net
+Maintainer: Luiz Angelo Daros de Luca <luizluca@gmail.com>
+Architecture: all
+Installed-Size: 27915
+Description:  CLI utility to build and manage a PKI CA.

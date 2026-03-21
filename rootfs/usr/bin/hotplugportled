@@ -1,0 +1,157 @@
+#!/bin/sh
+
+. /lib/functions.sh
+. /usr/share/libubox/jshn.sh
+
+PORT_STATUS_DIR=/tmp/status/hotplugport/
+PORT_STATUS_WAN_INDEX=/tmp/status/hotplugport/wan
+wan_port=""
+port_type=""
+[ -f ${PORT_STATUS_DIR} ] || mkdir -p ${PORT_STATUS_DIR}
+
+wan_port_init() {
+    json_init
+    json_load "$(cat /etc/board.json)"
+
+    json_select switch
+	json_select switch0
+	json_select ports
+	index=1
+	while json_select $index;do
+		index=`expr $index + 1`
+		json_get_var role role
+		[ "$role" != "wan" ] && {
+			json_select ..
+			continue
+		}
+		json_get_var num num
+		[ -n "$num" ] && echo -n $num
+		break
+	done
+
+	json_select ..
+	json_select ..
+}
+
+load_led()
+{
+	local name
+	local sysfs
+	local trigger
+	local dev
+	local mode
+	local default
+
+	config_get name $1 name "$sysfs"
+	[ "${name}" != "${port_type}" -a  "${port_type}" != "ALL" ] && return 0
+	config_get sysfs $1 sysfs
+	[ -e /sys/class/leds/${sysfs}/brightness ] || return 0
+	[ "$STATUS" = "DOWN" ] && {
+		echo 0 > /sys/class/leds/${sysfs}/brightness
+		return
+	}
+
+	config_get dev $1 dev
+	config_get trigger $1 trigger "none"
+	config_get mode $1 mode "link"
+
+	echo $trigger > /sys/class/leds/${sysfs}/trigger 2> /dev/null
+
+	case "$trigger" in
+		"netdev")
+			[ -n "$dev" ] && {
+			echo $dev > /sys/class/leds/${sysfs}/device_name
+			echo $mode > /sys/class/leds/${sysfs}/mode
+		}
+	;;
+	esac
+}
+
+led_switch_trigger()
+{
+	config_load system
+	config_foreach load_led ledhotplug
+}
+
+hotplug_portled_stop() {
+	port_type="ALL"
+    STATUS="DOWN"
+    led_switch_trigger
+}
+
+hotplug_portled_start() {
+    local lan_status="$(get_lan_stat_fromfile)"
+    local wan_status="$(get_wan_stat_fromfile)"
+
+	port_type="lan"
+    STATUS="$(get_lan_stat_fromfile)"
+    led_switch_trigger
+
+	port_type="wan"
+    STATUS="$(get_wan_stat_fromfile)"
+    led_switch_trigger
+
+}
+
+hotplug_portled_trigger() {
+    if [ $PORT = $wan_port ]; then
+        port_type=wan
+        STATUS=$(get_wan_stat_fromfile)
+    else
+        port_type=lan
+        STATUS=$(get_lan_stat_fromfile)
+    fi
+    led_switch_trigger
+}
+
+get_lan_stat_fromfile() {
+    # lan port
+    for portfile in $(ls ${PORT_STATUS_DIR}port*)
+    do
+        # skip wan port
+        [ "${portfile}" != "${PORT_STATUS_DIR}port${wan_port}" ] && {
+            [ $(cat ${portfile}) = "UP" ] && {
+                echo -n "UP"
+                return
+            }
+        }
+    done
+
+    echo -n "DOWN"
+}
+
+get_wan_stat_fromfile() {
+    # wan port
+    local wan_stat=$(cat ${PORT_STATUS_DIR}port${wan_port} 2>/dev/null)
+    echo -n "${wan_stat:-DOWN}"
+}
+
+get_wan_port() {
+    [ -f ${PORT_STATUS_WAN_INDEX} ] && {
+        wan_port=$(cat ${PORT_STATUS_WAN_INDEX})
+        return
+    }
+    wan_port=$(wan_port_init)
+    [ "$wan_port" -ge "0" ] && {
+        echo -n $wan_port >${PORT_STATUS_DIR}wan
+    }
+}
+
+get_wan_port
+[ -n "${STATUS}" ] && echo -n ${STATUS} >${PORT_STATUS_DIR}port${PORT}
+
+cmd=$1
+[ $(uci -q get led.led_off) = "1" ] && cmd=stop
+case "${cmd}" in
+    trigger)
+        hotplug_portled_trigger
+        ;;
+    stop)
+        hotplug_portled_stop
+        ;;
+    start)
+        hotplug_portled_start
+        ;;
+    restart)
+        ;;
+esac

@@ -1,0 +1,8 @@
+Package: fibocom
+Version: 0.1-1
+Depends: libc, libubus, libubox, libuci, libblobmsg-json, zlib, libpthread
+Source: feeds/atmodem_compat/atmodem_compat
+Section: atmodem_compat
+Architecture: mipsel_24kc
+Installed-Size: 9706
+Description:  This package contains fibocom 2G/3G/4G netcard modem

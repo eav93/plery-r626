@@ -1,0 +1,7 @@
+/usr/bin/ecm_mode
+/etc/init.d/rndis
+/etc/hotplug.d/tty/30-dhcp_fibocom
+/lib/netifd/proto/dhcp_fibocom.sh
+/etc/rc.d/S99rndis
+/usr/bin/reboot_model
+/usr/bin/fibocom

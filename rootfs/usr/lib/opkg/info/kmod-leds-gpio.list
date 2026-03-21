@@ -1,0 +1,3 @@
+/lib/modules/4.4.194/leds-gpio.ko
+/etc/modules-boot.d/60-leds-gpio
+/etc/modules.d/60-leds-gpio

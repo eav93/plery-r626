@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <link type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/css/shreset.css">
+    <link rel="stylesheet" href="/css/wap/shap.css">
+    <title></title>
+    <style>
+        .list .left {
+            width: 50%;
+        }
+        .list .right {
+            width: 48%;
+        }
+    </style>
+</head>
+<body module="pptpclient" device="mobile" id="mbox_container">
+<header class="is-fixed">
+    <span class="goback" et="tap:prev"><i et="tap:prev" class="icon-prev"></i></span>
+    <label sh_lang="SHpack.pptpclient"></label>
+    <a class="header_menu" href="#"><span class="menu_icon"></span></a>
+</header>
+<main class="main_content container-fluid">
+    <div class="shstep"></div>
+    <div class="wizard_man">
+        <div class="wizard_box">
+            <div class="shbox clearfix">
+                <div class="shbox_border">
+                    <label class="title" sh_lang="SHpack.pptpclient"></label>
+                    <ul class="clearfix shbox_cont">
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHpack.remoteswitch"></label>
+                            <span class="right">
+                                <select id="remote_switch" class="text" et="change:remote_change">
+                                    <option value="1" sh_lang="SHpack.enable"></option>
+                                    <option value="0" sh_lang="SHpack.disable"></option>
+                                </select>
+                            </span>
+                        </li>
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHpack.user"></label>
+                            <span class="right">
+                                <input type="text" class="text require isNonull isEnglish" id="username">
+                            </span>
+                        </li>
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHpack.pwd"></label>
+                            <span class="right">
+                                <input type="text" class="text require isNonull isEnglish" id="passwd">
+                            </span>
+                        </li>
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHpack.serveip"></label>
+                            <span class="right">
+                                <input type="text" class="text require isNonull isIp" id="server">
+                            </span>
+                        </li>
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHpack.bridge_status"></label>
+                            <span class="right" id="pptp_status"></span>
+                        </li>
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHpack.ip"></label>
+                            <span class="right" id="pptp_ip"></span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <span class="btn btn-warning" et="click tap:save" sh_lang="SHpack.optimised"></span>
+        </div>
+    </div>
+</main>
+<nav class="subMenu" id="subMenu">
+    <ul class="navigation clearfix"></ul>
+</nav>
+</body>
+</html>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName, "touch"], function (page) {
+            page.init();
+        });
+    }
+</script>

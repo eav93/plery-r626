@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <link type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/css/shreset.css">
+    <link rel="stylesheet" href="/css/wap/shap.css">
+    <title></title>
+</head>
+<body module="logs" device="mobile" id="mbox_container">
+<header class="is-fixed">
+    <span class="goback" et="tap:prev"><i et="tap:prev" class="icon-prev"></i></span>
+    <label sh_lang="SHpack.logs"></label>
+    <a class="header_menu" href="#"><span class="menu_icon"></span></a>
+</header>
+<main class="main_content container-fluid">
+    <div class="content_box clearfix">
+        <div class="content container-fluid clearfix">
+            <div class="logs_box">
+                <div class="row firewall_head">
+                    <div class="col-xs-6">
+                    </div>
+                    <div class="col-xs-6 btngroup">
+                        <a class="btn btn-warning" sh_lang="SHpack.refresh" et="click:log_now" id="btn-log" 
+                           ></a>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12 logs">
+                        <table class="table" style="width: 100%;">
+                            <thead>
+                            <th style="width: 100px" sh_lang="SHpack.time"></th>
+                            <th style="width:100px" sh_lang="SHpack.level"></th>
+                            <th style="text-align: left;" sh_lang="SHpack.content"></th>
+                            </thead>
+                        </table>
+                        <div id="logtext">
+                            <table class="table" style="width: 100%;">
+                                <thead style="border-bottom: none; display: none">
+                                <!-- <th style="width: 200px"></th>
+                                <th style="width:120px"></th>
+                                <th style="text-align: left;"></th> -->
+                                </thead>
+                                <tbody id="log_tab"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="login_footer">
+                <div sh_lang="SHpack.copyright"></div>
+            </div>
+        </div>
+    </div>
+</main>
+<nav class="subMenu" id="subMenu">
+    <ul class="navigation clearfix"></ul>
+</nav>
+</body>
+</html>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName, "touch"], function (page) {
+            page.init();
+        });
+    }
+</script>

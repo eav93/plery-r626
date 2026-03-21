@@ -1,0 +1,60 @@
+#!/bin/sh
+
+MD5FILE=/var/run/config.md5
+
+config_check_reload() {
+	local RELOADFILE=$1
+	local RELOADFILE_MD5OLD
+	local RELOADFILE_MD5NEW
+	local CHECK_DIR="/var/run/config.check"
+	local CHECK_FILE="/var/run/config.check/$RELOADFILE"
+	local CHECK_FILE
+
+	[ ! -f "/etc/config/$RELOADFILE" ] && return
+	[ ! -f "/var/run/config.md5" ] && return
+
+	rm -rf /var/run/config.check
+	mkdir -p /var/run/config.check
+
+	RELOADFILE_MD5OLD=`cat  $MD5FILE | grep "/wireless$" | cut -d" " -f 1`
+	RELOADFILE_MD5NEW=`uci show -q $RELOADFILE >$CHECK_FILE && md5sum $CHECK_FILE | cut -d" " -f 1`
+
+	[ "$RELOADFILE_MD5OLD" != "$RELOADFILE_MD5NEW" ] && {
+		sed  -i "s/$RELOADFILE_MD5OLD/$RELOADFILE_MD5NEW/" $MD5FILE
+		ubus call service event "{ \"type\": \"config.change\", \"data\": { \"package\": \"$RELOADFILE\" }}"
+	}
+
+	rm -rf /var/run/config.check
+}
+
+[ -n "$1" ] && {
+	config_check_reload $1
+	return;
+}
+
+depend_config() {
+	case "$1" in
+		*common)
+			[ -n "/etc/config/wireless" ] && printf "wireless";;
+		*login)
+			[ -n "/etc/config/dhcp" ] && printf "dhcp";;
+
+		*) printf $1;;
+	esac
+}
+
+rm -rf /var/run/config.check
+mkdir -p /var/run/config.check
+for config in /etc/config/*; do
+	file=${config##*/}
+	uci show "${file##*/}" > /var/run/config.check/$file
+done
+DEPENDLIST=""
+[ -f $MD5FILE ] && {
+	for c in `md5sum -c $MD5FILE 2>/dev/null| grep FAILED | cut -d: -f1`; do
+		DEPENDLIST=`depend_config $c`
+		ubus call service event "{ \"type\": \"config.change\", \"data\": { \"package\": \"$(basename $DEPENDLIST)\" }}"
+	done
+}
+md5sum /var/run/config.check/* > $MD5FILE
+rm -rf /var/run/config.check

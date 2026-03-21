@@ -1,0 +1,185 @@
+#!/bin/sh
+
+WAN_LED_VALUE=/sys/devices/platform/gpio-leds/leds/comfast:blue:wan/brightness
+LAN_LED_VALUE=/sys/devices/platform/gpio-leds/leds/comfast:blue:lan/brightness
+WIFI_LED_VALUE=/sys/devices/platform/gpio-leds/leds/comfast:blue:wifi/brightness
+
+SIGNAL1_4G_LED=/sys/devices/platform/gpio-leds/leds/comfast:red:led/brightness
+SIGNAL2_4G_LED=/sys/devices/platform/gpio-leds/leds/comfast:green:led/brightness
+#SIGNAL3_4G_LED=/sys/devices/gpio-leds/leds/comfast:blue:led/brightness
+IP="199.85.126.10"
+
+signal_led_disabled() {
+	echo 0 > $SIGNAL1_4G_LED 2>/dev/null
+	echo 0 > $SIGNAL2_4G_LED 2>/dev/null
+#	echo 0 > $SIGNAL3_4G_LED 2>/dev/null
+}
+
+ping_status() {
+        if ping -c 1 $IP > /dev/null; then
+                #echo "$IP Ping is successful."
+                return 0
+        else
+                #echo "$IP Ping is failure"
+                return 1
+        fi
+}
+
+fibocom_mode_handle() {
+	local signal
+	local card_status
+	local ping_result
+	signal=`cat /tmp/fibocom/signal | sed -e 's/dBm//g'`
+
+	ping_status
+
+	if [  ! -e /tmp/fibocom/br-wan ]; then
+		echo 1 > $SIGNAL1_4G_LED 2>/dev/null
+		echo 0 > $SIGNAL2_4G_LED 2>/dev/null
+	elif [ $? -ne 0 ]; then
+		if [ "$signal" = "unknown" ]; then
+			echo 1 > $SIGNAL1_4G_LED 2>/dev/null
+			echo 0 > $SIGNAL2_4G_LED 2>/dev/null
+		else
+			if [ $signal -le -70 ]; then
+				echo 1 > $SIGNAL1_4G_LED 2>/dev/null
+					echo 0 > $SIGNAL2_4G_LED 2>/dev/null
+			elif [ $signal -le -45 ]; then
+					echo 0 > $SIGNAL1_4G_LED 2>/dev/null
+					echo 1 > $SIGNAL2_4G_LED 2>/dev/null
+			else
+					echo 0 > $SIGNAL1_4G_LED 2>/dev/null
+					echo 1 > $SIGNAL2_4G_LED 2>/dev/null
+			fi
+		fi
+	else
+		echo 1 > $SIGNAL1_4G_LED 2>/dev/null
+		echo 0 > $SIGNAL2_4G_LED 2>/dev/null
+	fi
+}
+
+free_wan_ip() {
+	local wan_ip
+
+	if [ "$wan_port_status" = "down" ]; then 
+		wan_ip=`ifstatus wan | grep \"address\" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'`
+		[ -n "$wan_ip" ] && ifup wan
+	fi
+}
+
+port_led_handle() {
+	local port2_status port3_status port4_status wan_status workmode
+
+	port2_status=`swconfig dev switch0 port 2 get link | awk -F "[ :]" '{print $4}' 2> /dev/null`
+	port3_status=`swconfig dev switch0 port 3 get link | awk -F "[ :]" '{print $4}' 2> /dev/null`
+	port4_status=`swconfig dev switch0 port 4 get link | awk -F "[ :]" '{print $4}' 2> /dev/null`
+	wan_status=`uci get network.wan.fibocom_flag 2> /dev/null`
+	workmode=`cat /tmp/status/workmode 2> /dev/null`
+
+	# if [ x"$port2_status" = x"up" -o x"$port3_status" = x"up" ]; then
+	# 	echo 1 > $LAN_LED_VALUE 2>/dev/null
+	# else
+	# 	echo 0 > $LAN_LED_VALUE 2>/dev/null
+	# fi
+	
+	if [ x"$wan_status" = x"1" -o x"$workmode" = x"ap" -o x"$workmode" = x"wds" -o x"$workmode" = x"wisp" ]; then
+		if [ x"$port4_status" = x"up" -o x"$port2_status" = x"up" -o x"$port3_status" = x"up" ]; then
+			echo 1 > $LAN_LED_VALUE 2>/dev/null
+			echo 0 > $WAN_LED_VALUE 2>/dev/null
+		else
+			echo 0 > $LAN_LED_VALUE 2>/dev/null
+		fi
+	else
+		if [ x"$port4_status" = x"up" ]; then
+			echo 1 > $WAN_LED_VALUE 2>/dev/null
+		else
+			echo 0 > $WAN_LED_VALUE 2>/dev/null
+		fi
+		if [ x"$port2_status" = x"up" -o x"$port3_status" = x"up" ]; then
+        	        echo 1 > $LAN_LED_VALUE 2>/dev/null
+        	else
+        	        echo 0 > $LAN_LED_VALUE 2>/dev/null
+        	fi
+	fi
+
+	wan_port_status=$port4_status
+}
+
+router_mode_handle() {
+	local flag
+	if [ -n "$fibocom_module" -a "$fibocom_module" = "fibocom" ]; then
+		flag=`uci get network.wan.fibocom_flag 2>/dev/null`
+		if [ -n "$flag" -a "$flag" = "1" ]; then
+			fibocom_mode_handle
+		else
+			free_wan_ip
+			signal_led_disabled
+		fi
+	fi
+
+}
+
+all_led_disabled() {
+	echo 0 > $WAN_LED_VALUE 2>/dev/null
+	echo 0 > $LAN_LED_VALUE 2>/dev/null
+	echo 0 > $WIFI_LED_VALUE 2>/dev/null
+	echo 0 > $SIGNAL1_4G_LED 2>/dev/null
+	echo 0 > $SIGNAL2_4G_LED 2>/dev/null
+#	echo 0 > $SIGNAL3_4G_LED 2>/dev/null
+}
+
+wifi_managenment()
+{
+	local wifiN
+	local wifi_on_24g=0
+	local wifi_on_58g=0
+
+	wifiN=`ifconfig | grep "ra0" | awk '{print $1}'`
+	[ -n "$wifiN" -a "$wifiN" = "ra0" ] && wifi_on_24g=1
+	wifiN=`ifconfig | grep "rai0" | awk '{print $1}'`
+	[ -n "$wifiN" -a "$wifiN" = "rai0" ] && wifi_on_58g=1
+
+	if [ "$wifi_on_24g" = "1" -o "$wifi_on_58g" = "1" ]; then
+		echo 1 > $WIFI_LED_VALUE
+	else
+		echo 0 > $WIFI_LED_VALUE
+	fi
+}
+
+main() {
+
+	local t=0
+	while [ 1 ]
+	do
+		if [ $t -lt 2400 ]; then
+      			t=$((t + 1))
+    		else
+        		echo 3 > /proc/sys/vm/drop_caches
+        		t=0
+    		fi
+		led_off=`uci get led.led_off 2>/dev/null`
+		if [ -n "$led_off" -a "$led_off" = "1" ]; then
+			all_led_disabled
+		else
+			wifi_managenment
+			port_led_handle
+			workmode=`cat /tmp/status/workmode 2> /dev/null`
+			case $workmode in
+				wisp | \
+				wds | \
+				ap)
+					signal_led_disabled
+				;;
+				router)
+					router_mode_handle
+				;;
+			esac
+		fi
+		sleep 3
+	done
+
+}
+
+wan_port_status="down"
+fibocom_module=`ls /usr/bin/ | grep fibocom`
+main

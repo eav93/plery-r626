@@ -1,0 +1,3 @@
+/etc/rc.d/S99ledctrl
+/etc/init.d/ledctrl
+/usr/bin/led_control

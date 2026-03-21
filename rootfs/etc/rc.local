@@ -1,0 +1,5 @@
+# Put your custom commands here that should be executed once
+# the system init finished. By default this file does nothing.
+
+echo 1024 >  /proc/sys/vm/min_free_kbytes
+exit 0

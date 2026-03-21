@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <title></title>
+    <link type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/css/shreset.css">
+    <link rel="stylesheet" href="/css/wap/shap.css">
+</head>
+<body module="pptpuser" device="mobile" id="mbox_container">
+<header class="is-fixed">
+    <span class="goback" et="tap:prev"><i et="tap:prev" class="icon-prev"></i></span>
+    <label sh_lang="SHpack.pptpuser"></label>
+    <a class="header_menu" href="#"><span class="menu_icon"></span></a>
+</header>
+<main class="main_content container-fluid">
+    <ul class="wizard clearfix">
+        <div class="firewall_tab">
+            <div class="row firewall_head">
+                <div class="col-xs-4">
+                    <span sh_lang="SHpack.pptpuser"></span>
+                </div>
+                <div class="col-xs-8 btngroup">
+                    <a class="btn btn-warning" id="add" data-name="url" et="click:add" sh_lang="SHpack.add"></a>
+                    <a class="btn btn-warning" id="del" data-name="url" et="click:delsele" sh_lang="SHpack.del"></a>
+                </div>
+            </div>
+            <div class="row">
+                <table width="100%">
+                    <thead class="table_head">
+                    <tr>
+                        <th width="10%">
+                            <input id="allchecked" type="checkbox" et="click:selectall" data-value="0"/>
+                            <label et="click:selectall" id="select_laber" sh_lang="SHpack.selectall"></label>
+                        </th>
+                        <th width="10%" sh_lang="SHpack.number"></th>
+                        <th width="30%" sh_lang="SHpack.user"></th>
+                        <th width="30%" sh_lang="SHpack.pwd"></th>
+                        <th width="20%" sh_lang="SHpack.operation"></th>
+                    </tr>
+                    </thead>
+                    <tbody id="user_table">
+                    </tbody>
+                </table>
+                <div class="page clearfix" id="url_page">
+                    <div class="PageInfo clearfix"></div>
+                    <ul class="clearfix PageCode"></ul>
+                </div>
+            </div>
+        </div>
+    </ul>
+    <div class="row">
+        <div class="login_footer">
+            <div sh_lang="SHpack.copyright"></div>
+        </div>
+    </div>
+</main>
+<nav class="subMenu" id="subMenu">
+    <ul class="navigation clearfix"></ul>
+</nav>
+<div class="mask"></div>
+<input type="text" id="real_num" class="hide"/>
+<div class="add_box url_add">
+    <div class="add_box_head">
+        <i class="iconfont icon-cuowu" et="click:closewin"></i>
+        <h4><span sh_lang="SHpack.add"></span><span sh_lang="SHpack.pptpuser"></span></h4>
+    </div>
+    <div class="add_box_body">
+        <div class="add_box_list clearfix">
+            <div class="col-xs-4">
+                <div class="row"><span sh_lang="SHpack.user"></span></div>
+            </div>
+            <div class="col-xs-8">
+                <div class="row"><input type="text" id="username" class="require isEnglish isNULL"/></div>
+            </div>
+        </div>
+        <div class="add_box_list clearfix">
+            <div class="col-xs-4">
+                <div class="row"><span sh_lang="SHpack.pwd"></span></div>
+            </div>
+            <div class="col-xs-8">
+                <div class="row"><input type="text" id="password" class="require isEnglish isNULL"/></div>
+            </div>
+        </div>
+    </div>
+    <div class="add_box_foot clearfix">
+        <button class="btn btn-warning pull-right firewall_save ifbtn" et="click:save" sh_lang="SHpack.save"></button>
+    </div>
+</div>
+</body>
+</html>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName, "touch"], function (page) {
+            page.init();
+        });
+    }
+</script>

@@ -1,0 +1,69 @@
+#!/bin/sh
+
+echo "change ${ACTION}" > /dev/console
+if [ "${ACTION}" = "pressed" -a "$BUTTON" = "reset" ]; then
+
+echo $ACTION > /tmp/sysinfo/button_state
+/bin/button_light &
+
+elif [ "${ACTION}" = "released" -a "$BUTTON" = "reset" ]; then
+kill -9 $(pidof button_light)
+/etc/init.d/led restart
+
+echo $ACTION > /tmp/sysinfo/button_state
+
+. /lib/functions.sh
+
+logger "$BUTTON pressed for $SEEN seconds"
+
+if [ "$SEEN" -le 1 -a "$BUTTON" = "reset" ]
+then
+	button_mode=$(cat /tmp/sysinfo/reset_button_mode1 2>/dev/null)
+	case "$button_mode" in
+	wps)
+		echo "WPS Start" > /dev/console
+		wps start
+	;;
+	mtkwps)
+		echo "MTK WPS 2G Start" > /dev/console
+		mtk_wps start 2
+	;;
+	none)
+		echo "no something to do" > /dev/console
+	;;
+	*)
+		echo "REBOOT" > /dev/console
+		sync
+		reboot
+	;;
+	esac
+
+elif [ "$SEEN" -le 5 ]
+then
+	kill -9 $(pidof button_light)
+	button_mode=$(cat /tmp/sysinfo/reset_button_mode5 2>/dev/null)
+	case "$button_mode" in
+	wps)
+		echo "WPS Start" > /dev/console
+		wps start
+	;;
+	mtkwps)
+		echo "MTK WPS 5G Start" > /dev/console
+		mtk_wps start 5
+	;;
+	none)
+		echo "no something to do" > /dev/console
+	;;
+	*)
+		echo "REBOOT" > /dev/console
+		sync
+		reboot
+	;;
+	esac
+
+elif [ "$SEEN" -gt 5 ]
+then
+	echo "FACTORY RESET" > /dev/console
+	jffs2reset -y && reboot &
+fi
+fi

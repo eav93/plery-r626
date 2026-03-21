@@ -1,0 +1,4 @@
+*.bin
+*.squashfs
+.DS_Store
+.idea/

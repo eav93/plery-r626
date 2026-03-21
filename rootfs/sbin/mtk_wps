@@ -1,0 +1,81 @@
+#!/bin/sh
+. /lib/functions/ledctrl.sh
+
+led_ctrl_init wps_led
+PID_LOCK_FILE="/tmp/run/mtk_wps_led.pid"
+
+mtk_wps_led_work_clean() {
+    led_ctrl_all 0
+    /etc/init.d/led restart
+    [ -e "${PID_LOCK_FILE}" ] && {
+        rm $PID_LOCK_FILE
+    }
+}
+
+# need background
+mtk_wps_led_work() {
+
+    local count=0
+    wsc_status_busy=0
+
+    local phyname=$1
+
+    while [ $count -lt 120 ]; do
+        let count++
+        usleep 500000
+        led_ctrl_all 1
+        usleep 500000
+        led_ctrl_all 0
+        wsc_status=$(iwpriv $phyname stat | grep "WPS Query Status($phyname)" | awk -F"= " '{print $2}')
+         if [ "$wsc_status" = "34" ]; then
+             break
+         fi
+    done
+
+    mtk_wps_led_work_clean
+}
+
+mtk_wps_start() {
+    echo "wps" > /tmp/led_status
+    echo "start server side wps!" > /dev/console
+    if [[ "$band" == "2" ]]; then #2g
+        wifi_disabled_2g=`uci get wireless.@wifi-iface[0].disabled`
+        if [ "$wifi_disabled_2g" = "0" ]; then
+            mtk_wps_PBC  ra0
+        fi
+    else #5g
+        wifi_disabled_5g=`uci get wireless.@wifi-iface[8].disabled`
+        if [ "$wifi_disabled_5g" = "0" ]; then
+            mtk_wps_PBC rai0
+        fi
+    fi
+}
+
+_mtk_wps_init_PBC() {
+    # all wps disable
+    iwpriv ra0 set WscConfMode=0
+    iwpriv rai0 set WscConfMode=0
+}
+
+mtk_wps_PBC() {
+    local phyname=$1
+
+    _mtk_wps_init_PBC
+
+    iwpriv ${phyname} set WscConfMode=7
+    iwpriv ${phyname} set WscConfStatus=2
+    iwpriv ${phyname} set WscMode=2
+    iwpriv ${phyname} set WscV2Support=0
+    iwpriv ${phyname} set WscGetConf=1
+
+    [ -e "${PID_LOCK_FILE}" ] && {
+        kill -9 `cat $PID_LOCK_FILE` 2>/dev/null
+    }
+    mtk_wps_led_work $phyname &
+    echo $! >$PID_LOCK_FILE
+}
+
+band=$2
+case "$1" in
+	start) mtk_wps_start;;
+esac

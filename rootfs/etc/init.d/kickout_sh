@@ -1,0 +1,23 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+START=99
+start() {
+	kickout_disable=`uci get system.kickout.disable 2>/dev/null`
+	if [ $kickout_disable -eq 0 ] || [ -z $kickout_disable ];then
+		/usr/bin/kickout &
+	fi
+}
+stop() {
+	killall -9 kickout
+}
+
+restart() {
+	sleep 1
+	trap '' TERM
+	stop "$@"
+	start "$@"
+}
+
+shutdown() {
+	stop
+}

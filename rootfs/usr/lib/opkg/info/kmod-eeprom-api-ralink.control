@@ -1,0 +1,8 @@
+Package: kmod-eeprom-api-ralink
+Version: 4.4.194-1
+Depends: kernel (=4.4.194-1-6a2a531d1a298b00a51eb3c922ec423d), wireless-tools, maccalc
+Source: package/ramips/drivers/eeprom-api
+Section: kernel
+Architecture: mipsel_24kc
+Installed-Size: 1826
+Description:  The Mediatek WiFi driver need eeprom api dirver support if target is ramips.

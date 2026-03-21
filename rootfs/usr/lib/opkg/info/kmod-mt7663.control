@@ -1,0 +1,8 @@
+Package: kmod-mt7663
+Version: 4.4.194+6.0.2.0-1
+Depends: kernel (=4.4.194-1-6a2a531d1a298b00a51eb3c922ec423d)
+Source: package/ramips/drivers/mt7663
+Section: kernel
+Architecture: mipsel_24kc
+Installed-Size: 2259079
+Description:  Mediatek MT7613/MT7663 AP driver 6.0.2.0

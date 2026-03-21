@@ -1,0 +1,126 @@
+#!/bin/sh
+
+UCI_LOCK_FILE="/var/lock/uci.lck"
+rst_count=0
+in_rst_count=0
+
+# Hardware boot
+enable_moudle(){
+	echo "0" > /tmp/fibocom/module_err
+	rst_count=0
+	in_rst_count=0
+	echo 1 > /sys/class/leds/comfast\:power\:4g_pwrkey/brightness
+	sleep 3
+	echo 0 > /sys/class/leds/comfast\:power\:4g_pwrkey/brightness
+	
+	echo 1 > /sys/class/leds/comfast\:blue\:4g_rst/brightness
+	sleep 1
+	echo 0 > /sys/class/leds/comfast\:blue\:4g_rst/brightness
+}
+
+# If the detected 4G module is not powered on,
+#  control GPIO to power on
+checkMoudle(){
+	FINDMOUDLE_COUNT=1
+	killall cat
+	CHECK_MOUDLE=`lsusb | grep 2cb7`
+	echo "rst_count is ${rst_count}" > /dev/console
+	echo "in_rst_count is ${in_rst_count}" > /dev/console
+	if [ -n "$CHECK_MOUDLE" ];then
+		if [ "$rst_count" -gt "3" -o "$in_rst_count" -gt "4" ];then
+			#echo "abnormal enable_moudle" > /dev/console
+			enable_moudle	
+			sleep 2
+			echo -e "AT+CFUN=15\r\n" > /dev/ttyUSB0
+			sleep 15
+		fi
+	fi
+	while [ -z "$CHECK_MOUDLE" ]
+	do
+	    if [  "$FINDMOUDLE_COUNT" -le 15 ]
+	    then
+	      #echo "Seek moudle $FINDMOUDLE_COUNT times" > /dev/console
+	      let "FINDMOUDLE_COUNT++"
+	      CHECK_MOUDLE=`lsusb | grep 2cb7`
+	      sleep 2
+	    else
+	      FINDMOUDLE_COUNT=0
+	      echo -e "Timeout! enable_moudle" > /dev/console
+	      enable_moudle
+	      sleep 2
+	      echo -e "AT+CFUN=15\r\n" > /dev/ttyUSB0
+	      sleep 15 
+	    fi
+	done
+	echo "4G Modudle is working!" > /dev/console
+}
+
+uci_lock_start()
+{
+	for i in $(seq 1 5); do
+		if [ -e $UCI_LOCK_FILE ]; then
+			sleep 1
+			continue
+		else
+			touch $UCI_LOCK_FILE
+			break
+		fi
+	done
+}
+
+uci_lock_end()
+{
+	if [ -e $UCI_LOCK_FILE ]; then
+		rm $UCI_LOCK_FILE
+	fi
+}
+
+run_main()
+{
+	while [[ true ]]; do
+		workmode=`cat /tmp/status/workmode 2>/dev/null`
+		if [[ "$workmode" == "router" ]]; then
+			uci_lock_start
+			fibocom=`uci get network.wan.fibocom_flag`
+			uci_lock_end
+
+			if [[ x"$fibocom" == x"1" ]]; then
+				deal_fibocom
+			else
+				fibocom=`ps | grep "fibocom" | grep -v grep`
+				if [[ -n "$fibocom" ]]; then
+					killall fibocom &
+				fi
+			fi
+		fi
+		sleep 15
+	done
+}
+
+#Deal the 4G mode
+deal_fibocom()
+{
+	have_fibocom=`ps | grep "fibocom" | grep -v grep`
+	if [[ ! -n "$have_fibocom" ]]; then
+		echo "4G mode restart module!" > /dev/console
+		in_rst_count=0
+		let rst_count++
+		checkMoudle
+		echo -e "AT+CFUN=15\r\n" > /dev/ttyUSB2
+		sleep 15
+	else
+		rst_count=0
+		module_err=`cat /tmp/fibocom/module_err`
+		card_status=`cat /tmp/fibocom/card_staus`
+		if [ x"$module_err" = x"1" ];then
+			echo "0" > /tmp/fibocom/module_err
+			let in_rst_count++
+			checkMoudle
+		fi	
+		if [ x"$card_status" = x"1" ];then
+			in_rst_count=0
+		fi
+	fi
+}
+
+run_main

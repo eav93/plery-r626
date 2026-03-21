@@ -1,0 +1,3 @@
+/lib/upgrade/keep.d/dnsmasq
+/etc/dnsmasq.conf
+/usr/sbin/dnsmasq

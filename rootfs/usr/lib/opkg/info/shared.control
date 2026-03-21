@@ -1,0 +1,8 @@
+Package: shared
+Version: 0.1-1
+Depends: libc, libubus, libubox, libuci, libblobmsg-json
+Source: feeds/shared/shared
+Section: shared
+Architecture: mipsel_24kc
+Installed-Size: 30875
+Description:  This package contains Comfast lib shared

@@ -1,0 +1,11 @@
+Package: kmod-nf-nathelper
+Version: 4.4.194-1
+Depends: kernel (=4.4.194-1-6a2a531d1a298b00a51eb3c922ec423d), kmod-nf-nat
+Source: package/kernel/linux
+License: GPLv2
+Section: kernel
+Architecture: mipsel_24kc
+Installed-Size: 5144
+Description:  Default Netfilter (IPv4) Conntrack and NAT helpers
+ Includes:
+ - ftp

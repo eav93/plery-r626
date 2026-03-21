@@ -1,0 +1,7 @@
+/etc/nginx/naxsi_core.rules
+/etc/nginx/koi-win
+/etc/nginx/win-utf
+/usr/sbin/nginx
+/etc/nginx/koi-utf
+/etc/nginx/mime.types
+/lib/upgrade/keep.d/nginx

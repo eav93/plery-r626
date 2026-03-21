@@ -1,0 +1,8 @@
+Package: heart_beat
+Version: 0.1-1
+Depends: libc, libubus, libuci, libubox, libblobmsg-json, shared
+Source: feeds/heart_beat/heart_beat
+Section: heart_beat
+Architecture: mipsel_24kc
+Installed-Size: 9866
+Description:  This package contains HEART BEAT Daemond

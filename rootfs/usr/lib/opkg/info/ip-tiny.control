@@ -1,0 +1,12 @@
+Package: ip-tiny
+Version: 4.4.0-10-cake-upstream
+Depends: libc, libnl-tiny
+Conflicts: ip-full
+Provides: ip
+Source: package/network/utils/iproute2
+License: GPL-2.0
+Section: net
+Maintainer: Russell Senior <russell@personaltelco.net>
+Architecture: mipsel_24kc
+Installed-Size: 76284
+Description:  Routing control utility (Minimal)

@@ -1,0 +1,48 @@
+#!/bin/sh
+. /lib/functions.sh
+. /lib/functions/ledctrl.sh
+
+
+sleep_once() {
+    [ -x /bin/usleep ] && {
+        usleep 500000
+        return
+    }
+    sleep 1
+}
+# ctrl led section
+led_ctrl_init led
+[ "$SYSTEM_LED_LIST" == "" ] && return
+
+while : TRUE
+do
+    action=`cat /tmp/sysinfo/button_state`
+
+    if [ "$action" = "pressed" ]; then
+
+        echo $action > /dev/console
+        [ "$action" = "pressed" ] || continue
+
+        for i in $(seq 1 7)
+        do
+            action=`cat /tmp/sysinfo/button_state`
+            [ "$action" = "pressed" ] || break
+
+            led_ctrl_all 1
+            sleep_once
+            led_ctrl_all 0
+            sleep_once
+            echo $action $i > /dev/console
+
+            if [ "$i" -gt 5 ]; then
+                echo "reset" > /tmp/led_status
+                sleep 1
+                exit 0
+            fi
+        done
+
+    else
+        exit 0
+
+    fi
+done

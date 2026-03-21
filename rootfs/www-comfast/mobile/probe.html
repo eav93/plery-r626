@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <link type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/css/shreset.css">
+    <link rel="stylesheet" href="/css/wap/shap.css">
+    <title></title>
+    <style>
+        .list .left {
+            width: 50%;
+        }
+        .list .right {
+            width: 48%;
+        }
+    </style>
+</head>
+<body module="probe" device="mobile" id="mbox_container">
+<header class="is-fixed">
+    <span class="goback" et="tap:prev"><i et="tap:prev" class="icon-prev"></i></span>
+    <label sh_lang="SHpack.probe_server"></label>
+    <a class="header_menu" href="#"><span class="menu_icon"></span></a>
+</header>
+<main class="main_content container-fluid">
+    <div class="shstep"></div>
+    <div class="wizard_man">
+        <div class="wizard_box">
+            <div class="shbox clearfix">
+                <div class="shbox_border">
+                    <label class="title" sh_lang="SHtips.probe_server_config"></label>
+                    <ul class="clearfix shbox_cont">
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHpack.remoteswitch"></label>
+                            <span class="right">
+                                <select id="remote_switch" class="text">
+                                    <option value="1" sh_lang="SHpack.enable"></option>
+                                    <option value="0" sh_lang="SHpack.disable"></option>
+                                </select>
+                            </span>
+                        </li>
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHtips.probe_radio"></label>
+                            <span class="right"><select id="radio" class="text"></select></span>
+                        </li>
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHtips.probe_addr"></label>
+                            <span class="right">
+                                        <input class="text require isIp" id="probe_addr"/>
+                                    </span>
+                        </li>
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHtips.probe_port"></label>
+                            <span class="right">
+                                        <input class="text require isPort" id="probe_port"/>
+                                    </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <span class="btn btn-warning" et="click tap:saveConfig" sh_lang="SHpack.optimised"></span>
+        </div>
+    </div>
+</main>
+<nav class="subMenu" id="subMenu">
+    <ul class="navigation clearfix"></ul>
+</nav>
+</body>
+</html>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName, "touch"], function (page) {
+            page.init();
+        });
+    }
+</script>

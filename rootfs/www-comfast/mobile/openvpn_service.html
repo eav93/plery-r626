@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <link type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/css/shreset.css">
+    <link rel="stylesheet" href="/css/wap/shap.css">
+    <title></title>
+    <style>
+        .list .left {
+            width: 50%;
+        }
+        .list .right {
+            width: 48%;
+        }
+    </style>
+</head>
+<body module="openvpn_service" device="mobile" id="mbox_container">
+<header class="is-fixed">
+    <span class="goback" et="tap:prev"><i et="tap:prev" class="icon-prev"></i></span>
+    <label sh_lang="SHpack.openvpn_service"></label>
+    <a class="header_menu" href="#"><span class="menu_icon"></span></a>
+</header>
+<main class="main_content container-fluid">
+    <div class="shbox clearfix">
+        <div class="shbox_border">
+            <label class="title" sh_lang="SHpack.openvpn_service"></label>
+            <ul class="clearfix shbox_cont">
+                <li class="list clearfix">
+                    <label class="left" sh_lang="SHpack.remoteswitch"></label>
+                    <span class="right">
+                        <select id="openvpnservice_switch" et="change:enableConfig" class="text">
+                            <option sh_lang="SHpack.enable" value="1"></option>
+                            <option sh_lang="SHpack.disable" value="0"></option>
+                        </select>
+                    </span>
+                </li>
+                <div class="list allform">
+                    
+                    <li class="list clearfix">
+                        <label class="left">Verb</label>
+                        <span class="right">
+                            <select class="text" id="verb">
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                                <option value="8">8</option>
+                                <option value="9">9</option>
+                                <option value="10">10</option>
+                                <option value="11">11</option>
+                            </select>
+                        </span>
+                    </li>
+                    <li class="list clearfix">
+                        <label class="left" sh_lang="SHpack.zt_port"></label>
+                        <span class="right">
+                            <input type="text" id="port" class="text require isNum isNULL" name="_@1_65535">
+                        </span>
+                    </li>
+                    <li class="list clearfix">
+                        <label class="left" sh_lang="SHpack.openvpn_server"></label>
+                        <span class="right">
+                            <input type="text" id="server_ip" class="text require isZeroIp">
+                        </span>
+                    </li>
+                    <li class="list clearfix">
+                        <label class="left" sh_lang="SHpack.openvpn_mask"></label>
+                        <span class="right">
+                            <input type="text" id="server_mask" class="text require isNetmask">
+                        </span>
+                    </li>
+                    <li class="list clearfix">
+                        <label class="left" sh_lang="SHpack.interval_time"></label>
+                        <span class="right">
+                            <input type="text" id="keepalive_interval" class="text require isNum" name="_@1_100">
+                        </span>
+                    </li>
+                    <li class="list clearfix">
+                        <label class="left" sh_lang="SHpack.all_time"></label>
+                        <span class="right">
+                            <input type="text" id="keepalive_total" class="text require isNum" name="_@1_10000">
+                        </span>
+                    </li>
+                    <li class="list clearfix">
+                        <label class="left" sh_lang="SHpack.openvpn_clientip"></label>
+                        <span class="right">
+                            <input type="text" id="clientip" class="text require isZeroIp">
+                        </span>
+                    </li>
+                    <li class="list clearfix">
+                        <label class="left" sh_lang="SHpack.openvpn_clientnetmask"></label>
+                        <span class="right">
+                            <input type="text" id="client_mask" class="text require isNetmask">
+                        </span>
+                    </li>
+                </div>
+                <li class="list clearfix">
+                    <label class="left" sh_lang="SHpack.protocol"></label>
+                    <span class="right">
+                        <select id="proto" class="text" disabled>
+                            <option value="udp">UDP</option>
+                            <option value="tcp">TCP</option>
+                        </select>
+                    </span>
+                </li>
+                
+            </ul>
+        </div>
+        <button class="btn btn-warning" et="click:setmode" sh_lang="SHpack.modify"></button>
+        <div class="shbox_border">
+            <label class="title" sh_lang="SHpack.openvpn_book"></label>
+            <ul class="clearfix shbox_cont">
+                <li class="list clearfix">
+                    <label class="left" sh_lang="SHpack.openvpn_book"></label>
+                    <span class="right">
+                        <select id="book_switch" class="text" et="change:book_change">
+                            <option value="0" sh_lang="SHpack.apn_auto"></option>
+                            <option value="1" sh_lang="SHpack.apn_nanual"></option>
+                        </select>
+                    </span>
+                </li>
+                <div id="book_auto" class="list hide">
+                    <li class="list clearfix">
+                        <label class="left">ca</label>
+                        <span class="right" style="overflow-x: auto;">
+                            <div>
+                                <label class="btn btn-warning" sh_lang="SHpack.openvpn_upgrade_service" for="backup_file_ca"></label>
+                                <input type="file" accept=".file" name="backup_file" id="backup_file_ca" style="position: fixed;top: -999px;">
+                                <button class="btn btn-warning" et="click:downloadFile_ca" sh_lang="SHpack.openvpn_download"></button>
+                                <button class="btn btn-warning" et="click:updateFile_ca" sh_lang="SHpack.openvpn_update"></button>
+                            </div>
+                        </span>
+                    </li>
+                    <li class="list clearfix">
+                        <label class="left">dh</label>
+                        <span class="right" style="overflow-x: auto;">
+                            <div>
+                                <label class="btn btn-warning" sh_lang="SHpack.openvpn_upgrade_service" for="backup_file_dh"></label>
+                                <input type="file" accept=".file" name="backup_file" id="backup_file_dh" style="position: fixed;top: -999px;">
+                                <button class="btn btn-warning" et="click:downloadFile_dh" sh_lang="SHpack.openvpn_download"></button>
+                                <button class="btn btn-warning" et="click:updateFile_dh" sh_lang="SHpack.openvpn_update"></button>
+                            </div>
+                        </span>
+                    </li>
+                    <li class="list clearfix">
+                        <label class="left">cert</label>
+                        <span class="right" style="overflow-x: auto;">
+                            <div>
+                                <label class="btn btn-warning" sh_lang="SHpack.openvpn_upgrade_service" for="backup_file_cert"></label>
+                                <input type="file" accept=".file" name="backup_file" id="backup_file_cert" style="position: fixed;top: -999px;">
+                                <button class="btn btn-warning" et="click:downloadFile_cert" sh_lang="SHpack.openvpn_download"></button>
+                                <button class="btn btn-warning" et="click:updateFile_cert" sh_lang="SHpack.openvpn_update"></button>
+                            </div>
+                        </span>
+                    </li>
+                    <li class="list clearfix">
+                        <label class="left">key</label>
+                        <span class="right" style="overflow-x: auto;">
+                            <div>
+                                <label class="btn btn-warning" sh_lang="SHpack.openvpn_upgrade_service" for="backup_file_key"></label>
+                                <input type="file" accept=".file" name="backup_file" id="backup_file_key" style="position: fixed;top: -999px;">
+                                <button class="btn btn-warning" et="click:downloadFile_key" sh_lang="SHpack.openvpn_download"></button>
+                                <button class="btn btn-warning" et="click:updateFile_key" sh_lang="SHpack.openvpn_update"></button>
+                            </div>
+                        </span>
+                    </li>
+                </div>
+            </ul>
+        </div>
+    </div>
+    <div class="row">
+        <div class="login_footer">
+            <div sh_lang="SHpack.copyright"></div>
+        </div>
+    </div>
+</main>
+<nav class="subMenu" id="subMenu">
+    <ul class="navigation clearfix"></ul>
+</nav>
+</body>
+</html>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName, "touch"], function (page) {
+            page.init();
+        });
+    }
+</script>

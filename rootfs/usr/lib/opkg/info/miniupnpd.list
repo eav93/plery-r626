@@ -1,0 +1,5 @@
+/usr/sbin/miniupnpd
+/etc/hotplug.d/iface/50-miniupnpd
+/usr/share/miniupnpd/firewall.include
+/etc/uci-defaults/99-miniupnpd
+/etc/init.d/miniupnpd

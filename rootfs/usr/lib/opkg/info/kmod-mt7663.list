@@ -1,0 +1,6 @@
+/etc/wireless/mt7663e/SingleSKU_BF.dat
+/etc/wireless/mt7663e/SingleSKU.dat
+/etc/modules.d/80-mt7663
+/lib/wifi/mt7663e.sh
+/etc/wireless/mt7663e/mt7663e.2.dat
+/lib/modules/4.4.194/mt7663e.ko

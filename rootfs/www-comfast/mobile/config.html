@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <link type="image/x-icon" href="/images/favicon.ico" />
+    <link rel="stylesheet" href="/css/shreset.css">
+    <link rel="stylesheet" href="/css/wap/shap.css">
+    <title></title>
+    <style>
+        .btn {
+            font-size: 14px;
+            padding: 6px;
+        }
+    </style>
+</head>
+
+<body module="config" device="mobile" id="mbox_container">
+    <header class="is-fixed">
+        <span class="goback" et="tap:prev"><i et="tap:prev" class="icon-prev"></i></span>
+        <label sh_lang="SHpack.config"></label>
+        <a class="header_menu" href="#"><span class="menu_icon"></span></a>
+    </header>
+    <main class="main_content container-fluid">
+        <div class="shbox clearfix">
+            <div class="shbox_border">
+                <label class="title" sh_lang="SHpack.heart_beat_sw"></label>
+                <ul class="clearfix shbox_cont">
+                    <li class="list clearfix">
+                        <label class="left" sh_lang="SHpack.hb_switch"></label>
+                        <span class="right">
+                            <select id="hb_switch" class="text" et="change:hb_change">
+                                <option value="on" sh_lang="SHpack.enable"></option>
+                                <option value="off" sh_lang="SHpack.disable"></option>
+                            </select>
+                        </span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="shbox clearfix">
+            <div class="shbox_border">
+                <label class="title" sh_lang="SHpack.wipe_data"></label>
+                <ul class="clearfix shbox_cont">
+                    <li class="list class">
+                        <button class="btn btn-warning" href="javascript:void(0)" et="tap:factory_reset"
+                            sh_lang="SHpack.wipe_data"></button>
+                        <label class="btn btn-warning" sh_lang="SHpack.Import" for="backup_file"></label>
+                        <input type="file" accept=".file" name="backup_file" id="backup_file"
+                            style="position: fixed;top: -999px;">
+                        <button class="btn btn-warning hide" et="click:set_setting" id="backup_file_btn"></button>
+
+                        <button class="btn btn-warning" href="javascript:;" et="click:get_setting"
+                            sh_lang="SHpack.Export"></button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="row">
+            <div class="login_footer">
+                <div sh_lang="SHpack.copyright"></div>
+            </div>
+        </div>
+    </main>
+    <nav class="subMenu" id="subMenu">
+        <ul class="navigation clearfix"></ul>
+    </nav>
+</body>
+
+</html>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName, "touch"], function (page) {
+            page.init();
+        });
+    }
+</script>

@@ -1,0 +1,8 @@
+Package: kmod-net_stats
+Version: 4.4.194-3
+Depends: kernel (=4.4.194-1-6a2a531d1a298b00a51eb3c922ec423d), kmod-input-core
+Source: package/kernel/comfast/net_stats
+Section: kernel
+Architecture: mipsel_24kc
+Installed-Size: 3703
+Description:  Kernel module to do network traffic statistics.

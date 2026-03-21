@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <link type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/css/shreset.css">
+    <link rel="stylesheet" href="/css/wap/shap.css">
+    <title></title>
+</head>
+<body module="onlineupg" device="mobile" id="mbox_container">
+<header class="is-fixed">
+    <span class="goback" et="tap:prev"><i et="tap:prev" class="icon-prev"></i></span>
+    <label sh_lang="SHpack.OnlineUpg"></label>
+    <a class="header_menu" href="#"><span class="menu_icon"></span></a>
+</header>
+<main class="main_content container-fluid">
+    <div class="shbox clearfix">
+        <div class="shbox_border">
+            <label class="title" sh_lang="SHpack.OnlineUpg"></label>
+            <ul class="clearfix shbox_cont">
+
+
+                <li class="list clearfix">
+                    <label class="left" sh_lang="SHpack.OnlineUpg"></label>
+                    <div class="right">
+                        <div class="OnlineSwitch">
+                            <input type="checkbox" autocomplete="off" id="OnlineSwitch" class="MCB">
+                        </div>
+                    </div>
+                </li>
+                <li class="list clearfix">
+                    <label class="left" sh_lang="SHpack.BestNewVersion"></label>
+                    <div class="right">
+                        <label id="CurrentVersion"></label>
+                    </div>
+                </li>
+                <li class="list clearfix" style="text-align: center;font-size: 12px">
+                    <label id="UpgTip"></label>
+                </li>
+
+                <li class="list clearfix" style="text-align: center;display: none" id="ManualDown">
+                    <button class="btn btn-warning" et="click tap:manual_check" style="min-width: 120px"
+                            sh_lang="SHpack.ManualCheck"></button>
+                </li>
+                <li class="list clearfix" style="text-align: center;display: none" id="ClearDown">
+                    <button class="btn btn-warning" et="click tap:cancel_down" style="min-width: 120px"
+                            sh_lang="SHpack.CancelDown"></button>
+                </li>
+                <li class="list clearfix" style="text-align: center;display: none" id="Update">
+                    <button class="btn btn-warning" et="click tap:online_upgrade" style="min-width: 120px"
+                            sh_lang="SHpack.OnlineUpg"></button>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="row">
+        <div class="login_footer">
+            <div sh_lang="SHpack.copyright"></div>
+        </div>
+    </div>
+</main>
+<nav class="subMenu" id="subMenu">
+    <ul class="navigation clearfix"></ul>
+</nav>
+</body>
+</html>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName, "touch"], function (page) {
+            page.init();
+        });
+    }
+</script>

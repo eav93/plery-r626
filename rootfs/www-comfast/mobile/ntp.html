@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <link type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/css/shreset.css">
+    <link rel="stylesheet" href="/css/wap/shap.css">
+    <title></title>
+</head>
+<body module="ntp" device="mobile" id="mbox_container">
+<header class="is-fixed">
+    <span class="goback" et="tap:prev"><i et="tap:prev" class="icon-prev"></i></span>
+    <label sh_lang="SHpack.ntp_set"></label>
+    <a class="header_menu" href="#"><span class="menu_icon"></span></a>
+</header>
+<main class="main_content container-fluid">
+    <div class="shbox clearfix" id="wan_info">
+        <div class="shbox_border">
+            <label class="title" sh_lang="SHpack.ntp_set"></label>
+            <ul class="clearfix shbox_cont">
+                <li class="list clearfix">
+                    <label class="left" sh_lang="SHpack.localtime"></label>
+                    <span class="right">
+                        <input class="text" id="localtime" disabled="disabled">
+                    </span>
+                </li>
+                <div>
+                    <li class="list clearfix">
+                        <label class="left" style="min-height: 1px"></label>
+                        <span class="right">
+                            <button class="btn btn-warning" et="tap:cptime" sh_lang="SHpack.update"></button>
+                        </span>
+                    </li>
+                </div>
+                <li class="list clearfix">
+                    <label class="left" sh_lang="SHpack.ntp_switch"></label>
+                    <span class="right">
+                        <select id="ntp_switch" class="text" et="change:change_ntpswitch">
+                            <option value="1" sh_lang="SHpack.enable"></option>
+                            <option value="0" sh_lang="SHpack.disable"></option>
+                        </select>
+                    </span>
+                </li>
+                <div id="ntp_box" style="padding-top: 8px">
+                    <li class="list clearfix">
+                        <label class="left" sh_lang="SHpack.timezone"></label>
+                        <span class="right">
+                                    <select id="timezone" class="text" style="width: 256px">
+                                        <option data-value="UTC11" value="1" sh_lang="SHpack.util_gw_array1"></option>
+                                        <option data-value="UTC10" value="2" sh_lang="SHpack.util_gw_array2"></option>
+                                        <option data-value="UTC9" value="3" sh_lang="SHpack.util_gw_array3"></option>
+                                        <option data-value="UTC8" value="4" sh_lang="SHpack.util_gw_array4"></option>
+                                        <option data-value="UTC8" value="5" sh_lang="SHpack.util_gw_array5"></option>
+                                        <option data-value="UTC7" value="6" sh_lang="SHpack.util_gw_array6"></option>
+                                        <option data-value="UTC7" value="7" sh_lang="SHpack.util_gw_array7"></option>
+                                        <option data-value="UTC7" value="8" sh_lang="SHpack.util_gw_array8"></option>
+                                        <option data-value="UTC6" value="9" sh_lang="SHpack.util_gw_array9"></option>
+                                        <option data-value="UTC6" value="10" sh_lang="SHpack.util_gw_array10"></option>
+                                        <option data-value="UTC6" value="11" sh_lang="SHpack.util_gw_array11"></option>
+                                        <option data-value="UTC6" value="12" sh_lang="SHpack.util_gw_array12"></option>
+                                        <option data-value="UTC5" value="13" sh_lang="SHpack.util_gw_array13"></option>
+                                        <option data-value="UTC5" value="14" sh_lang="SHpack.util_gw_array14"></option>
+                                        <option data-value="UTC5" value="15" sh_lang="SHpack.util_gw_array15"></option>
+                                        <option data-value="UTC4" value="16" sh_lang="SHpack.util_gw_array16"></option>
+                                        <option data-value="UTC4" value="17" sh_lang="SHpack.util_gw_array17"></option>
+                                        <option data-value="UTC4" value="18" sh_lang="SHpack.util_gw_array18"></option>
+                                        <option data-value="UTC4" value="19" sh_lang="SHpack.util_gw_array19"></option>
+                                        <option data-value="UTC4" value="20" sh_lang="SHpack.util_gw_array20"></option>
+                                        <option data-value="UTC3" value="21" sh_lang="SHpack.util_gw_array21"></option>
+                                        <option data-value="UTC3" value="22" sh_lang="SHpack.util_gw_array22"></option>
+                                        <option data-value="UTC3" value="23" sh_lang="SHpack.util_gw_array23"></option>
+                                        <option data-value="UTC3" value="24" sh_lang="SHpack.util_gw_array24"></option>
+                                        <option data-value="UTC3" value="25" sh_lang="SHpack.util_gw_array25"></option>
+                                        <option data-value="UTC2" value="26" sh_lang="SHpack.util_gw_array26"></option>
+                                        <option data-value="UTC1" value="27" sh_lang="SHpack.util_gw_array27"></option>
+                                        <option data-value="UTC1" value="28" sh_lang="SHpack.util_gw_array28"></option>
+                                        <option data-value="UTC" value="29" sh_lang="SHpack.util_gw_array29"></option>
+                                        <option data-value="UTC" value="30" sh_lang="SHpack.util_gw_array30"></option>
+                                        <option data-value="UTC" value="31" sh_lang="SHpack.util_gw_array31"></option>
+                                        <option data-value="UTC" value="32" sh_lang="SHpack.util_gw_array32"></option>
+                                        <option data-value="UTC-1" value="33" sh_lang="SHpack.util_gw_array33"></option>
+                                        <option data-value="UTC-1" value="34" sh_lang="SHpack.util_gw_array34"></option>
+                                        <option data-value="UTC-1" value="35" sh_lang="SHpack.util_gw_array35"></option>
+                                        <option data-value="UTC-1" value="36" sh_lang="SHpack.util_gw_array36"></option>
+                                        <option data-value="UTC-1" value="37" sh_lang="SHpack.util_gw_array37"></option>
+                                        <option data-value="UTC-1" value="38" sh_lang="SHpack.util_gw_array38"></option>
+                                        <option data-value="UTC-2" value="39" sh_lang="SHpack.util_gw_array39"></option>
+                                        <option data-value="UTC-2" value="40" sh_lang="SHpack.util_gw_array40"></option>
+                                        <option data-value="UTC-2" value="41" sh_lang="SHpack.util_gw_array41"></option>
+                                        <option data-value="UTC-2" value="42" sh_lang="SHpack.util_gw_array42"></option>
+                                        <option data-value="UTC-2" value="43" sh_lang="SHpack.util_gw_array43"></option>
+                                        <option data-value="UTC-2" value="45" sh_lang="SHpack.util_gw_array45"></option>
+                                        <option data-value="UTC-2" value="46" sh_lang="SHpack.util_gw_array46"></option>
+                                        <option data-value="UTC-3" value="44" sh_lang="SHpack.util_gw_array44"></option>
+                                        <option data-value="UTC-3" value="47" sh_lang="SHpack.util_gw_array47"></option>
+                                        <option data-value="UTC-3" value="48" sh_lang="SHpack.util_gw_array48"></option>
+                                        <option data-value="UTC-3" value="49" sh_lang="SHpack.util_gw_array49"></option>
+                                        <option data-value="UTC-3" value="50" sh_lang="SHpack.util_gw_array50"></option>
+                                        <option data-value="UTC-3" value="51" sh_lang="SHpack.util_gw_array51"></option>
+                                        <option data-value="UTC-4" value="52" sh_lang="SHpack.util_gw_array52"></option>
+                                        <option data-value="UTC-4" value="53" sh_lang="SHpack.util_gw_array53"></option>
+                                        <option data-value="UTC-4" value="54" sh_lang="SHpack.util_gw_array54"></option>
+                                        <option data-value="UTC-4" value="55" sh_lang="SHpack.util_gw_array55"></option>
+                                        <option data-value="UTC-5" value="56" sh_lang="SHpack.util_gw_array56"></option>
+                                        <option data-value="UTC-5" value="57" sh_lang="SHpack.util_gw_array57"></option>
+                                        <option data-value="UTC-5" value="58" sh_lang="SHpack.util_gw_array58"></option>
+                                        <option data-value="UTC-6" value="59" sh_lang="SHpack.util_gw_array59"></option>
+                                        <option data-value="UTC-6" value="60" sh_lang="SHpack.util_gw_array60"></option>
+                                        <option data-value="UTC-7" value="61" sh_lang="SHpack.util_gw_array61"></option>
+                                        <option data-value="UTC-7" value="62" sh_lang="SHpack.util_gw_array62"></option>
+                                        <option data-value="UTC-8" value="63" sh_lang="SHpack.util_gw_array63"></option>
+                                        <option data-value="UTC-8" value="64" sh_lang="SHpack.util_gw_array64"></option>
+                                        <option data-value="UTC-8" value="65" sh_lang="SHpack.util_gw_array65"></option>
+                                        <option data-value="UTC-8" value="66" sh_lang="SHpack.util_gw_array66"></option>
+                                        <option data-value="UTC-8" value="67" sh_lang="SHpack.util_gw_array67"></option>
+                                        <option data-value="UTC-9" value="68" sh_lang="SHpack.util_gw_array68"></option>
+                                        <option data-value="UTC-9" value="69" sh_lang="SHpack.util_gw_array69"></option>
+                                        <option data-value="UTC-9" value="70" sh_lang="SHpack.util_gw_array70"></option>
+                                        <option data-value="UTC-10" value="71" sh_lang="SHpack.util_gw_array71"></option>
+                                        <option data-value="UTC-10" value="72" sh_lang="SHpack.util_gw_array72"></option>
+                                        <option data-value="UTC-10" value="73" sh_lang="SHpack.util_gw_array73"></option>
+                                        <option data-value="UTC-10" value="74" sh_lang="SHpack.util_gw_array74"></option>
+                                        <option data-value="UTC-10" value="75" sh_lang="SHpack.util_gw_array75"></option>
+                                        <option data-value="UTC-11" value="76" sh_lang="SHpack.util_gw_array76"></option>
+                                        <option data-value="UTC-12" value="77" sh_lang="SHpack.util_gw_array77"></option>
+                                        <option data-value="UTC-12" value="78" sh_lang="SHpack.util_gw_array78"></option>
+                                        <option data-value="UTC-12" value="79" sh_lang="SHpack.util_gw_array79"></option>
+                                        <option data-value="UTC-13" value="80" sh_lang="SHpack.util_gw_array80"></option>
+                                    </select>
+                                </span>
+                    </li>
+                    <li class="list clearfix">
+                        <label class="left" sh_lang="SHpack.ntp_server"></label>
+                        <span class="right">
+                                    <input class="text require isNonull isEnglish" id="servername">
+                                </span>
+                    </li>
+                </div>
+
+            </ul>
+        </div>
+        <button class="btn btn-warning" sh_lang="SHpack.optimised" et="tap:saveConfig"></button>
+    </div>
+    <div class="row">
+        <div class="login_footer">
+            <div sh_lang="SHpack.copyright"></div>
+        </div>
+    </div>
+</main>
+<nav class="subMenu" id="subMenu">
+    <ul class="navigation clearfix"></ul>
+</nav>
+</body>
+</html>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName, "touch"], function (page) {
+            page.init();
+        });
+    }
+</script>

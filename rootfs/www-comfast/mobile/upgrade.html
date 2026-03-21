@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <link type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/css/shreset.css">
+    <link rel="stylesheet" href="/css/wap/shap.css">
+    <title></title>
+</head>
+<body module="upgrade" device="mobile" id="mbox_container">
+<header class="is-fixed">
+    <span class="goback" et="tap:prev"><i et="tap:prev" class="icon-prev"></i></span>
+    <label sh_lang="SHpack.upgrade"></label>
+    <a class="header_menu" href="#"><span class="menu_icon"></span></a>
+</header>
+<style>
+	.system{
+		margin: 30px 0;
+	}
+	.system li{
+		float: left;
+		width: 100%;
+		text-align: left;
+		line-height: 36px;
+	}
+	.system li label.row_name {
+		display: inline-block;
+		width: 40%;
+		min-height: 1px;
+		padding-right: 12px;
+		text-align: right;
+	}
+</style>
+<main class="main_content container-fluid">
+    <div class="shbox clearfix">
+		<div class="shbox_border">
+			<label class="title" sh_lang="SHpack.upgrade">Upgrade</label>
+			<ul class="clearfix system">
+				<li class="clearfix">
+					<label class="row_name" sh_lang="SHpack.system_version">Version</label>
+					<label id="current_version">CF-WA350-V2.6.0.4</label>
+				</li>
+				<li class="clearfix">
+					<label class="row_name" sh_lang="SHpack.upload_sys">Upload</label>
+					<label for="firmware_upg" class="clearfix btn btn-warning" sh_lang="SHpack.select_file">Choose File</label>
+					<input type="file" accept=".bin" name="firmware_upg" class="clearfix" id="firmware_upg" style="position: fixed;top: -999px;">
+					<span class="showFileName" id="firmware_upg_text"></span>
+				</li>
+				<li class="clearfix">
+					<label class="row_name"></label>
+					<button class="btn btn-warning" et="click:system_uploadfile" sh_lang="SHpack.update">Update</button>
+				</li>
+			</ul>
+		</div>
+	</div>
+    <div class="row">
+        <div class="login_footer">
+            <div sh_lang="SHpack.copyright"></div>
+        </div>
+    </div>
+</main>
+<nav class="subMenu" id="subMenu">
+    <ul class="navigation clearfix"></ul>
+</nav>
+</body>
+</html>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName, "touch"], function (page) {
+            page.init();
+        });
+    }
+</script>

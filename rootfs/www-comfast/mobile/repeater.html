@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <link type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/css/shreset.css">
+    <link rel="stylesheet" href="/css/wap/shap.css">
+    <title></title>
+</head>
+<body module="repeater" device="mobile" id="mbox_container">
+<header class="is-fixed">
+    <span class="goback" et="tap:prev"><i et="tap:prev" class="icon-prev"></i></span>
+    <label sh_lang="SHpack.repeater"></label>
+    <a class="header_menu" href="#"><span class="menu_icon"></span></a>
+</header>
+<main class="main_content container-fluid">
+    <div class="shstep"></div>
+    <div class="wizard_man">
+        <div class="wizard_box">
+            <div class="shbox clearfix">
+                <div class="shbox_border">
+                    <label class="title" sh_lang="SHpack.lan_set"></label>
+                    <ul class="clearfix shbox_cont">
+                        <li class="clearfix list">
+                            <label class="left" sh_lang="SHpack.ip_addr"></label>
+                            <span class="right">
+                                <input id="lan_ip_id" sh_lang="SHeg.ip" class="text require isIp" type="text"
+                                       autocomplete="off" value="">
+                            </span>
+                        </li>
+                        <li class="clearfix list">
+                            <label class="left" sh_lang="SHpack.netmask"></label>
+                            <span class="right">
+                                <select type="text" class="text" id="lan_netmask_id">
+                                    <option value="255.255.255.252">255.255.255.252</option>
+                                    <option value="255.255.255.248">255.255.255.248</option>
+                                    <option value="255.255.255.240">255.255.255.240</option>
+                                    <option value="255.255.255.224">255.255.255.224</option>
+                                    <option value="255.255.255.192">255.255.255.192</option>
+                                    <option value="255.255.255.128">255.255.255.128</option>
+                                    <option value="255.255.255.0">255.255.255.0</option>
+                                    <option value="255.255.254.0">255.255.254.0</option>
+                                    <option value="255.255.252.0">255.255.252.0</option>
+                                    <option value="255.255.248.0">255.255.248.0</option>
+                                    <option value="255.255.240.0">255.255.240.0</option>
+                                    <option value="255.255.224.0">255.255.224.0</option>
+                                    <option value="255.255.192.0">255.255.192.0</option>
+                                    <option value="255.255.128.0">255.255.128.0</option>
+                                    <option value="255.255.0.0">255.255.0.0</option>
+                                    <option value="255.254.0.0">255.254.0.0</option>
+                                    <option value="255.252.0.0">255.252.0.0</option>
+                                    <option value="255.248.0.0">255.248.0.0</option>
+                                    <option value="255.240.0.0">255.240.0.0</option>
+                                    <option value="255.224.0.0">255.224.0.0</option>
+                                    <option value="255.192.0.0">255.192.0.0</option>
+                                    <option value="255.128.0.0">255.128.0.0</option>
+                                    <option value="255.0.0.0">255.0.0.0</option>
+                                </select>
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <span class="btn btn-warning" et="tap:next" sh_lang="SHpack.next"></span>
+        </div>
+        <div class="wizard_box hide">
+            <div class="shbox clearfix">
+                <div class="shbox_border">
+                    <label class="title" sh_lang="SHpack.repeater_set"></label>
+                    <ul class="clearfix shbox_cont">
+                        <li class="clearfix list">
+                            <label class="left" sh_lang="SHpack.scan_bind"></label>
+                            <span class="right">
+                                <select class="text" id="scan_band"></select>
+                            </span>
+                        </li>
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHpack.ssid"></label>
+                            <span class="right">
+                                <input type="text" id="sta_ssid_id" sh_lang="SHeg.auto" readonly
+                                       class="text scan_ssid pull-left require selectSSID" autocomplete="off">
+                                <button class="freshSSID iconfont icon-seach" et="tap:showscan"></button>
+                            </span>
+                        </li>
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHpack.ssid_pwd"></label>
+                            <span class="right">
+                                <input id="rep_ssid_pwd" class="text require isSSIDPwd2" type="text">
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <span class="btn btn-warning" et="tap:next" sh_lang="SHpack.next"></span>
+        </div>
+        <div class="wizard_box wireless hide" style="padding-bottom: 12px">
+            <div class="clearfix" style="line-height: 48px;border-bottom: 1px solid #ed6c00;display: none;" id="combineExist">
+                <div style="font-weight: bold;float: left"><span sh_lang="SHpack.combineWifi"></span></div>
+                <div style="float: right;width: 42px">
+                    <span class="combineSwitch">
+                        <input type="checkbox" autocomplete="off" id="combineSwitch" class="MCB">
+                    </span>
+                </div>
+            </div>
+            <div id="alone" style="display: none">
+                <div class="shbox clearfix" id="wifi_24g">
+                    <div class="shbox_border">
+                        <label class="title" sh_lang="SHpack.wifi24g"></label>
+                        <ul class="clearfix shbox_cont">
+                            <li class="list clearfix">
+                                <label class="left" sh_lang="SHpack.ssid"></label>
+                                <span class="right place">
+                                            <input type="text" id="ssid_id_24g" class="text require isSSID"
+                                                   autocomplete="off" sh_lang="SHeg.max32char">
+                                        </span>
+                            </li>
+                            <li class="list clearfix">
+                                <label class="left" sh_lang="SHpack.ssid_pwd"></label>
+                                <span class="right place">
+                                            <input type="text" id="psk_id_24g" class="text require isSSIDPwd"
+                                                   autocomplete="off" sh_lang="SHeg.emp832char">
+                                        </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="shbox clearfix" id="wifi_58g">
+                    <div class="shbox_border">
+                        <label class="title" sh_lang="SHpack.wifi58g"></label>
+                        <ul class="clearfix shbox_cont">
+                            <li class="list clearfix">
+                                <label class="left" sh_lang="SHpack.ssid"></label>
+                                <span class="right place">
+                                            <input type="text" id="ssid_id_58g" class="text require isSSID"
+                                                   autocomplete="off" sh_lang="SHeg.max32char">
+                                        </span>
+                            </li>
+                            <li class="list clearfix">
+                                <label class="left" sh_lang="SHpack.ssid_pwd"></label>
+                                <div class="right place">
+                                    <input type="text" id="psk_id_58g" class="text require isSSIDPwd"
+                                           autocomplete="off" sh_lang="SHeg.emp832char">
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div id="combine" style="display: none">
+                <div class="shbox clearfix">
+                    <div class="shbox_border">
+                        <label class="title" sh_lang="SHpack.wireless"></label>
+                        <ul class="clearfix shbox_cont">
+                            <li class="list clearfix">
+                                <label class="left" sh_lang="SHpack.ssid"></label>
+                                <span class="right place">
+                                            <input type="text" id="ssid_id_combine" class="text require isSSID"
+                                                   autocomplete="off" sh_lang="SHeg.max32char">
+                                        </span>
+                            </li>
+                            <li class="list clearfix">
+                                <label class="left" sh_lang="SHpack.ssid_pwd"></label>
+                                <div class="right place">
+                                    <input type="text" id="psk_id_combine" class="text require isSSIDPwd"
+                                           autocomplete="off" sh_lang="SHeg.emp832char">
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <span class="btn" et="click:prev" sh_lang="SHpack.prev"></span>
+            <span class="btn btn-warning" et="click:nextend" sh_lang="SHpack.next"></span>
+        </div>
+        <div class="wizard_box hide">
+            <div class="shbox clearfix">
+                <div class="shbox_border">
+                    <label class="title" sh_lang="SHpack.repeater"></label>
+                    <ul class="clearfix shbox_cont" id="readSet"></ul>
+                </div>
+            </div>
+            <button class="btn btn-warning" et="tap:setmode" sh_lang="SHpack.finish"></button>
+        </div>
+    </div>
+    <div class="popSSID hide" id="ssidlist">
+        <div class="c_popBox c_scanCon" id="wlanscantb_id">
+            <h4 class="blueColor">
+                <button href="javascript:;" class="btn btn-warning scan reFreshsd" et="tap:refresh"
+                        sh_lang="SHpack.refresh"></button>
+                <span sh_lang="SHpack.scan_result"></span>
+            </h4>
+            <div class="tableHead">
+                <table>
+                    <thead>
+                    <tr style="text-align: center;">
+                        <th width="8%">No.</th>
+                        <th width="28%" style="display: none">BSSID</th>
+                        <th width="28%">SSID</th>
+                        <th width="10%" sh_lang="SHpack.channel"></th>
+                        <th width="7%"></th>
+                        <th width="7%"></th>
+                        <th width="12%" class="noSort" sh_lang="SHpack.operate"></th>
+                    </tr>
+                    </thead>
+                </table>
+            </div>
+            <div class="c_ssidCon">
+                <table>
+                    <thead>
+                    <tr style="text-align: center;">
+                        <th width="8%">&nbsp;</th>
+                        <th width="28%" style="display: none">&nbsp;</th>
+                        <th width="28%">&nbsp;</th>
+                        <th width="10%">&nbsp;</th>
+                        <th width="7%">&nbsp;</th>
+                        <th width="7%">&nbsp;</th>
+                        <th width="12%">&nbsp;</th>
+                    </tr>
+                    </thead>
+                    <tbody id="wlanscanbody_id">
+                    </tbody>
+                </table>
+                <div id="loading_pic" style="text-align: center;"><img src="/images/loading.gif"/></div>
+            </div>
+        </div>
+    </div><!--#扫描弹窗-->
+    <div class="row">
+        <div class="login_footer">
+            <div sh_lang="SHpack.copyright"></div>
+        </div>
+    </div>
+</main>
+<nav class="subMenu" id="subMenu">
+    <ul class="navigation clearfix"></ul>
+</nav>
+
+</body>
+</html>
+<script type="text/javascript" src="/common/lib/jquery.js"></script>
+<script type="text/javascript" src="/common/lib/confirmBox.min.js"></script>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName, "touch"], function (page) {
+            page.init();
+        });
+    }
+</script>
+

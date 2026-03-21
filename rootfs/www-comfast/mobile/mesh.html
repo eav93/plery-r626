@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <link type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/css/shreset.css">
+    <link rel="stylesheet" href="/css/wap/shap.css">
+    <title></title>
+</head>
+<body module="mesh" device="mobile" id="mbox_container">
+<header class="is-fixed">
+    <span class="goback" et="tap:prev"><i et="tap:prev" class="icon-prev"></i></span>
+    <label sh_lang="SHpack.mesh"></label>
+    <a class="header_menu" href="#"><span class="menu_icon"></span></a>
+</header>
+<main class="main_content container-fluid">
+    <div class="shstep"></div>
+    <div class="wizard_man">
+        <div class="wizard_box">
+            <div class="shbox clearfix">
+                <div class="shbox_border">
+                    <label class="title" sh_lang="SHpack.lan_set"></label>
+                    <ul class="clearfix shbox_cont">
+                        <li class="clearfix list">
+                            <label class="left" sh_lang="SHpack.ip_addr"></label>
+                            <span class="right">
+                                <input id="lan_ip_id" sh_lang="SHeg.ip" class="text require isIp" type="text"
+                                       autocomplete="off" value="">
+                            </span>
+                        </li>
+                        <li class="clearfix list">
+                            <label class="left" sh_lang="SHpack.netmask"></label>
+                            <span class="right">
+                                <input id="lan_netmask_id" sh_lang="SHeg.netmask" class="text require isNetmask"
+                                       type="text" autocomplete="off">
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <span class="btn btn-warning" et="tap:next" sh_lang="SHpack.next"></span>
+        </div>
+        <div class="wizard_box hide">
+            <div class="shbox clearfix">
+                <div class="shbox_border">
+                    <label class="title" sh_lang="SHpack.bridge_set"></label>
+                    <ul class="clearfix shbox_cont">
+                        <li class="clearfix list">
+                            <label class="left" sh_lang="SHpack.mesh_bind"></label>
+                            <span class="right">
+                                <select class="text" et="change:band_mesh" id="mesh_band"></select>
+                            </span>
+                        </li>
+                        <li class="list clearfix">
+                            <label class="left">MESH ID</label>
+                            <span class="right">
+                                <input type="text" id="sta_ssid_id" class="text require isSSID" sh_lang="SHtips.max32char" autocomplete="off">
+                            </span>
+                        </li>
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHpack.ssid_pwd"></label>
+                            <span class="right">
+                                <input sh_lang="SHeg.emp832char" id="rep_ssid_pwd" class="text require isSSIDPwd"
+                                       type="text">
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="shbox clearfix">
+                <div class="shbox_border">
+                    <label class="title" sh_lang="SHpack.advanced"></label>
+                    <ul class="clearfix shbox_cont">
+                        <li class="clearfix list">
+                            <label class="left" sh_lang="SHpack.bandwidth"></label>
+                            <span class="right">
+                                <select class="text" et="change:htmode_mesh" id="htmode_mesh"></select>
+                            </span>
+                        </li>
+                        <li class="clearfix list">
+                            <label class="left" sh_lang="SHpack.country"></label>
+                            <span class="right">
+                                <select class="text country" id="country_mesh" et="change:country_mesh">
+                                    <option value="UK" sh_lang="SHpack.country_es"></option>
+                                    <option value="CN" sh_lang="SHpack.country_cn"></option>
+                                    <option value="US" sh_lang="SHpack.country_us"></option>
+                                    <option value="GB" sh_lang="SHpack.country_eu"></option>
+                                </select>
+                            </span>
+                        </li>
+                        <li class="clearfix list">
+                            <label class="left" sh_lang="SHpack.channels"></label>
+                            <span class="right">
+                                <select class="text" et="change:channels_mesh" id="channels_mesh"></select>
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <span class="btn btn-warning" et="tap:next" sh_lang="SHpack.next"></span>
+        </div>
+        <div class="wizard_box w24g hide">
+            <div class="shbox clearfix">
+                <div class="shbox_border">
+                    <label class="title" sh_lang="SHpack.wifi24g"></label>
+                    <ul class="clearfix shbox_cont">
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHpack.ssid"></label>
+                            <span class="right">
+                                <input sh_lang="SHeg.max32char" id="ssid_id_24g" class="text require isSSID"
+                                       type="text">
+                            </span>
+                        </li>
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHpack.ssid_pwd"></label>
+                            <span class="right">
+                                <input sh_lang="SHeg.emp832char" id="psk_id_24g" class="text require isSSIDPwd"
+                                       type="text">
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="shbox clearfix">
+                <div class="shbox_border">
+                    <label class="title" sh_lang="SHpack.advanced"></label>
+                    <ul class="clearfix shbox_cont">
+                        <li class="clearfix list">
+                            <label class="left" sh_lang="SHpack.bandwidth"></label>
+                            <span class="right">
+                                <select class="text" id="htmode_24g"></select>
+                            </span>
+                        </li>
+                        <li class="clearfix list">
+                            <label class="left" sh_lang="SHpack.channels"></label>
+                            <span class="right">
+                                <select class="text" id="channels_24g"></select>
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <span class="btn btn-warning" et="tap:nextend" sh_lang="SHpack.next"></span>
+        </div>
+        <div class="wizard_box w58g hide">
+            <div class="shbox clearfix">
+                <div class="shbox_border">
+                    <label class="title" sh_lang="SHpack.wifi58g"></label>
+                    <ul class="clearfix shbox_cont">
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHpack.ssid"></label>
+                            <span class="right">
+                                <input sh_lang="SHeg.max32char" id="ssid_id_58g" class="text require isSSID"
+                                       type="text">
+                            </span>
+                        </li>
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHpack.ssid_pwd"></label>
+                            <span class="right">
+                                <input sh_lang="SHeg.emp832char" id="psk_id_58g" class="text require isSSIDPwd"
+                                       type="text">
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="shbox clearfix">
+                <div class="shbox_border">
+                    <label class="title" sh_lang="SHpack.advanced"></label>
+                    <ul class="clearfix shbox_cont">
+                        <li class="clearfix list">
+                            <label class="left" sh_lang="SHpack.bandwidth"></label>
+                            <span class="right">
+                                <select class="text" et="change:htmode_change" id="htmode_58g"></select>
+                            </span>
+                        </li>
+                        <li class="clearfix list">
+                            <label class="left" sh_lang="SHpack.channels"></label>
+                            <span class="right">
+                                <select class="text" id="channels_58g"></select>
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <span class="btn btn-warning" et="tap:nextend" sh_lang="SHpack.next"></span>
+        </div>
+        <div class="wizard_box hide">
+            <div class="shbox clearfix">
+                <div class="shbox_border">
+                    <label class="title" sh_lang="SHpack.bridge"></label>
+                    <ul class="clearfix shbox_cont" id="readSet"></ul>
+                </div>
+            </div>
+            <button class="btn btn-warning" et="tap:setmode" sh_lang="SHpack.finish"></button>
+        </div>
+    </div>
+    <div class="row">
+        <div class="login_footer">
+            <div sh_lang="SHpack.copyright"></div>
+        </div>
+    </div>
+</main>
+<nav class="subMenu" id="subMenu">
+    <ul class="navigation clearfix"></ul>
+</nav>
+</body>
+</html>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName, "touch"], function (page) {
+            page.init();
+        });
+    }
+</script>

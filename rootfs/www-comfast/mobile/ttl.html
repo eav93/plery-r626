@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <title></title>
+    <link type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/css/shreset.css">
+    <link rel="stylesheet" href="/css/wap/shap.css">
+</head>
+<body module="ttl" device="mobile" id="mbox_container">
+<header class="is-fixed">
+    <span class="goback" et="tap:prev"><i et="tap:prev" class="icon-prev"></i></span>
+    <label sh_lang="SHpack.ttl"></label>
+    <a class="header_menu" href="#"><span class="menu_icon"></span></a>
+</header>
+<main class="main_content container-fluid">
+    <ul class="wizard clearfix">
+        <div>
+            <div class="shbox clearfix">
+                <div class="shbox_border">
+                    <label class="title" sh_lang="SHpack.ttl"></label>
+                    <ul class="clearfix shbox_cont">
+                        <li class="list clearfix">
+                            <label class="left" sh_lang="SHpack.ttl_switch"></label>
+                            <span class="right">
+                                <select id="t_switch" et="change:enableConfig" class="text">
+                                    <option sh_lang="SHpack.enable" value="1"></option>
+                                    <option sh_lang="SHpack.disable" value="0"></option>
+                                </select>
+                            </span>
+                        </li>
+                        <li class="list">
+                            <label class="left" sh_lang="SHpack.ttl_value"></label>
+                            <span class="right">
+                                <input type="text" id="t_value" class="text require isNum" name="_@0_255">
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <button class="btn btn-warning" et="click:set_config" sh_lang="SHpack.modify"></button>
+        </div>
+    </ul>
+    <div class="row">
+        <div class="login_footer">
+            <div sh_lang="SHpack.copyright"></div>
+        </div>
+    </div>
+</main>
+<nav class="subMenu" id="subMenu">
+    <ul class="navigation clearfix"></ul>
+</nav>
+<div class="mask"></div>
+<input type="text" id="real_num" style="display: none"/>
+<div class="add_box ip_add ">
+    <div class="add_box_head">
+        <i class="iconfont icon-cuowu" et="click:closewin"></i>
+        <h4><span sh_lang="SHpack.ip_filter"></span></h4>
+    </div>
+    <div class="add_box_body">
+        <div class="add_box_list clearfix">
+            <div class="col-xs-4">
+                <div class="row">
+                    <span sh_lang="SHpack.agreement"></span>
+                </div>
+            </div>
+            <div class="col-xs-8">
+                <div class="row">
+                    <select id="proto_select">
+                        <option value="all">ALL</option>
+                        <option value="tcp">TCP</option>
+                        <option value="udp">UDP</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="add_box_list clearfix">
+            <div class="col-xs-4">
+                <div class="row"><span sh_lang="SHpack.start_ip"></span></div>
+            </div>
+            <div class="col-xs-8">
+                <div class="row"><input type="text" id="startip" class="require startIp" sh_lang="SHeg.ip"/></div>
+            </div>
+        </div>
+        <div class="add_box_list clearfix">
+            <div class="col-xs-4">
+                <div class="row"><span sh_lang="SHpack.end_ip"></span></div>
+            </div>
+            <div class="col-xs-8">
+                <div class="row"><input type="text" id="endip" class="require endIp" sh_lang="SHeg.ip"/></div>
+            </div>
+        </div>
+        <div class="add_box_list clearfix">
+            <div class="col-xs-4">
+                <div class="row"><span sh_lang="SHpack.remarks"></span></div>
+            </div>
+            <div class="col-xs-8">
+                <div class="row"><input type="text" id="ip_reamek" sh_lang="SHpack.remarks" maxlength="32"/></div>
+            </div>
+        </div>
+    </div>
+    <div class="add_box_foot clearfix">
+        <button class="btn btn-warning pull-right firewall_save ifbtn" et="click:save"
+                sh_lang="SHpack.save"></button>
+    </div>
+</div>
+</body>
+</html>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName, "touch"], function (page) {
+            page.init();
+        });
+    }
+</script>

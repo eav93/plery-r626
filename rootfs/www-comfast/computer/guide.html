@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <title></title>
+    <link type="image/x-icon" href="/images/favicon.ico" rel="shortcut icon"/>
+    <link rel="stylesheet" href="/css/shreset.css"/>
+    <link rel="stylesheet" href="/css/pc/shap.css"/>
+	<style>
+		body::-webkit-scrollbar {
+		      display: none;
+		   width: 0 !important;
+		  }
+	</style>
+</head>
+<body module="guide" device="computer" id="mbox_container">
+<div class="container-fluid header">
+    <div class="row nav">
+        <div class="logo"><a id="logo_herf" target="_blank"><img src="/images/logo.png"></a></div>
+        <ul class="out">
+            <li id="login_out">
+                <a href="#"><i class="iconfont icon-tuichu"></i><span sh_lang="SHpack.logout"></span></a>
+            </li>
+        </ul>
+    </div>
+</div>
+<div class="wapper clearfix">
+    <div class="subMenu clearfix" id="subMenu">
+        <ul class="navigation clearfix"></ul>
+    </div><!--#submenu-->
+
+    <div class="content_box clearfix">
+        <div class="content clearfix guide-box">
+            <div class="wizards clearfix">
+                <div class="img_box">
+                    <a href="router.html">
+                        <img src="/images/m_router.png" style="margin: 0 auto" class="img-responsive">
+                        <p sh_lang="SHpack.router"></p>
+                    </a>
+                </div>
+                <div class="img_box">
+                    <a href="bridge.html">
+                        <img src="/images/m_bridge.png" style="margin: 0 auto" class="img-responsive">
+                        <p sh_lang="SHpack.bridge"></p>
+                    </a>
+                </div>
+                <div class="img_box">
+                    <a href="ap.html">
+                        <img src="/images/m_ap.png" style="margin: 0 auto" class="img-responsive">
+                        <p sh_lang="SHpack.ap"></p>
+                    </a>
+                </div>
+                <div class="img_box">
+                    <a href="repeater.html">
+                        <img src="/images/m_repeater.png" style="margin: 0 auto" class="img-responsive">
+                        <p sh_lang="SHpack.repeater"></p>
+                    </a>
+                </div>
+            </div>
+            <div class="copyright" sh_lang="SHpack.copyright1"></div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName], function (page) {
+            page.init();
+        });
+    }
+</script>

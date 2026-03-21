@@ -1,0 +1,237 @@
+{
+  "menu": [
+    {
+      "id": "home",
+      "name": "SHpack.home",
+      "icon": "icon-hemo",
+      "urls": "index.html",
+      "childs": ""
+    },
+    {
+      "id": "wizard",
+      "name": "SHpack.wizard",
+      "icon": "icon-wizard",
+      "urls": "guide.html",
+      "childs": ""
+    },
+    {
+      "id": "network",
+      "name": "SHpack.network",
+      "icon": "icon-network",
+      "urls": "netmanage",
+      "childs": [
+        {
+          "id": "lan",
+          "name": "SHpack.lan",
+          "urls": "lan.html"
+        },
+        {
+          "id": "wan",
+          "name": "SHpack.wan",
+          "urls": "wan.html"
+        },
+        {
+          "id": "wireless",
+          "name": "SHpack.wireless",
+          "urls": "wifi.html"
+        },
+        {
+          "id": "dns",
+          "name": "SHpack.only_dns",
+          "urls": "dns.html"
+        },
+        {
+          "id": "band",
+          "name": "SHpack.band",
+          "urls": "band.html"
+        },
+        {
+          "id": "ttl",
+          "name": "SHpack.ttl",
+          "urls": "ttl.html"
+        },
+        {
+          "id": "vpnclient",
+          "name": "SHpack.vpnclient",
+          "icon": "",
+          "urls": "vpnclient",
+          "childs": [
+            {
+              "id": "pptpclient",
+              "name": "SHpack.pptpclient",
+              "urls": "pptpclient.html"
+            },
+            {
+              "id": "ltpclient",
+              "name": "SHpack.ltpclient",
+              "urls": "ltpclient.html"
+            }
+          ]
+        },
+        {
+          "id": "vpnservice",
+          "name": "SHpack.vpnservice",
+          "icon": "",
+          "urls": "vpnservice",
+          "childs": [
+            {
+              "id": "pptpservice",
+              "name": "SHpack.pptpservice",
+              "urls": "pptpservice.html"
+            },
+            {
+              "id": "pptpuser",
+              "name": "SHpack.pptpuser",
+              "urls": "pptpuser.html"
+            }
+          ]
+        },
+        {
+          "id": "openvpn",
+          "name": "SHpack.openvpn",
+          "icon": "",
+          "urls": "openvpn",
+          "childs": [
+            {
+              "id": "openvpn_service",
+              "name": "SHpack.openvpn_service",
+              "urls": "openvpn_service.html"
+            },
+            {
+              "id": "openvpn_client",
+              "name": "SHpack.openvpn_client",
+              "urls": "openvpn_client.html"
+            }
+          ]
+        },
+        {
+          "id": "wireguade_client",
+          "name": "SHpack.wireguade_client",
+          "urls": "wireguade_client.html"
+        }
+      ]
+    },
+    {
+      "id": "users_real",
+      "name": "SHpack.users",
+      "icon": "icon-user",
+      "urls": "usersreal.html",
+      "childs": ""
+    },
+    {
+      "id": "system",
+      "name": "SHpack.system",
+      "icon": "icon-system",
+      "urls": "system.html",
+      "childs": [
+        {
+          "id": "config",
+          "name": "SHpack.config",
+          "urls": "config.html"
+        },
+        {
+          "id": "upgrade",
+          "name": "SHpack.upgrade",
+          "urls": "upgrade.html"
+        },
+        {
+          "id": "reboot",
+          "name": "SHpack.reboot",
+          "urls": "reboot.html"
+        },
+        {
+          "id": "chang",
+          "name": "SHpack.chang_psd",
+          "urls": "chang.html"
+        },
+        {
+          "id": "remote",
+          "name": "SHpack.remote",
+          "urls": "remote.html"
+        },
+        {
+          "id": "ntp",
+          "name": "SHpack.ntp_set",
+          "urls": "ntp.html"
+        },
+        {
+          "id": "logs",
+          "name": "SHpack.logs",
+          "urls": "logs.html"
+        }
+      ]
+    },
+    {
+      "id": "firewall",
+      "name": "SHpack.firewall",
+      "icon": "icon-firewall",
+      "urls": "firewall.html",
+      "childs": [
+        {
+          "id": "ipfilter",
+          "name": "SHpack.ipfilter",
+          "urls": "ipfilter.html"
+        },
+        {
+          "id": "macfilter",
+          "name": "SHpack.macfilter",
+          "urls": "macfilter.html"
+        },
+        {
+          "id": "urlfilter",
+          "name": "SHpack.urlfilter",
+          "urls": "urlsfilter.html"
+        },
+        {
+          "id": "portforward",
+          "name": "SHpack.portforward",
+          "urls": "portforward.html"
+        },
+        {
+          "id": "arp",
+          "name": "SHpack.arp",
+          "urls": "arp.html"
+        },
+        {
+          "id": "dmz",
+          "name": "SHpack.dmz",
+          "urls": "dmz.html"
+        },
+        {
+          "id": "ddos",
+          "name": "SHpack.ddos",
+          "urls": "ddos.html"
+        }
+      ]
+    }
+  ],
+  "ap_wizard": [
+    "lan_set",
+    "wireless",
+    "finish"
+  ],
+  "mesh_wizard": [
+    "lan_set",
+    "mesh_set",
+    "wireless",
+    "finish"
+  ],
+  "bridge_wizard": [
+    "lan_set",
+    "bridge_set",
+    "wireless",
+    "finish"
+  ],
+  "repeater_wizard": [
+    "lan_set",
+    "repeater_set",
+    "wireless",
+    "finish"
+  ],
+  "router_wizard": [
+    "wan_set",
+    "lan_set",
+    "wireless",
+    "finish"
+  ]
+}

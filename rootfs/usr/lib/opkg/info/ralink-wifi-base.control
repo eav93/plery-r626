@@ -1,0 +1,9 @@
+Package: ralink-wifi-base
+Version: 1
+Depends: libc, maccalc, wireless-tools
+Source: package/ramips/drivers/eeprom-api
+Section: opt
+Maintainer: lintel<lintel.huang@gmail.com>
+Architecture: mipsel_24kc
+Installed-Size: 205
+Description:  ralink-wifi-base

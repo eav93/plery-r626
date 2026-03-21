@@ -1,0 +1,62 @@
+#!/bin/sh
+
+# Hardware boot
+enable_moudle(){
+	echo 1 > /sys/class/leds/comfast\:power\:4g_pwrkey/brightness
+	sleep 3
+	echo 0 > /sys/class/leds/comfast\:power\:4g_pwrkey/brightness
+	
+	sleep 1
+	echo 1 > /sys/class/leds/comfast\:blue\:4g_rst/brightness
+	echo 0 > /sys/class/leds/comfast\:blue\:4g_rst/brightness
+}
+
+# If the detected 4G module is not powered on,
+#  control GPIO to power on
+checkMoudle(){
+	FINDMOUDLE_COUNT=1
+	killall cat
+	CHECK_MOUDLE=`lsusb | grep 2cb7`
+	while [ -z "$CHECK_MOUDLE" ]
+	do
+	    if [  "$FINDMOUDLE_COUNT" -le 5 ]
+	    then
+	      echo "Seek moudle $FINDMOUDLE_COUNT times" > /dev/console
+	      let "FINDMOUDLE_COUNT++"
+	      CHECK_MOUDLE=`lsusb | grep 2cb7`
+	      sleep 1
+	    else
+	      echo -e "Timeout!" > /dev/console
+	      enable_moudle
+	    fi
+	done
+	echo "4G Modudle is working!" > /dev/console
+}
+
+while [[ true ]]; do
+	while [[ true ]]; do
+		have_usb=`ls /dev | grep "ttyUSB2"`
+		if [ -n "$have_usb" ]; then
+			checkMoudle
+			break
+		fi
+	done
+        echo -e "AT+GTUSBMODE?\r\n" > /dev/ttyUSB2
+        sleep 2
+        cat /dev/ttyUSB2 > /tmp/fibocom_tmp.txt &
+	sleep 2
+        is_ecm=`cat /tmp/fibocom_tmp.txt | grep "18"`
+
+        if [ ! -n "$is_ecm" ]; then
+                echo "The module is not ecm, to set ecm mode!" > /dev/console
+                echo -e "AT+GTUSBMODE=18\r\n" > /dev/ttyUSB2
+		sleep 10
+        else
+                echo "The module is ecm mode!" > /dev/console
+                killall cat > /dev/null
+                rm /tmp/fibocom_tmp.txt
+                exit 0
+        fi
+done
+
+

@@ -1,0 +1,9 @@
+Package: wifi-l1profile
+Version: 1-r2993+1053-b9a408c
+Depends: libc
+Source: package/ramips/drivers/wifi-l1profile
+License: GPL-2.0
+Section: MTK Properties
+Architecture: mipsel_24kc
+Installed-Size: 467
+Description:  This package helps to build l1profile on demand.

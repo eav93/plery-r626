@@ -1,0 +1,9 @@
+#!/bin/sh
+
+[ ! "$ACTION" = "ifup" ] && return
+work_mode=$(cat /tmp/status/workmode)
+[ "${work_mode}" != "router" -a "${work_mode}" != "wisp" ] && return
+[ "${DEVICE}" != "br-wan" -a  "${DEVICE}" != "vif-sta0" ] && return
+[ "$(uci -q get common.qos.enable_limit)" != "1" ] && return
+
+[ -x /etc/init.d/customqos ] && /etc/init.d/customqos restart

@@ -1,0 +1,37 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+
+start() {
+#netifd is 2015
+	local board_name=$(cat /tmp/sysinfo/board_name)
+
+	echo "run $board_name check program!" > /dev/console
+
+	case $board_name in
+	ws-r650 | \
+	ws-r640 | \
+	cf-plery | \
+	cf-e3v2 | \
+	cf-e3)
+		/usr/bin/reboot_model &
+		;;
+
+	*)#NL668
+		is_ecm=`ps | grep /usr/bin/fibocom | grep -v grep`
+		if [ ! -n "$is_ecm" ]; then
+			touch /tmp/fibocom_tmp.txt
+				/usr/bin/ecm_mode &
+		fi
+		while [[ true ]]; do
+			if [ ! -e "/tmp/fibocom_tmp.txt" ]; then
+				/usr/bin/reboot_model &
+				break
+			fi
+			sleep 2
+		done
+		;;
+	esac
+}
+

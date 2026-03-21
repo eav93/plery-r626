@@ -1,0 +1,127 @@
+#!/bin/bash
+#
+# Plery R626 (COMFAST cf-plery) firmware builder
+# Chip: MT7628 (ramips), OS: LEDE 17.01, Kernel: Linux 4.4.194
+#
+# Usage: ./build.sh [output_name.bin]
+#
+# Structure:
+#   kernel.bin          — original uImage kernel (LZMA, MIPS32)
+#   rootfs/             — root filesystem (edit files here)
+#   metadata.json       — device metadata for fwtool
+#   fwtool              — compiled OpenWrt fwtool (appends metadata + CRC)
+#
+# Output firmware layout:
+#   [kernel.bin][SquashFS][0xFF padding][fwimage_header + metadata.json + FWx trailer]
+#
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
+
+OUTPUT="${1:-Plery-R626-custom.bin}"
+KERNEL="kernel.bin"
+ROOTFS_DIR="rootfs"
+METADATA="metadata.json"
+FWTOOL="./fwtool"
+BASE_VERSION="Plery-R626-V2.0.1.4-EU"
+
+# ---- Colors ----
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+log()  { echo -e "${GREEN}[+]${NC} $1"; }
+warn() { echo -e "${YELLOW}[!]${NC} $1"; }
+err()  { echo -e "${RED}[-]${NC} $1"; exit 1; }
+
+# ---- Check dependencies ----
+log "Checking dependencies..."
+
+command -v mksquashfs >/dev/null 2>&1 || err "mksquashfs not found. Install: brew install squashfs / apt install squashfs-tools"
+
+if [ ! -x "$FWTOOL" ]; then
+    warn "fwtool binary not found, compiling..."
+    cc -o fwtool fwtool.c -Wall -O2 || err "Failed to compile fwtool"
+fi
+
+[ -f "$KERNEL" ]   || err "kernel.bin not found"
+[ -d "$ROOTFS_DIR" ] || err "rootfs/ directory not found"
+[ -f "$METADATA" ] || err "metadata.json not found"
+
+# ---- Write firmware version ----
+VERSION_FILE="$ROOTFS_DIR/etc/defconfig/cf-plery/version"
+
+if command -v git >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1; then
+    COMMIT_SHORT=$(git rev-parse --short HEAD 2>/dev/null || echo "dev")
+    FIRMWARE_VERSION="${BASE_VERSION}-${COMMIT_SHORT}"
+else
+    FIRMWARE_VERSION="${BASE_VERSION}-dev"
+fi
+
+echo -n "$FIRMWARE_VERSION" > "$VERSION_FILE"
+log "Firmware version: $FIRMWARE_VERSION"
+
+# ---- Build SquashFS ----
+log "Building SquashFS from $ROOTFS_DIR/..."
+
+SQUASHFS_TMP=$(mktemp /tmp/rootfs_XXXXXX.squashfs)
+trap "rm -f '$SQUASHFS_TMP' /tmp/firmware_raw_$$.bin" EXIT
+
+mksquashfs "$ROOTFS_DIR" "$SQUASHFS_TMP" \
+    -comp xz \
+    -b 262144 \
+    -nopad \
+    -noappend \
+    -no-xattrs \
+    -all-root \
+    -quiet
+
+KERNEL_SIZE=$(stat -f%z "$KERNEL" 2>/dev/null || stat -c%s "$KERNEL")
+SQUASHFS_SIZE=$(stat -f%z "$SQUASHFS_TMP" 2>/dev/null || stat -c%s "$SQUASHFS_TMP")
+BODY_SIZE=$((KERNEL_SIZE + SQUASHFS_SIZE))
+
+log "Kernel:   $KERNEL_SIZE bytes"
+log "SquashFS: $SQUASHFS_SIZE bytes"
+
+# ---- Pad to flash boundary ----
+FLASH_BOUNDARY=$((0x840000))
+
+if [ "$BODY_SIZE" -gt "$FLASH_BOUNDARY" ]; then
+    err "Firmware too large! Body ($BODY_SIZE) exceeds flash boundary ($FLASH_BOUNDARY)"
+fi
+
+PAD_SIZE=$((FLASH_BOUNDARY - BODY_SIZE))
+log "Padding:  $PAD_SIZE bytes (0xFF to offset 0x$(printf '%X' $FLASH_BOUNDARY))"
+
+# ---- Assemble raw firmware ----
+RAW_FW="/tmp/firmware_raw_$$.bin"
+
+cat "$KERNEL" "$SQUASHFS_TMP" > "$RAW_FW"
+dd if=/dev/zero bs=1 count="$PAD_SIZE" 2>/dev/null | tr '\0' '\377' >> "$RAW_FW"
+
+# ---- Append metadata with fwtool ----
+log "Appending metadata with fwtool (CRC32 calculated automatically)..."
+
+"$FWTOOL" -I "$METADATA" "$RAW_FW" || err "fwtool failed to append metadata"
+
+# ---- Verify ----
+log "Verifying metadata..."
+
+VERIFY=$("$FWTOOL" -i /dev/stdout "$RAW_FW" 2>&1) || err "fwtool verification failed!"
+echo "    $VERIFY"
+
+# ---- Output ----
+mv "$RAW_FW" "$OUTPUT"
+FINAL_SIZE=$(stat -f%z "$OUTPUT" 2>/dev/null || stat -c%s "$OUTPUT")
+
+echo ""
+log "Firmware built successfully!"
+echo "    File:    $OUTPUT"
+echo "    Size:    $FINAL_SIZE bytes ($(echo "scale=1; $FINAL_SIZE / 1048576" | bc) MB)"
+echo "    Version: $FIRMWARE_VERSION"
+echo ""
+echo "    Flash via web:  http://192.168.2.1/computer/upgrade.html"
+echo "    Flash via SSH:  scp -O $OUTPUT root@192.168.2.1:/tmp/fw.bin && ssh root@192.168.2.1 'sysupgrade -n /tmp/fw.bin'"

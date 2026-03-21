@@ -1,0 +1,13 @@
+/usr/sbin/setkey
+/usr/lib/libracoon.so.0
+/etc/racoon/functions.sh
+/usr/lib/libracoon.so.0.0.0
+/usr/sbin/racoon
+/etc/init.d/racoon
+/usr/lib/libipsec.so.0
+/etc/racoon/vpnctl
+/etc/racoon/p1client-up
+/usr/lib/libipsec.so.0.0.1
+/etc/racoon/p1client-down
+/usr/sbin/plainrsa-gen
+/usr/sbin/racoonctl

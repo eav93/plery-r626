@@ -1,0 +1,2 @@
+/etc/modules.d/wireguard
+/lib/modules/4.4.194/wireguard.ko

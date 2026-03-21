@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <title></title>
+    <link type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/css/shreset.css">
+    <link rel="stylesheet" href="/css/wap/shap.css">
+    <style>
+        body::-webkit-scrollbar {
+            display: none;
+            width: 0 !important;
+        }
+          #band-content {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            padding-right: 20px;
+          }
+          .band {
+            display: flex;
+            justify-content: center;
+            padding: 10px 0;
+          }
+          .ddos {
+            width: auto;
+          }
+    </style>
+</head>
+<body module="band" device="mobile" id="mbox_container">
+<header class="is-fixed">
+    <span class="goback" et="tap:prev"><i et="tap:prev" class="icon-prev"></i></span>
+    <label>BAND</label>
+    <a class="header_menu" href="#"><span class="menu_icon"></span></a>
+</header>
+<main class="main_content container-fluid">
+    <ul class="wizard clearfix">
+        <div>
+            <div class="shbox clearfix">
+                <div class="shbox_border">
+                    <label class="title" sh_lang="SHpack.lock_band"></label>
+                    <div class="ddos clearfix" id="band-content">
+                    </div>
+                </div>
+                <div class="list clearfix">
+                    <div class="col-xs-12">
+                        <div class="row">
+                            <button class="btn btn-warning" sh_lang="SHpack.optimised"
+                                    et="click:save_config"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </ul>
+    <div class="row">
+        <div class="login_footer">
+            <div sh_lang="SHpack.copyright"></div>
+        </div>
+    </div>
+</main>
+<nav class="subMenu" id="subMenu">
+    <ul class="navigation clearfix"></ul>
+</nav>
+</body>
+</html>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName, "touch"], function (page) {
+            page.init();
+        });
+    }
+</script>

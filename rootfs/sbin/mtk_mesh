@@ -1,0 +1,25 @@
+#!/bin/sh
+
+. /lib/functions/ledctrl.sh
+
+led_ctrl_init mesh_led
+PID_LOCK_FILE="/tmp/run/mtk_mesh_led.pid"
+
+mtk_mesh_start() {
+	if [[ "$band" == "2" ]]; then
+		echo "start 2G mesh wps" > /dev/console
+		wappctrl ra0 wps_pbc
+	elif [[ "$band" == "5" ]]; then
+		echo "start 5G mesh wps" > /dev/console
+		wappctrl rai0 wps_pbc
+	else
+		echo "band $band is error!!!" > /dev/console
+	fi
+}
+
+band=$2
+case "$1" in
+	start)
+		mtk_mesh_start
+	;;
+esac

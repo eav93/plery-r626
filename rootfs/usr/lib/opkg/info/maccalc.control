@@ -1,0 +1,9 @@
+Package: maccalc
+Version: 1
+Depends: libc
+Source: package/network/utils/maccalc
+License: GPL-2.0
+Section: utils
+Architecture: mipsel_24kc
+Installed-Size: 2114
+Description:  This package contains a MAC address manipulation utility.

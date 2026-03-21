@@ -1,0 +1,9 @@
+Package: kmod-sched
+Version: 4.4.194-1
+Depends: kernel (=4.4.194-1-6a2a531d1a298b00a51eb3c922ec423d), kmod-sched-core, kmod-ipt-core
+Source: package/kernel/linux
+License: GPLv2
+Section: kernel
+Architecture: mipsel_24kc
+Installed-Size: 38623
+Description:  Extra kernel schedulers modules for IP traffic

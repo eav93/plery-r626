@@ -1,0 +1,16 @@
+/etc/openvpn.user
+/etc/openvpn/server/dh.pem
+/etc/openvpn/client/ca.crt
+/etc/config/openvpn
+/etc/openvpn/server/server.crt
+/etc/hotplug.d/openvpn/01-user
+/etc/openvpn/server/server.key
+/etc/init.d/openvpn
+/lib/functions/openvpn.sh
+/etc/openvpn/server/ca.crt
+/etc/openvpn/client/client.crt
+/usr/sbin/openvpn
+/etc/openvpn/client/client.key
+/usr/share/openvpn/openvpn.options
+/lib/upgrade/keep.d/openvpn
+/usr/libexec/openvpn-hotplug

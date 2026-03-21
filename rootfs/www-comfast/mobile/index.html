@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <title></title>
+    <link type="image/x-icon" href="/images/favicon.ico" rel="shortcut icon"/>
+    <link rel="stylesheet" href="/css/shreset.css">
+    <link rel="stylesheet" href="/css/wap/shap.css">
+    <style>
+        #mode_pic {
+            height: 200px;
+            margin: 0 auto;
+            padding-top: 12px;
+            padding-bottom: 12px;
+        }
+    </style>
+</head>
+<body module="index" device="mobile" id="mbox_container">
+<header class="is-fixed logo">
+    <h1><a id="logo_herf" target="_blank"><img src="/images/logo.png"/></a></h1>
+    <a class="header_menu" href="#"><span class="menu_icon"></span></a>
+</header>
+<main class="main_content container-fluid">
+    <div class="row nowmodel">
+        <img id="mode_pic" class="img-responsive">
+        <h3><span sh_lang="SHpack.current_state"></span> : <span id="mode_text"></span></h3>
+    </div>
+    <div class="shbox clearfix">
+        <div class="shbox_border">
+            <label class="title" sh_lang="SHpack.totalup"></label>
+            <label class="unit"><span sh_lang="SHpack.unit"></span>:<span id="upload_unit"></span></label>
+            <div class="clearfix box_cont">
+                <div class="clearfix">
+                    <div class="left"><i class="iconfont icon-faarrowup bg_totalup"></i></div>
+                    <div class="right f_totalup" id="upload"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="shbox clearfix">
+        <div class="shbox_border">
+            <label class="title" sh_lang="SHpack.totaldown"></label>
+            <label class="unit"><span sh_lang="SHpack.unit"></span>:<span id="download_unit"></span></label>
+
+            <div class="clearfix box_cont">
+                <div class="clearfix">
+                    <div class="left"><i class="iconfont icon-faarrowdown bg_totaldown"></i></div>
+                    <div class="right f_totaldown" id="download"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="shbox clearfix">
+        <div class="shbox_border">
+            <label class="title" sh_lang="SHpack.usernum"></label>
+            <div class="clearfix box_cont">
+                <div class="clearfix">
+                    <div class="left"><i class="iconfont icon-user bg_usernum"></i></div>
+                    <div class="right f_usernum" id="user_num"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="shbox clearfix">
+        <div class="shbox_border">
+            <label class="title" sh_lang="SHpack.totallink"></label>
+            <div class="clearfix box_cont">
+                <div class="clearfix">
+                    <div class="left"><i class="iconfont icon-linknum bg_totallink"></i></div>
+                    <div class="right f_totallink" id="total_link"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="shbox clearfix">
+        <div class="shbox_border">
+            <label class="title" sh_lang="SHpack.intertface"></label>
+            <div class="clearfix box_cont">
+                <div class="clearfix" style="height: 130px; position: relative;">
+                    <ul class="intertface" id="port_list">
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="clearfix">
+        <div class="shbox clearfix col-xs-6">
+            <div class="shbox_border">
+                <label class="title" sh_lang="SHpack.cpu_usage"></label>
+                <div class="clearfix box_cont">
+                    <div class="clearfix">
+                            <span class="chart" id="cpuusage" data-percent="0">
+							<span class="percent"></span>%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="shbox clearfix col-xs-6">
+            <div class="shbox_border">
+                <label class="title" sh_lang="SHpack.memory_usage"></label>
+
+                <div class="clearfix box_cont">
+                    <div class="clearfix">
+                        <span class="chart" id="menusage" data-percent="0"><span class="percent"></span>%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="shbox clearfix hide" id="wan_info">
+        <div class="shbox_border">
+            <label class="title" sh_lang="SHpack.waninfo"></label>
+            <ul class="clearfix shbox_cont">
+                <li class="list clearfix">
+                    <label class="left" sh_lang="SHpack.access"></label>
+                    <span class="right" id="wan_get_mode"></span>
+                </li>
+                <li id="wan_ip_info" class="list clearfix">
+                    <label class="left" sh_lang="SHpack.ip_addr"></label>
+                    <span class="right" id="wan_ip"></span>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="shbox clearfix hide" id="qmi_info">
+        <div class="shbox_border">
+            <label class="title" sh_lang="SHpack.apn_mode"></label>
+            <ul class="clearfix shbox_cont">
+                <li id="4g_ip_info" class="list clearfix">
+                    <label class="left" sh_lang="SHpack.ip_addr"></label>
+                    <span class="right" id="4g_ip"></span>
+                </li>
+                <li class="list clearfix hidden" style="text-align: center" id="sim_status">
+                    <span sh_lang="SHpack.sim_unknown"></span>
+                </li>
+                <li class="list clearfix hidden apn_row">
+                    <label class="left" sh_lang="SHpack.apn_name"></label>
+                    <span id="apn_name" class="right"></span>
+                </li>
+                <li class="list clearfix hidden apn_row">
+                    <label class="left" sh_lang="SHpack.apn_network"></label>
+                    <span id="apn_network" class="right"></span>
+                </li>
+                <li class="list clearfix hidden apn_row">
+                    <label class="left" sh_lang="SHpack.modem_rsst"></label>
+                    <span id="apn_data" class="right"></span>
+                </li>
+                <li class="list clearfix hidden apn_row">
+                    <label class="left">ICCID</label>
+                    <span id="apn_iccid" class="right"></span>
+                </li>
+                <li class="list clearfix">
+                    <label class="left">IMEI</label>
+                    <span id="apn_imei" class="right"></span>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="shbox clearfix hide" id="wireless_info">
+        <div class="shbox_border">
+            <label class="title" sh_lang="SHpack.wifiinfo"></label>
+            <ul class="clearfix shbox_cont" id="wifishow"></ul>
+        </div>
+    </div>
+    <div class="shbox clearfix hide" id="rep_info">
+        <div class="shbox_border">
+            <label class="title" sh_lang="SHpack.bridgeinfo"></label>
+            <ul class="clearfix shbox_cont">
+                <li class="list clearfix"><label class="left" sh_lang="SHpack.bridge_status"></label><span class="right"
+                                                                                                           id="rep_status"></span>
+                </li>
+                <li class="list clearfix"><label class="left" sh_lang="SHpack.sta_ssid"></label><span class="right"
+                                                                                                      id="sta_ssid"></span>
+                </li>
+                <li class="list clearfix"><label class="left" sh_lang="SHpack.modem_rsst"></label><span class="right"
+                                                                                                        id="rep_signal"></span>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="shbox clearfix hide" id="mesh_info">
+        <div class="shbox_border">
+            <label class="title" sh_lang="SHpack.mesh_info"></label>
+            <ul class="clearfix shbox_cont">
+                <li class="list clearfix">
+                    <label class="left" sh_lang="SHpack.mesh_status"></label>
+                    <span class="right" id="mesh_status"></span></li>
+                <li class="list clearfix">
+                    <label class="left" sh_lang="SHpack.mesh_id"></label>
+                    <span class="right" id="mesh_id"></span></li>
+                <li class="list clearfix">
+                    <label class="left" sh_lang="SHpack.modem_rsst"></label>
+                    <span class="right" id="mesh_signal"></span></li>
+            </ul>
+        </div>
+    </div>
+    <div class="shbox clearfix">
+        <div class="shbox_border">
+            <label class="title" sh_lang="SHpack.deviceinfo"></label>
+            <ul class="clearfix shbox_cont">
+                <li class="list clearfix"><label class="left" sh_lang="SHpack.mac"></label><span class="right"
+                                                                                                 id="mac"></span></li>
+                <li class="list clearfix"><label class="left" sh_lang="SHpack.unit_type"></label><span class="right"
+                                                                                                       id="deviceinfo"></span>
+                </li>
+                <li class="list clearfix"><label class="left" sh_lang="SHpack.version"></label><span class="right"
+                                                                                                     id="version"></span>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="clearfix shbox">
+        <div class="shbox_border" style="padding-top: 12px;">
+            <label class="title" sh_lang="SHpack.total"></label>
+            <div class="unit">
+                <div class="l_up"><i class="iconfont icon-dian"></i><label sh_lang="SHpack.uplink"></label></div>
+                <div class="l_down"><i class="iconfont icon-dian"></i><label sh_lang="SHpack.downlink"></label></div>
+            </div>
+            <div class="box clearfix">
+                <div id="flowchart"></div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="login_footer">
+            <div sh_lang="SHpack.copyright"></div>
+        </div>
+    </div>
+</main>
+<nav class="subMenu" id="subMenu">
+    <ul class="navigation clearfix"></ul>
+</nav>
+</body>
+</html>
+<script type="text/javascript" src="/common/lib/jquery.js"></script>
+<script type="text/javascript" src="/common/lib/highstock.js"></script>
+<script type="text/javascript" src="/common/lib/jquery.easypiechart.js"></script>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName, "touch"], function (page) {
+            page.init();
+        });
+    }
+</script>

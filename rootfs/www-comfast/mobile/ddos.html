@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <title></title>
+    <link type="image/x-icon" href="/images/favicon.ico"/>
+    <link rel="stylesheet" href="/css/shreset.css">
+    <link rel="stylesheet" href="/css/wap/shap.css">
+</head>
+<style>
+    .col-xs-4{
+        width: 31%;
+        font-size: 12px;
+    }
+</style>
+<body module="ddos" device="mobile" id="mbox_container">
+<header class="is-fixed">
+    <span class="goback" et="tap:prev"><i et="tap:prev" class="icon-prev"></i></span>
+    <label sh_lang="SHpack.ddos"></label>
+    <a class="header_menu" href="#"><span class="menu_icon"></span></a>
+</header>
+<main class="main_content container-fluid">
+    <ul class="wizard clearfix">
+        <div>
+            <div class="shbox clearfix">
+                <div class="shbox_border">
+                    <label class="title" sh_lang="SHpack.ddos"></label>
+                    <div class="ddos clearfix">
+                        <div class="list clearfix">
+                            <div class="col-xs-4">
+                                <div class="row"><span sh_lang="SHpack.enable_icmp"></span><input
+                                        class="option-input" id="enable_icmp" type="checkbox"></div>
+                            </div>
+                            <div class="col-xs-4">
+                                <div class="row"><span sh_lang="SHpack.enable_udp"></span><input
+                                        class="option-input" id="enable_udp" type="checkbox"></div>
+                            </div>
+                        </div>
+                        <div class="list clearfix">
+                            <div class="col-xs-4">
+                                <div class="row"><span sh_lang="SHpack.enable_syn"></span><input
+                                        class="option-input" id="enable_syn" type="checkbox"></div>
+                            </div>
+                            <div class="col-xs-4">
+                                <div class="row"><span sh_lang="SHpack.enable_null"></span><input
+                                        class="option-input" id="enable_null" type="checkbox"></div>
+                            </div>
+                        </div>
+                        <div class="list clearfix">
+                            <div class="col-xs-4">
+                                <div class="row"><span sh_lang="SHpack.enable_fin"></span><input
+                                        class="option-input" id="enable_fin" type="checkbox"></div>
+                            </div>
+                            <div class="col-xs-4">
+                                <div class="row"><span sh_lang="SHpack.enable_xmas"></span><input
+                                        class="option-input" id="enable_xmas" type="checkbox"></div>
+                            </div>
+                        </div>
+                        <div class="list clearfix">
+                            <div class="col-xs-4">
+                                <div class="row"><span sh_lang="SHpack.enable_smurf"></span><input
+                                        class="option-input" id="enable_smurf" type="checkbox"></div>
+                            </div>
+                            <div class="col-xs-4">
+                                <div class="row"><span sh_lang="SHpack.enable_ping"></span><input
+                                        class="option-input" id="enable_ping" type="checkbox"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="list clearfix">
+                    <div class="col-xs-12">
+                        <div class="row">
+                            <button class="btn btn-warning" sh_lang="SHpack.optimised"
+                                    et="click:save_ddos"></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </ul>
+    <div class="row">
+        <div class="login_footer">
+            <div sh_lang="SHpack.copyright"></div>
+        </div>
+    </div>
+</main>
+<nav class="subMenu" id="subMenu">
+    <ul class="navigation clearfix"></ul>
+</nav>
+</body>
+</html>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName, "touch"], function (page) {
+            page.init();
+        });
+    }
+</script>
