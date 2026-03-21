@@ -14,7 +14,7 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y squashfs-tools
@@ -32,7 +32,7 @@ jobs:
           ./build.sh "${{ env.FIRMWARE_VERSION }}.bin"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ env.FIRMWARE_VERSION }}
           path: dist/*.bin
