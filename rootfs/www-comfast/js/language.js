@@ -80,8 +80,8 @@ var SHpack = {
             'ru': 'English'
         },
         'ru': {
-            'cn': '俄语',
-            'en': 'Russian',
+            'cn': 'Русский',
+            'en': 'Русский',
             'ru': 'Русский'
         },
         'wropwd': {
