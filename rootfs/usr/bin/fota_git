@@ -1,0 +1,74 @@
+#!/bin/sh
+#
+# fota_git - OTA update checker for Plery R626
+# Checks GitHub Releases for new firmware
+#
+
+REPO="eav93/plery-r626"
+FOTA_DIR="/tmp/fota"
+VERSION_FILE="/etc/defconfig/cf-plery/version"
+API_URL="https://api.github.com/repos/$REPO/releases/latest"
+
+mkdir -p "$FOTA_DIR"
+
+get_current_version() {
+    cat "$VERSION_FILE" 2>/dev/null || echo "unknown"
+}
+
+check_update() {
+    local current_version=$(get_current_version)
+
+    # Fetch latest release info
+    local release_json=$(wget -q -O - "$API_URL" 2>/dev/null)
+    if [ -z "$release_json" ]; then
+        echo "5" > "$FOTA_DIR/fota_status"
+        return 1
+    fi
+
+    # Parse release tag and asset URL
+    local latest_tag=$(echo "$release_json" | jsonfilter -e '@.tag_name' 2>/dev/null)
+    local asset_url=$(echo "$release_json" | jsonfilter -e '@.assets[0].browser_download_url' 2>/dev/null)
+    local asset_size=$(echo "$release_json" | jsonfilter -e '@.assets[0].size' 2>/dev/null)
+
+    if [ -z "$latest_tag" ] || [ -z "$asset_url" ]; then
+        echo "5" > "$FOTA_DIR/fota_status"
+        return 1
+    fi
+
+    # Compare versions
+    if [ "$current_version" = "$latest_tag" ]; then
+        echo "$current_version" > "$FOTA_DIR/version"
+        echo "5" > "$FOTA_DIR/fota_status"
+        return 0
+    fi
+
+    # New version available - download
+    echo "$latest_tag" > "$FOTA_DIR/version"
+    echo "$asset_size" > "$FOTA_DIR/total_length"
+    echo "3" > "$FOTA_DIR/fota_status"
+
+    wget -q -O "$FOTA_DIR/firmware.bin" "$asset_url" 2>/dev/null
+    if [ $? -ne 0 ] || [ ! -f "$FOTA_DIR/firmware.bin" ]; then
+        echo "4" > "$FOTA_DIR/fota_status"
+        return 1
+    fi
+
+    # Calculate MD5
+    md5sum "$FOTA_DIR/firmware.bin" | awk '{print $1}' > "$FOTA_DIR/md5sum"
+    local actual_size=$(ls -l "$FOTA_DIR/firmware.bin" | awk '{print $5}')
+    echo "$actual_size" > "$FOTA_DIR/total_length"
+
+    # Downloaded OK
+    echo "1" > "$FOTA_DIR/fota_status"
+    return 0
+}
+
+case "$1" in
+    -c)
+        check_update
+        ;;
+    *)
+        echo "Usage: fota_git -c"
+        exit 1
+        ;;
+esac
