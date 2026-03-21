@@ -1,9 +1,21 @@
+/*
+ * Copyright (C) 2016 Felix Fietkau <nbd@nbd.name>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2
+ * as published by the Free Software Foundation
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 #ifndef __FWIMAGE_H
 #define __FWIMAGE_H
 
 #include <stdint.h>
 
-#define FWIMAGE_MAGIC		0x46577830	/* FWx0 */
+#define FWIMAGE_MAGIC		0x46577830 /* FWx0 */
 
 struct fwimage_header {
 	uint32_t version;

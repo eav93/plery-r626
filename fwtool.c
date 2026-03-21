@@ -1,3 +1,15 @@
+/*
+ * Copyright (C) 2016 Felix Fietkau <nbd@nbd.name>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2
+ * as published by the Free Software Foundation
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 #include <sys/types.h>
 #include <stdio.h>
 #include <getopt.h>
@@ -31,13 +43,14 @@ struct data_buf {
 static FILE *signature_file, *metadata_file, *firmware_file;
 static int file_mode = MODE_DEFAULT;
 static bool truncate_file;
+static bool write_truncated;
 static bool quiet = false;
 
 static uint32_t crc_table[256];
 
-#define msg(...)			\
-	do {				\
-		if (!quiet)		\
+#define msg(...)					\
+	do {						\
+		if (!quiet)				\
 			fprintf(stderr, __VA_ARGS__);	\
 	} while (0)
 
@@ -47,12 +60,13 @@ usage(const char *progname)
 	fprintf(stderr, "Usage: %s <options> <firmware>\n"
 		"\n"
 		"Options:\n"
-		" -S <file>:\tAppend signature file to firmware image\n"
-		" -I <file>:\tAppend metadata file to firmware image\n"
-		" -s <file>:\tExtract signature file from firmware image\n"
-		" -i <file>:\tExtract metadata file from firmware image\n"
-		" -t:\t\tRemove extracted chunks from firmware image (using -s, -i)\n"
-		" -q:\t\tQuiet (suppress error messages)\n"
+		"  -S <file>:		Append signature file to firmware image\n"
+		"  -I <file>:		Append metadata file to firmware image\n"
+		"  -s <file>:		Extract signature file from firmware image\n"
+		"  -i <file>:		Extract metadata file from firmware image\n"
+		"  -t:			Remove extracted chunks from firmare image (using -s, -i)\n"
+		"  -T:			Output firmware image without extracted chunks to stdout (using -s, -i)\n"
+		"  -q:			Quiet (suppress error messages)\n"
 		"\n", progname);
 	return 1;
 }
@@ -131,11 +145,12 @@ append_trailer(FILE *out, struct fwimage_trailer *tr)
 static int
 add_metadata(struct fwimage_trailer *tr)
 {
-	struct fwimage_header hdr = {};
+	struct fwimage_header hdr;
 
 	tr->type = FWIMAGE_INFO;
 	tr->size = sizeof(hdr) + sizeof(*tr);
 
+	memset(&hdr, 0, sizeof(hdr));
 	trailer_update_crc(tr, &hdr, sizeof(hdr));
 	fwrite(&hdr, sizeof(hdr), 1, firmware_file);
 
@@ -167,12 +182,14 @@ add_signature(struct fwimage_trailer *tr)
 static int
 add_data(const char *name)
 {
-	struct fwimage_trailer tr = {
-		.magic = cpu_to_be32(FWIMAGE_MAGIC),
-		.crc32 = ~0,
-	};
+	struct fwimage_trailer tr;
 	int file_len = 0;
 	int ret = 0;
+
+	memset(&tr, 0, sizeof(tr));
+
+	tr.crc32 = ~0;
+	tr.magic = cpu_to_be32(FWIMAGE_MAGIC);
 
 	firmware_file = fopen(name, "r+");
 	if (!firmware_file) {
@@ -199,7 +216,9 @@ add_data(const char *name)
 
 	if (ret) {
 		fflush(firmware_file);
-		ftruncate(fileno(firmware_file), file_len);
+		ret = ftruncate(fileno(firmware_file), file_len);
+		if (ret < 0)
+			msg("Error during ftruncate: %m\n");
 	}
 
 	return ret;
@@ -235,7 +254,7 @@ extract_tail(struct data_buf *dbuf, void *dest, int len)
 	remove_tail(dbuf, cur_len);
 
 	cur_len = len - cur_len;
-	if (cur_len && !dbuf->cur)
+	if (cur_len < 0 || !dbuf->cur)
 		return 1;
 
 	memcpy(dest, dbuf->cur + dbuf->cur_len - cur_len, cur_len);
@@ -256,9 +275,9 @@ tail_crc32(struct data_buf *dbuf, uint32_t crc32)
 static int
 validate_metadata(struct fwimage_header *hdr, int data_len)
 {
-	if (hdr->version != 0)
-		return 1;
-	return 0;
+	 if (hdr->version != 0)
+		 return 1;
+	 return 0;
 }
 
 static int
@@ -268,8 +287,12 @@ extract_data(const char *name)
 	struct fwimage_trailer tr;
 	struct data_buf dbuf = {};
 	uint32_t crc32 = ~0;
+	int data_len = 0;
 	int ret = 1;
 	void *buf;
+	bool metadata_keep = false;
+
+	memset(&tr, 0, sizeof(tr));
 
 	firmware_file = open_file(name, false);
 	if (!firmware_file) {
@@ -289,6 +312,9 @@ extract_data(const char *name)
 	do {
 		char *tmp = dbuf.cur;
 
+		if (write_truncated && dbuf.prev)
+			fwrite(dbuf.prev, 1, BUFLEN, stdout);
+
 		dbuf.cur = dbuf.prev;
 		dbuf.prev = tmp;
 
@@ -305,16 +331,19 @@ extract_data(const char *name)
 	} while (dbuf.cur_len == BUFLEN);
 
 	while (1) {
-		int data_len;
 
-		if (extract_tail(&dbuf, &tr, sizeof(tr)))
-			break;
-
-		data_len = be32_to_cpu(tr.size) - sizeof(tr);
-		if (tr.magic != cpu_to_be32(FWIMAGE_MAGIC)) {
-			msg("Data not found\n");
+		if (extract_tail(&dbuf, &tr, sizeof(tr))) {
+			msg("unable to extract trailer header\n");
 			break;
 		}
+
+		if (tr.magic != cpu_to_be32(FWIMAGE_MAGIC)) {
+			msg("Data not found\n");
+			metadata_keep = true;
+			break;
+		}
+
+		data_len = be32_to_cpu(tr.size) - sizeof(tr);
 
 		if (be32_to_cpu(tr.crc32) != tail_crc32(&dbuf, crc32)) {
 			msg("CRC error\n");
@@ -326,7 +355,10 @@ extract_data(const char *name)
 			break;
 		}
 
-		extract_tail(&dbuf, buf, data_len);
+		if (extract_tail(&dbuf, buf, data_len)) {
+			msg("unable to extract trailer data\n");
+			break;
+		}
 
 		if (tr.type == FWIMAGE_SIGNATURE) {
 			if (!signature_file)
@@ -335,8 +367,11 @@ extract_data(const char *name)
 			ret = 0;
 			break;
 		} else if (tr.type == FWIMAGE_INFO) {
-			if (!metadata_file)
+			if (!metadata_file) {
+				dbuf.file_len += data_len + sizeof(tr);
+				metadata_keep = true;
 				break;
+			}
 
 			hdr = buf;
 			data_len -= sizeof(*hdr);
@@ -351,8 +386,24 @@ extract_data(const char *name)
 		}
 	}
 
-	if (!ret && truncate_file)
-		ftruncate(fileno(firmware_file), dbuf.file_len);
+	if (!ret && truncate_file) {
+		ret = ftruncate(fileno(firmware_file), dbuf.file_len);
+		if (ret < 0) {
+			msg("Error during ftruncate: %m\n");
+			goto out;
+		}
+	}
+
+	if (write_truncated) {
+		if (dbuf.prev)
+			fwrite(dbuf.prev, 1, BUFLEN, stdout);
+		if (dbuf.cur)
+			fwrite(dbuf.cur, 1, dbuf.cur_len, stdout);
+		if (metadata_keep) {
+			fwrite(buf, data_len, 1, stdout);
+			fwrite(&tr, sizeof(tr), 1, stdout);
+		}
+	}
 
 out:
 	free(buf);
@@ -378,7 +429,7 @@ int main(int argc, char **argv)
 
 	crc32_filltable(crc_table);
 
-	while ((ch = getopt(argc, argv, "i:I:qs:S:t")) != -1) {
+	while ((ch = getopt(argc, argv, "i:I:qs:S:tT")) != -1) {
 		ret = 0;
 		switch(ch) {
 		case 'S':
@@ -395,6 +446,9 @@ int main(int argc, char **argv)
 			break;
 		case 't':
 			truncate_file = true;
+			break;
+		case 'T':
+			write_truncated = true;
 			break;
 		case 'q':
 			quiet = true;
