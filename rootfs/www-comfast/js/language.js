@@ -2149,6 +2149,21 @@ var SHpack = {
         }
     },
     SHtips = {//提示
+        'maxlength': {
+            'cn': '已达到最大数量',
+            'en': 'Maximum number reached',
+            'ru': 'Достигнуто максимальное количество'
+        },
+        'sameas': {
+            'cn': '用户名已存在',
+            'en': 'Username already exists',
+            'ru': 'Имя пользователя уже существует'
+        },
+        'probe_server_url_ok': {
+            'cn': 'URL格式正确',
+            'en': 'URL format is correct',
+            'ru': 'Формат URL верный'
+        },
         'openvpnInfo_update': {
             'cn': '证书还未更新成功',
             'en': 'The certificate has not been successfully updated yet',

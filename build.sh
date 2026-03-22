@@ -154,4 +154,4 @@ echo "    Size:    $FINAL_SIZE bytes ($(echo "scale=1; $FINAL_SIZE / 1048576" | 
 echo "    Version: $FIRMWARE_VERSION"
 echo ""
 echo "    Flash via web:  http://192.168.0.1/computer/upgrade.html"
-echo "    Flash via SSH:  scp -O $OUTPUT root@192.168.0.1:/tmp/fw.bin && ssh root@192.168.0.1 'sysupgrade -n /tmp/fw.bin'"
+echo "    Flash via SSH:  scp -O $OUTPUT root@192.168.0.1:/tmp/fw.bin && ssh root@192.168.0.1 'sysupgrade /tmp/fw.bin'"

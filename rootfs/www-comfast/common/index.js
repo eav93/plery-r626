@@ -120,10 +120,11 @@ define(function (require, exports) {
                 });
 
                 f.getMConfig('get_ccid_and_imei', '', function (data) {
-                    //data = {"module_info":{"imei":"868704046053359","iccid":"89860 0MFSS YYGXX XXXXP"},"errCode":0,"errMsg":"OK","configDone":false}
-                    iccid_and_imei = data.module_info;
-                    d('#apn_imei').html(iccid_and_imei.imei);
-                    d('#apn_iccid').html(iccid_and_imei.iccid);
+                    if (data && data.errCode == 0 && data.module_info) {
+                        iccid_and_imei = data.module_info;
+                        d('#apn_imei').html(iccid_and_imei.imei || '-');
+                        d('#apn_iccid').html(iccid_and_imei.iccid || '-');
+                    }
                 })
 
                 d("#qmi_info").removeClass('hide');

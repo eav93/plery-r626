@@ -36,11 +36,16 @@ CI автоматически собирает прошивку и создаё�
 ## Прошивка
 
 **Через веб-интерфейс:**
-http://192.168.2.1/computer/upgrade.html
+http://192.168.0.1/computer/upgrade.html
 
-**Через SSH:**
+**Через SSH (с сохранением настроек):**
 ```bash
-scp -O dist/firmware.bin root@192.168.2.1:/tmp/fw.bin && ssh root@192.168.2.1 'sysupgrade -n /tmp/fw.bin'
+scp -O dist/firmware.bin root@192.168.0.1:/tmp/fw.bin && ssh root@192.168.0.1 'sysupgrade /tmp/fw.bin'
+```
+
+**Через SSH (чистая установка):**
+```bash
+scp -O dist/firmware.bin root@192.168.0.1:/tmp/fw.bin && ssh root@192.168.0.1 'sysupgrade -n /tmp/fw.bin'
 ```
 
 ## Восстановление через UART
