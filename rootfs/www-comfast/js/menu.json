@@ -150,6 +150,11 @@
           "urls": "chang.html"
         },
         {
+          "id": "led",
+          "name": "SHpack.led_swich",
+          "urls": "led.html"
+        },
+        {
           "id": "remote",
           "name": "SHpack.remote",
           "urls": "remote.html"
