@@ -74,25 +74,28 @@ define(function (require, exports) {
     }
 
     function show_note(data, flag) {
-        d('#CurrentVersion').html(data.fota_status.fota_version);
+        if (!data.fota_status) data.fota_status = {};
+        if (!data.upgrade) data.upgrade = {};
+        if (!data.upgrage_status) data.upgrage_status = {};
+        var fota = data.fota_status;
+        var ver = fota.fota_version || '';
+        d('#CurrentVersion').html(ver || '-');
         //5 检测已经是最新版本 4 网络错误 3 检测到新版本未下载 2 检测到新版本正在下载  1 已经下载好最新版本  0 常态
-        if (data.fota_status.fota_status == 5) {
+        if (fota.fota_status == 5 && ver) {
             d('#UpgTip').html(SHpack.AlreadyNewVersion[nowLang]);
-			g.shconfirm(nowLang, SHtips.version[nowLang], "success");
-            //h.SetOKTip(tip_num++, already_newversion);
-        } else if (data.fota_status.fota_status == 2 || data.fota_status.fota_status == 3) {
+            g.shconfirm(nowLang, SHtips.version[nowLang], "success");
+        } else if (fota.fota_status == 2 || fota.fota_status == 3) {
             d('#UpgTip').html(SHpack.CheckNewVersion[nowLang]);
             d("#ManualDown").hide();
             if (data.upgrade.switch != "1") d("#ClearDown").show();
             showProgress(data);
-        } else if (data.fota_status.fota_status == 1) {
-            d('#UpgTip').html(SHpack.NewVersionOK[nowLang]);//已经下载好最新版本
+        } else if (fota.fota_status == 1) {
+            d('#UpgTip').html(SHpack.NewVersionOK[nowLang]);
             d("#ManualDown").hide();
             d("#ClearDown").hide();
             d("#Update").show();
-            //if (time_setting) clearTimeout(time_setting);
         } else {
-            d('#UpgTip').html(SHpack.AlreadyNewVersion[nowLang]);
+            d('#UpgTip').html('');
             if (data.upgrade.switch != "1") {
                 d("#ManualDown").show();
             }

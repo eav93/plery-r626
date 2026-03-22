@@ -2267,7 +2267,7 @@ var SHpack = {
         'ManualCheck': {
             'cn': '检测更新并下载固件',
             'en': 'Detect and download',
-            'ru': 'Проверить обновления и загрузить'
+            'ru': 'Проверить и скачать'
         },
         'CancelDown': {
             'cn': '取消下载',
