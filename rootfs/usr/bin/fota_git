@@ -64,7 +64,7 @@ check_update() {
 }
 
 case "$1" in
-    -c)
+    -c|-d)
         check_update
         ;;
     *)
