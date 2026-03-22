@@ -7,7 +7,7 @@ WIFI_LED_VALUE=/sys/devices/platform/gpio-leds/leds/comfast:blue:wifi/brightness
 SIGNAL1_4G_LED=/sys/devices/platform/gpio-leds/leds/comfast:red:led/brightness
 SIGNAL2_4G_LED=/sys/devices/platform/gpio-leds/leds/comfast:green:led/brightness
 #SIGNAL3_4G_LED=/sys/devices/gpio-leds/leds/comfast:blue:led/brightness
-IP="199.85.126.10"
+IP="ya.ru"
 
 signal_led_disabled() {
 	echo 0 > $SIGNAL1_4G_LED 2>/dev/null
