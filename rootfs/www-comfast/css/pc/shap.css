@@ -257,7 +257,7 @@ a {
 }
 
 .subMenu .item-has-children > a span {
-    font-family: "Microsoft Yahei", Tahoma, Arial, Roboto, "Droid Sans", "Helvetica Neue", "Droid Sans Fallback", "Heiti SC", "Hiragino Sans GB", Simsun, sans-self;
+    font-family: inherit;
 }
 
 .subMenu .sub-menu {
@@ -266,6 +266,11 @@ a {
 
 .subMenu .sub-menu a {
     padding-left: 48px;
+}
+
+.subMenu .sub-menu .sub-menu a {
+    padding-left: 64px;
+    font-size: 13px;
 }
 
 /*subMenu end*/

@@ -156,8 +156,8 @@ form, input[type=password], input[type=text], button {
 }
 
 button.submit_button {
-    font-size: 22px;
-    letter-spacing: 2px;
+    font-size: 20px;
+    letter-spacing: 1px;
 }
 
 input.Captcha {

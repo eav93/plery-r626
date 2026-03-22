@@ -14,7 +14,7 @@ body {
     margin: 0;
     color: #333333;
     background-color: #ffffff;
-    font-family: Microsoft YaHei, Segoe UI, Tahoma, Arial, Verdana, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", Arial, "Microsoft YaHei", Tahoma, Verdana, sans-serif;
 }
 
 article,
@@ -790,7 +790,7 @@ input, button, select, textarea {
 }
 
 body {
-    font-family: Microsoft YaHei, Segoe UI, Tahoma, Arial, Verdana, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", Arial, "Microsoft YaHei", Tahoma, Verdana, sans-serif;
 }
 
 /*shstep start*/

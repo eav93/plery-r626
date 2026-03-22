@@ -135,6 +135,11 @@
           "urls": "upgrade.html"
         },
         {
+          "id": "onlineupg",
+          "name": "SHpack.onlineupg",
+          "urls": "onlineupg.html"
+        },
+        {
           "id": "reboot",
           "name": "SHpack.reboot",
           "urls": "reboot.html"

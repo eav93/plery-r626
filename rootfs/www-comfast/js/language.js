@@ -102,7 +102,7 @@ var SHpack = {
         'band': {
             'cn': '频段设置',
             'en': 'Band Setting',
-            'ru': 'Настройка диапазона'
+            'ru': 'LTE Band'
         },
         'ttl': {
             'cn': 'TTL设置',
@@ -372,7 +372,7 @@ var SHpack = {
         'config': {
             'cn': '配置管理',
             'en': 'Manage Config',
-            'ru': 'Управление конфигурацией'
+            'ru': 'Конфигурация'
         },
         'reboot': {
             'cn': '重启设备',
@@ -897,7 +897,7 @@ var SHpack = {
         "portforward": {
             "cn": "端口转发",
             "en": "Port Forward",
-            "ru": "Переадресация портов"
+            "ru": "Проброс портов"
         },
         "arp": {
             "cn": "ARP绑定",
@@ -1097,12 +1097,12 @@ var SHpack = {
         'remote': {
             'cn': '远程管理',
             'en': 'Remote Management',
-            'ru': 'Удалённое управление'
+            'ru': 'Удал. управление'
         },
         'remoteswitch': {
             'cn': '开关',
             'en': 'Remote Management',
-            'ru': 'Удалённое управление'
+            'ru': 'Удал. управление'
         },
         'port': {
             'cn': '端口',
@@ -1182,7 +1182,7 @@ var SHpack = {
         'upgrade': {
             'cn': '固件更新',
             'en': 'Upgrade',
-            'ru': 'Обновление прошивки'
+            'ru': 'Обновление'
         },
         'upgrade_tip': {
             'cn': '升级前，请关掉VPN和多SSID，以免内存不够导致升级失败',
@@ -1747,7 +1747,7 @@ var SHpack = {
         "port_forward": {
             "cn": "端口转发",
             "en": "Port Forward",
-            "ru": "Переадресация портов"
+            "ru": "Проброс портов"
         },
         "add": {
             "cn": "添加",
@@ -1992,27 +1992,27 @@ var SHpack = {
         'unit': {
             'cn': '单位',
             'en': 'unit',
-            'ru': 'Единица'
+            'ru': ''
         },
         'totalup': {
             'cn': '总上行',
             'en': 'Total Uplink',
-            'ru': 'Всего исходящих'
+            'ru': 'Отдано'
         },
         'totaldown': {
             'cn': '总下行',
             'en': 'Total Downlink',
-            'ru': 'Всего входящих'
+            'ru': 'Принято'
         },
         'totallink': {
             'cn': 'TCP/UDP 总连接数',
             'en': 'TCP/UDP Total Links',
-            'ru': 'TCP/UDP всего соединений'
+            'ru': 'TCP/UDP соединений'
         },
         'usernum': {
             'cn': '用户数',
             'en': 'User Number',
-            'ru': 'Кол-во пользователей'
+            'ru': 'Пользователей'
         },
         'cpu_usage': {
             'cn': 'CPU使用率',
@@ -2232,7 +2232,7 @@ var SHpack = {
         'pptpuser': {
             'cn': 'PPTP用户',
             'en': 'PPTP User',
-            'ru': 'Пользователь PPTP'
+            'ru': 'Пользователи PPTP'
         },
         'serveip': {
             'cn': '服务器/IP',
@@ -2248,6 +2248,11 @@ var SHpack = {
             'cn': '在线升级',
             'en': 'Online Upgrade',
             'ru': 'Онлайн-обновление'
+        },
+        'onlineupg': {
+            'cn': '在线升级',
+            'en': 'Online Upgrade',
+            'ru': 'Автообновление'
         },
         'BestNewVersion': {
             'cn': '最新版本',
