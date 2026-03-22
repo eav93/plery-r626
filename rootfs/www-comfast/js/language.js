@@ -1,4 +1,70 @@
-var SHpack = {    'ddns': {
+var SHpack = {
+    'home': {
+        'cn': '状态信息',
+        'en': 'Status',
+        'ru': 'Состояние'
+    },
+    'band': {
+        'cn': '频段设置',
+        'en': 'Band Setting',
+        'ru': 'Диапазон LTE'
+    },
+    'network': {
+        'cn': '网络管理',
+        'en': 'Network',
+        'ru': 'Сеть'
+    },
+    'system': {
+        'cn': '系统管理',
+        'en': 'System',
+        'ru': 'Система'
+    },
+    'firewall': {
+        'cn': '防火墙',
+        'en': 'Firewall',
+        'ru': 'Безопасность'
+    },
+    'ipfilter': {
+        'cn': 'IP过滤',
+        'en': 'IP Filter',
+        'ru': 'IP-фильтр'
+    },
+    'macfilter': {
+        'cn': 'MAC过滤',
+        'en': 'MAC Filter',
+        'ru': 'MAC-фильтр'
+    },
+    'urlfilter': {
+        'cn': 'URL过滤',
+        'en': 'URL Filter',
+        'ru': 'URL-фильтр'
+    },
+    'portforward': {
+        'cn': '端口转发',
+        'en': 'Port Forward',
+        'ru': 'Проброс портов'
+    },
+    'onlineupg': {
+        'cn': '在线升级',
+        'en': 'Online Upgrade',
+        'ru': 'Онлайн-обновление'
+    },
+    'vpnclient': {
+        'cn': 'VPN客户端',
+        'en': 'VPN Client',
+        'ru': 'VPN-клиент'
+    },
+    'vpnservice': {
+        'cn': 'VPN服务器',
+        'en': 'VPN Server',
+        'ru': 'VPN-сервер'
+    },
+    'openvpn': {
+        'cn': 'OPENVPN',
+        'en': 'OpenVPN',
+        'ru': 'OpenVPN'
+    },
+    'ddns': {
         'cn': 'DDNS',
         'en': 'DDNS',
         'ru': 'DDNS'
