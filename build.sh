@@ -91,14 +91,23 @@ log "Building SquashFS from $ROOTFS_DIR/..."
 SQUASHFS_TMP=$(mktemp /tmp/rootfs_XXXXXX.squashfs)
 trap "rm -f '$SQUASHFS_TMP' /tmp/firmware_raw_$$.bin" EXIT
 
+# Check if mksquashfs supports MIPS BCJ filter
+XZ_BCJ_OPT=""
+if mksquashfs -help-comp xz 2>&1 | grep -q mips; then
+    XZ_BCJ_OPT="-Xbcj mips"
+    log "Using MIPS BCJ filter"
+fi
+
 mksquashfs "$ROOTFS_DIR" "$SQUASHFS_TMP" \
     -comp xz \
+    $XZ_BCJ_OPT \
     -Xdict-size 100% \
     -b 262144 \
     -nopad \
     -noappend \
     -no-xattrs \
     -all-root \
+    -wildcards -e ".gitkeep" ".DS_Store" \
     -quiet
 
 KERNEL_SIZE=$(stat -f%z "$KERNEL" 2>/dev/null || stat -c%s "$KERNEL")
