@@ -1,10 +1,4 @@
-var SHpack = {
-    'last': {
-        'cn': 'DDNS设置',
-        'en': 'DDNS',
-        'ru': 'DDNS'
-    },
-    'ddns': {
+var SHpack = {    'ddns': {
         'cn': 'DDNS',
         'en': 'DDNS',
         'ru': 'DDNS'
@@ -48,13 +42,7 @@ var SHpack = {
         'cn': '网络',
         'en': 'Network',
         'ru': 'Сеть'
-    },
-    'ddns_select_iface': {
-        'cn': '请选择解析网卡',
-        'en': 'Please select the resolve interface',
-        'ru': 'Выберите сетевой интерфейс'
-    },
-        'login': {
+    },        'login': {
             'cn': '登录',
             'en': 'Login',
             'ru': 'Вход'
@@ -68,48 +56,11 @@ var SHpack = {
             'cn': '密码',
             'en': 'Password',
             'ru': 'Пароль'
-        },
-        'language': {
-            'cn': '语言设置',
-            'en': 'Language Settings',
-            'ru': 'Настройки языка'
-        },
-        'cn': {
-            'cn': '中文',
-            'en': '中文',
-            'ru': '中文'
-        },
-        'en': {
-            'cn': 'English',
-            'en': 'English',
-            'ru': 'English'
-        },
-        'ru': {
-            'cn': 'Русский',
-            'en': 'Русский',
-            'ru': 'Русский'
-        },
-        'wropwd': {
-            'cn': '密码错误,请重新输入',
-            'en': 'Password incorrect, Please try again.',
-            'ru': 'Неверный пароль, попробуйте снова.'
-        },
-        'led_swich': {
+        },        'led_swich': {
             'cn': 'LED灯开关',
             'en': 'LED Lights',
             'ru': 'LED-индикаторы'
-        },
-        'submit': {
-            'cn': '设置',
-            'en': 'Submit',
-            'ru': 'Применить'
-        },
-        'band': {
-            'cn': '频段设置',
-            'en': 'Band Setting',
-            'ru': 'Диапазон LTE'
-        },
-        'ttl': {
+        },        'ttl': {
             'cn': 'TTL设置',
             'en': 'TTL Setting',
             'ru': 'Настройка TTL'
@@ -263,23 +214,11 @@ var SHpack = {
             'cn': '请输入密码',
             'en': 'Please Enter Password',
             'ru': 'Введите пароль'
-        },
-        'home': {
-            'cn': '状态信息',
-            'en': 'Status',
-            'ru': 'Состояние'
-        },
-        'wizard': {
+        },        'wizard': {
             'cn': '配置向导',
             'en': 'Wizard',
             'ru': 'Мастер настройки'
-        },
-        'network': {
-            'cn': '网络管理',
-            'en': 'Network',
-            'ru': 'Сеть'
-        },
-        'users': {
+        },        'users': {
             'cn': '用户管理',
             'en': 'Users',
             'ru': 'Пользователи'
@@ -363,18 +302,7 @@ var SHpack = {
             'cn': '5.8G 无线设置',
             'en': '5.8G Wireless',
             'ru': '5.8G Беспроводная сеть'
-        },
-        'system': {
-            'cn': '系统管理',
-            'en': 'System',
-            'ru': 'Система'
-        },
-        'tools': {
-            'cn': '系统工具',
-            'en': 'Tools',
-            'ru': 'Инструменты'
-        },
-        'config': {
+        },        'config': {
             'cn': '配置管理',
             'en': 'Manage Config',
             'ru': 'Конфигурация'
@@ -878,33 +806,7 @@ var SHpack = {
             'cn': '修改管理密码',
             'en': 'Change Password',
             'ru': 'Изменить пароль'
-        },
-        'firewall': {
-            'cn': '防火墙',
-            'en': 'Firewall',
-            'ru': 'Брандмауэр'
-        },
-        "ipfilter": {
-            "cn": "IP过滤",
-            "en": "IP Filter",
-            "ru": "IP-фильтр"
-        },
-        "macfilter": {
-            "cn": "MAC过滤",
-            "en": "MAC Filter",
-            "ru": "MAC-фильтр"
-        },
-        "urlfilter": {
-            "cn": "URL过滤",
-            "en": "URL Filter",
-            "ru": "URL-фильтр"
-        },
-        "portforward": {
-            "cn": "端口转发",
-            "en": "Port Forward",
-            "ru": "Проброс портов"
-        },
-        "arp": {
+        },        "arp": {
             "cn": "ARP绑定",
             "en": "ARP Binding",
             "ru": "Привязка ARP"
@@ -943,13 +845,7 @@ var SHpack = {
             'cn': '条',
             'en': 'Item',
             'ru': 'Запись'
-        },
-        'gotop': {
-            'cn': '顶部',
-            'en': 'Top',
-            'ru': 'Наверх'
-        },
-        'success_title': {
+        },        'success_title': {
             'cn': '成功提示',
             'en': 'Success',
             'ru': 'Успешно'
@@ -1003,13 +899,7 @@ var SHpack = {
             'cn': '取消',
             'en': 'Cancel',
             'ru': 'Отмена'
-        },
-        'select': {
-            'cn': '选择',
-            'en': 'Select',
-            'ru': 'Выбрать'
-        },
-        'selectall': {
+        },        'selectall': {
             'cn': '全选',
             'en': 'Select',
             'ru': 'Выбрать все'
@@ -1033,38 +923,7 @@ var SHpack = {
             'cn': '上一步',
             'en': 'Prev',
             'ru': 'Назад'
-        },
-        'return': {
-            'cn': '返回',
-            'en': 'Back',
-            'ru': 'Назад'
-        },
-        'stop_setting': {
-            'cn': '停止设置',
-            'en': 'Stop Settings',
-            'ru': 'Остановить настройку'
-        },
-        'users_manage': {
-            'cn': '用户管理',
-            'en': 'Users Management',
-            'ru': 'Управление пользователями'
-        },
-        'wireless_users': {
-            'cn': '无线用户管理',
-            'en': 'Wireless Users',
-            'ru': 'Беспроводные клиенты'
-        },
-        'filter_list': {
-            'cn': '过滤列表',
-            'en': 'Filter List',
-            'ru': 'Список фильтров'
-        },
-        'no': {
-            'cn': '序号',
-            'en': 'No',
-            'ru': '№'
-        },
-        "Statu_bind": {
+        },        "Statu_bind": {
             "cn": "已绑定",
             "en": "Bound",
             "ru": "Привязан"
@@ -1088,23 +947,11 @@ var SHpack = {
             'cn': '下行',
             'en': 'Down',
             'ru': 'Входящий'
-        },
-        'times': {
-            'cn': '时间',
-            'en': 'Times',
-            'ru': 'Время'
-        },
-        'no_date': {
+        },        'no_date': {
             'cn': '尚未获取到数据',
             'en': 'No Data',
             'ru': 'Нет данных'
-        },
-        'system_admin': {
-            'cn': '系统管理',
-            'en': 'System',
-            'ru': 'Система'
-        },
-        'remote': {
+        },        'remote': {
             'cn': '远程管理',
             'en': 'Remote Management',
             'ru': 'Удал. управление'
@@ -1128,13 +975,7 @@ var SHpack = {
             'cn': '设置',
             'en': 'Apply',
             'ru': 'Применить'
-        },
-        'system_son': {
-            'cn': '系统工具',
-            'en': 'Tools',
-            'ru': 'Инструменты'
-        },
-        'system_version': {
+        },        'system_version': {
             'cn': '当前版本',
             'en': 'Version',
             'ru': 'Версия'
@@ -1143,18 +984,7 @@ var SHpack = {
             'cn': '系统日志',
             'en': 'Logs ',
             'ru': 'Журнал'
-        },
-        'viewlog': {
-            'cn': '查看日志',
-            'en': 'View Log',
-            'ru': 'Просмотр журнала'
-        },
-        'systemlog': {
-            'cn': '系统日志',
-            'en': 'System Log',
-            'ru': 'Системный журнал'
-        },
-        'refresh': {
+        },        'refresh': {
             'cn': '刷新',
             'en': 'Refresh',
             'ru': 'Обновить'
@@ -1173,13 +1003,7 @@ var SHpack = {
             'cn': '导出配置',
             'en': 'Export Config',
             'ru': 'Экспорт конфигурации'
-        },
-        'configure': {
-            'cn': '配置',
-            'en': 'Settings',
-            'ru': 'Настройки'
-        },
-        'heart_beat_sw': {
+        },        'heart_beat_sw': {
             'cn': '联网检测',
             'en': 'Internet Detection',
             'ru': 'Проверка подключения'
@@ -1233,13 +1057,7 @@ var SHpack = {
             'cn': '广域网设置',
             'en': 'WAN',
             'ru': 'WAN'
-        },
-        'w_set_s': {
-            'cn': '无线设置',
-            'en': 'Wireless',
-            'ru': 'Беспроводная сеть'
-        },
-        'current_state': {
+        },        'current_state': {
             'cn': '当前状态',
             'en': 'Current State',
             'ru': 'Текущее состояние'
@@ -1258,13 +1076,7 @@ var SHpack = {
             'cn': '无线信息',
             'en': 'Wireless Info',
             'ru': 'Информация о Wi-Fi'
-        },
-        'relayinfo': {
-            'cn': '中继信息',
-            'en': 'Repeater Info',
-            'ru': 'Информация о ретрансляторе'
-        },
-        'bridgeinfo': {
+        },        'bridgeinfo': {
             'cn': '连接信息',
             'en': 'Connected Info',
             'ru': 'Информация о подключении'
@@ -1283,13 +1095,7 @@ var SHpack = {
             'cn': '获取方式',
             'en': 'Access',
             'ru': 'Способ доступа'
-        },
-        'relay_status': {
-            'cn': '中继状态',
-            'en': 'Repeater Status',
-            'ru': 'Состояние ретранслятора'
-        },
-        'bridge_status': {
+        },        'bridge_status': {
             'cn': '连接状态',
             'en': 'Connect Status',
             'ru': 'Состояние подключения'
@@ -1333,28 +1139,7 @@ var SHpack = {
             'cn': '未分配',
             'en': 'Unassigned',
             'ru': 'Не назначен'
-        },
-        'w24g': {
-            'cn': '2.4G',
-            'en': '2.4G',
-            'ru': '2.4G'
-        },
-        "w58g": {
-            'cn': '5.8G',
-            'en': '5.8G',
-            'ru': '5.8G'
-        },
-        'wf24g': {
-            'cn': 'WiFi 2.4G',
-            'en': 'WiFi 2.4G',
-            'ru': 'WiFi 2.4G'
-        },
-        "wf58g": {
-            'cn': 'WiFi 5.8G',
-            'en': 'WiFi 5.8G',
-            'ru': 'WiFi 5.8G'
-        },
-        'ssid_name_24g': {
+        },        'ssid_name_24g': {
             'cn': '2.4G SSID',
             'en': '2.4G SSID',
             'ru': '2.4G SSID'
@@ -1363,28 +1148,11 @@ var SHpack = {
             'cn': '5.8G SSID',
             'en': '5.8G SSID',
             'ru': '5.8G SSID'
-        },
-        "mesh_bind": {
-            "cn": "MESH频段",
-            "en": "MESH Band",
-            "ru": "Диапазон MESH"
-        },
-        "scan_bind": {
+        },        "scan_bind": {
             "cn": "扫描频段",
             "en": "Scan Band",
             "ru": "Диапазон сканирования"
-        },
-        "now_band": {
-            "cn": "当前频段",
-            "en": "Current frequency band",
-            "ru": "Текущий диапазон"
-        },
-        "band_text": {
-            "cn": "检测中...",
-            "en": "Testing...",
-            "ru": "Проверка..."
-        },
-        "lock_band": {
+        },        "lock_band": {
             "cn": "锁定频段",
             "en": "Locked frequency band",
             "ru": "Залоченный диапазон"
@@ -1513,13 +1281,7 @@ var SHpack = {
             'cn': '无法连接到互联网',
             'en': 'No Network',
             'ru': 'Нет сети'
-        },
-        'apn_data': {
-            'cn': '使用流量',
-            'en': 'Data usage',
-            'ru': 'Использование данных'
-        },
-        'sim_unknown': {
+        },        'sim_unknown': {
             'cn': '未检测到SIM卡',
             'en': 'No SIM card detected',
             'ru': 'SIM-карта не обнаружена'
@@ -1563,18 +1325,7 @@ var SHpack = {
             "cn": "MESH",
             "en": "MESH",
             "ru": "MESH"
-        },
-        "mode": {
-            "cn": "模式",
-            "en": "mode",
-            "ru": "Режим"
-        },
-        "normal_mode": {
-            "cn": "正常模式",
-            "en": "normal mode",
-            "ru": "Обычный режим"
-        },
-        "hwmode": {
+        },        "hwmode": {
             "cn": "模式",
             "en": "hwmode",
             "ru": "Режим"
@@ -1588,13 +1339,7 @@ var SHpack = {
             'cn': '中继客户端',
             'en': 'Repeater Client',
             'ru': 'Клиент ретранслятора'
-        },
-        'scenario': {
-            'cn': '场景',
-            'en': 'Scene',
-            'ru': 'Сценарий'
-        },
-        'wan_set': {
+        },        'wan_set': {
             'cn': '外网设置',
             'en': 'WAN Settings',
             'ru': 'Настройки WAN'
@@ -1603,13 +1348,7 @@ var SHpack = {
             'cn': '内网设置',
             'en': 'LAN Settings',
             'ru': 'Настройки LAN'
-        },
-        'device_address': {
-            'cn': '地址设置',
-            'en': 'Address Settings',
-            'ru': 'Настройка адреса'
-        },
-        'repeater_set': {
+        },        'repeater_set': {
             'cn': '中继设置',
             'en': 'Repeater Settings',
             'ru': 'Настройки ретранслятора'
@@ -1618,28 +1357,11 @@ var SHpack = {
             'cn': '网桥设置',
             'en': 'Bridge Settings',
             'ru': 'Настройки моста'
-        },
-        'mesh_set': {
-            'cn': 'MESH设置',
-            'en': 'MESH Settings',
-            'ru': 'Настройки MESH'
-        },
-        'wifi_set': {
-            'cn': '无线设置',
-            'en': 'Wireless Settings',
-            'ru': 'Настройки Wi-Fi'
-        },
-        'finish': {
+        },        'finish': {
             'cn': '完成',
             'en': 'Finish',
             'ru': 'Завершить'
-        },
-        'lan_ip': {
-            'cn': 'IP地址',
-            'en': 'IP Address',
-            'ru': 'IP-адрес'
-        },
-        'netmask': {
+        },        'netmask': {
             'cn': '子网掩码',
             'en': 'Subnet Mask',
             'ru': 'Маска подсети'
@@ -1648,13 +1370,7 @@ var SHpack = {
             'cn': '网关',
             'en': 'Gateway',
             'ru': 'Шлюз'
-        },
-        'rep_ssid': {
-            'cn': '上级 SSID',
-            'en': 'Upper SSID',
-            'ru': 'SSID вышестоящей сети'
-        },
-        'ssid': {
+        },        'ssid': {
             'cn': 'WiFi名称',
             'en': 'WiFi Name',
             'ru': 'Имя Wi-Fi'
@@ -1673,18 +1389,7 @@ var SHpack = {
             'cn': 'DNS服务器',
             'en': 'DNS',
             'ru': 'DNS'
-        },
-        'current_setting': {
-            'cn': '当前配置',
-            'en': 'Current Profile',
-            'ru': 'Текущая конфигурация'
-        },
-        'Connection': {
-            'cn': '当前连接方式',
-            'en': 'Current Mode',
-            'ru': 'Текущий режим'
-        },
-        'country_cn': {
+        },        'country_cn': {
             'cn': '中国',
             'en': 'China',
             'ru': 'Китай'
@@ -1703,13 +1408,7 @@ var SHpack = {
             'cn': '英国',
             'en': 'Britain',
             'ru': 'Великобритания'
-        },
-        'country_debug': {
-            'cn': '测试模式',
-            'en': 'DEBUG',
-            'ru': 'Отладка'
-        },
-        "edit": {
+        },        "edit": {
             "cn": "编辑",
             "en": "Edit",
             "ru": "Редактировать"
@@ -1728,18 +1427,7 @@ var SHpack = {
             "cn": "绑定",
             "en": "bind",
             "ru": "Привязать"
-        },
-        "addssid": {
-            "cn": "添加SSID",
-            "en": "Add SSID",
-            "ru": "Добавить SSID"
-        },
-        'launch_range': {
-            'cn': '发射距离',
-            'en': 'Launch Range',
-            'ru': 'Дальность передачи'
-        },
-        "ip_filter": {
+        },        "ip_filter": {
             "cn": "IP过滤",
             "en": "IP Filter",
             "ru": "IP-фильтр"
@@ -1768,13 +1456,7 @@ var SHpack = {
             "cn": "删除所选",
             "en": "Delete",
             "ru": "Удалить"
-        },
-        "select_all": {
-            "cn": "全选",
-            "en": "Select",
-            "ru": "Выбрать все"
-        },
-        "number": {
+        },        "number": {
             "cn": "编号",
             "en": "No",
             "ru": "№"
@@ -1803,13 +1485,7 @@ var SHpack = {
             "cn": "结束IP",
             "en": "End IP",
             "ru": "Конечный IP"
-        },
-        "mac_addr": {
-            "cn": "MAC地址",
-            "en": "MAC Address",
-            "ru": "MAC-адрес"
-        },
-        "url": {
+        },        "url": {
             "cn": "URL地址",
             "en": "URL Address",
             "ru": "URL-адрес"
@@ -1873,18 +1549,7 @@ var SHpack = {
             "cn": "保存",
             "en": "Save",
             "ru": "Сохранить"
-        },
-        "statu_bind": {
-            "cn": "已绑定",
-            "en": "binded",
-            "ru": "Привязан"
-        },
-        "statu_unbind": {
-            "cn": "未绑定",
-            "en": "unbind",
-            "ru": "Не привязан"
-        },
-        'advanced': {
+        },        'advanced': {
             'cn': '高级设置',
             'en': 'Advanced Setting',
             'ru': 'Расширенные настройки'
@@ -1933,13 +1598,7 @@ var SHpack = {
             "cn": "防Ping",
             "en": "Anti Ping",
             "ru": "Защита от Ping"
-        },
-        "scan_band": {
-            "cn": "扫描频段",
-            "en": "Scan Band",
-            "ru": "Диапазон сканирования"
-        },
-        'sta_ssid': {
+        },        'sta_ssid': {
             'cn': '上级SSID',
             'en': 'Upstream SSID',
             'ru': 'SSID вышестоящей сети'
@@ -2133,13 +1792,7 @@ var SHpack = {
             'cn': '次DNS',
             'en': 'Secondary DNS',
             'ru': 'Вторичный DNS'
-        },
-        'vpnclient': {
-            'cn': 'VPN客户端',
-            'en': 'VPN Client',
-            'ru': 'VPN-клиент'
-        },
-        'pptpclient': {
+        },        'pptpclient': {
             'cn': 'PPTP客户端',
             'en': 'PPTP Client',
             'ru': 'PPTP-клиент'
@@ -2153,23 +1806,11 @@ var SHpack = {
             'cn': 'ZeroTier',
             'en': 'ZeroTier',
             'ru': 'ZeroTier'
-        },
-        'vpnservice': {
-            'cn': 'VPN服务器',
-            'en': 'VPN Server',
-            'ru': 'VPN-сервер'
-        },
-        'pptpservice': {
+        },        'pptpservice': {
             'cn': 'PPTP服务器',
             'en': 'PPTP Server',
             'ru': 'PPTP-сервер'
-        },
-        'openvpn': {
-            'cn': 'OPENVPN',
-            'en': 'OPENVPN',
-            'ru': 'OpenVPN'
-        },
-        'openvpn_service': {
+        },        'openvpn_service': {
             'cn': 'OPENVPN服务器',
             'en': 'OpenVPN Server',
             'ru': 'OpenVPN-сервер'
@@ -2248,23 +1889,11 @@ var SHpack = {
             'cn': '服务器/IP',
             'en': 'Server /IP',
             'ru': 'Сервер/IP'
-        },
-        'probe_server': {
-            'cn': '探针服务器',
-            'en': 'Probe Server',
-            'ru': 'Сервер зондирования'
-        },
-        'OnlineUpg': {
+        },        'OnlineUpg': {
             'cn': '在线升级',
             'en': 'Install update',
             'ru': 'Установить'
-        },
-        'onlineupg': {
-            'cn': '在线升级',
-            'en': 'Online Upgrade',
-            'ru': 'Онлайн-обновление'
-        },
-        'BestNewVersion': {
+        },        'BestNewVersion': {
             'cn': '最新版本',
             'en': 'New version',
             'ru': 'Новая версия'
@@ -2319,7 +1948,7 @@ var SHpack = {
             'cn': '>',
             'en': '>',
             'ru': '>'
-        },
+        }
     },
     SHeg = {
         'auto': {
@@ -2703,13 +2332,7 @@ var SHpack = {
             'cn': '锁屏设置失败，请稍后再试',
             'en': 'Band lock setting failed, please try again later',
             'ru': 'Ошибка настройки, попробуйте позже'
-        },
-        'language': {
-            'cn': '语言设置',
-            'en': 'Language Settings',
-            'ru': 'Настройки языка'
-        },
-        'password_error': {
+        },        'password_error': {
             'cn': '密码错误',
             'en': 'Password Error',
             'ru': 'Ошибка пароля'
