@@ -3,7 +3,9 @@
 UCI_LOCK_FILE="/var/lock/uci.lck"
 rst_count=0
 in_rst_count=0
-no_sim_logged=0
+nosim_count=0
+MAX_NOSIM_RETRIES=5
+NOSIM_BACKOFF=60
 
 # Hardware boot
 enable_moudle(){
@@ -98,41 +100,26 @@ run_main()
 	done
 }
 
-# Check if SIM card is inserted
-check_sim(){
-	if [ -e /dev/ttyUSB0 ]; then
-		SIM_STATUS=$(echo -e "AT+CPIN?\r" | cat /dev/ttyUSB0 & sleep 2 && kill $! 2>/dev/null)
-		if echo "$SIM_STATUS" | grep -q "READY"; then
-			return 0
-		fi
-	fi
-	return 1
-}
-
 #Deal the 4G mode
 deal_fibocom()
 {
 	have_fibocom=`ps | grep "fibocom" | grep -v grep`
 	if [[ ! -n "$have_fibocom" ]]; then
-		# Don't restart module if no SIM card
-		if ! check_sim; then
-			if [ "$no_sim_logged" != "1" ]; then
-				echo "4G: No SIM card, waiting..." > /dev/console
-				no_sim_logged=1
-			fi
-			rst_count=0
-			in_rst_count=0
+		# After repeated failures, back off (likely no SIM)
+		if [ "$nosim_count" -ge "$MAX_NOSIM_RETRIES" ]; then
+			sleep $NOSIM_BACKOFF
 			return
 		fi
-		no_sim_logged=0
 		echo "4G mode restart module!" > /dev/console
 		in_rst_count=0
 		let rst_count++
+		let nosim_count++
 		checkMoudle
 		echo -e "AT+CFUN=15\r\n" > /dev/ttyUSB2
 		sleep 15
 	else
 		rst_count=0
+		nosim_count=0
 		module_err=`cat /tmp/fibocom/module_err`
 		card_status=`cat /tmp/fibocom/card_staus`
 		if [ x"$module_err" = x"1" ];then
