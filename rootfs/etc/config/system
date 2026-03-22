@@ -29,5 +29,5 @@ config combine_wifi combine_wifi
 	option enable 0
 
 config heart_beat 'heart_beat'
-	option hb_enable '1'
+	option hb_enable '0'
 
