@@ -82,8 +82,9 @@ for dir in dev etc/crontabs etc/easy-rsa/pki/private etc/easy-rsa/pki/reqs \
 done
 chmod 1777 "$ROOTFS_DIR/tmp"
 
-# ---- Remove macOS artifacts ----
+# ---- Remove build artifacts (restored by git) ----
 find "$ROOTFS_DIR" -name ".DS_Store" -delete 2>/dev/null
+find "$ROOTFS_DIR" -name ".gitkeep" -delete 2>/dev/null
 
 # ---- Build SquashFS ----
 log "Building SquashFS from $ROOTFS_DIR/..."
@@ -107,7 +108,6 @@ mksquashfs "$ROOTFS_DIR" "$SQUASHFS_TMP" \
     -noappend \
     -no-xattrs \
     -all-root \
-    -wildcards -e ".gitkeep" ".DS_Store" \
     -quiet
 
 KERNEL_SIZE=$(stat -f%z "$KERNEL" 2>/dev/null || stat -c%s "$KERNEL")
