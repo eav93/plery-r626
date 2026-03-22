@@ -218,6 +218,11 @@
           "urls": "dmz.html"
         },
         {
+          "id": "iplimit",
+          "name": "SHpack.iplimit",
+          "urls": "iplimit.html"
+        },
+        {
           "id": "ddos",
           "name": "SHpack.ddos",
           "urls": "ddos.html"

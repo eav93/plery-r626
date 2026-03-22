@@ -914,6 +914,11 @@ var SHpack = {
             "en": "DMZ",
             "ru": "DMZ"
         },
+        "iplimit": {
+            "cn": "IP限速",
+            "en": "IP Speed Limit",
+            "ru": "Лимит скорости"
+        },
         'previous': {
             'cn': '上一页',
             'en': 'Previous',
