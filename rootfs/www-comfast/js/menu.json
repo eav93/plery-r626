@@ -113,6 +113,11 @@
           "id": "wireguard_client",
           "name": "SHpack.wireguard_client",
           "urls": "wireguard_client.html"
+        },
+        {
+          "id": "zeroTier",
+          "name": "SHpack.zeroTier",
+          "urls": "zeroTier.html"
         }
       ]
     },
