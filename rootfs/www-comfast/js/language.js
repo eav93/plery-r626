@@ -2246,8 +2246,8 @@ var SHpack = {
         },
         'OnlineUpg': {
             'cn': '在线升级',
-            'en': 'Online Upgrade',
-            'ru': 'Онлайн-обновление'
+            'en': 'Install update',
+            'ru': 'Установить'
         },
         'onlineupg': {
             'cn': '在线升级',
@@ -2266,8 +2266,8 @@ var SHpack = {
         },
         'ManualCheck': {
             'cn': '检测更新并下载固件',
-            'en': 'Detect and download',
-            'ru': 'Проверить и скачать'
+            'en': 'Check for updates',
+            'ru': 'Проверить'
         },
         'CancelDown': {
             'cn': '取消下载',
