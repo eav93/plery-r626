@@ -82,14 +82,14 @@ for dir in dev etc/crontabs etc/easy-rsa/pki/private etc/easy-rsa/pki/reqs \
 done
 chmod 1777 "$ROOTFS_DIR/tmp"
 
-# ---- Create exclude file for mksquashfs ----
-EXCLUDE_FILE=$(mktemp /tmp/sqfs_exclude_XXXXXX)
-(cd "$ROOTFS_DIR" && find . -name ".DS_Store" -o -name ".gitkeep") > "$EXCLUDE_FILE"
+# ---- Remove build artifacts from rootfs (restored after build) ----
+find "$ROOTFS_DIR" -name ".DS_Store" -delete 2>/dev/null
+find "$ROOTFS_DIR" -name ".gitkeep" -delete 2>/dev/null
 # ---- Build SquashFS ----
 log "Building SquashFS from $ROOTFS_DIR/..."
 
 SQUASHFS_TMP=$(mktemp /tmp/rootfs_XXXXXX.squashfs)
-trap "rm -f '$SQUASHFS_TMP' '$EXCLUDE_FILE' /tmp/firmware_raw_$$.bin" EXIT
+trap "rm -f '$SQUASHFS_TMP' /tmp/firmware_raw_$$.bin; cd '$SCRIPT_DIR' && find '$ROOTFS_DIR' -type d -empty -exec touch {}/.gitkeep \;" EXIT
 
 # Check if mksquashfs supports MIPS BCJ filter
 XZ_BCJ_OPT=""
@@ -107,7 +107,6 @@ mksquashfs "$ROOTFS_DIR" "$SQUASHFS_TMP" \
     -noappend \
     -no-xattrs \
     -all-root \
-    -ef "$EXCLUDE_FILE" \
     -quiet
 
 KERNEL_SIZE=$(stat -f%z "$KERNEL" 2>/dev/null || stat -c%s "$KERNEL")
