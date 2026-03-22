@@ -3,9 +3,30 @@
 UCI_LOCK_FILE="/var/lock/uci.lck"
 rst_count=0
 in_rst_count=0
-nosim_count=0
-MAX_NOSIM_RETRIES=5
-NOSIM_BACKOFF=60
+
+# Check SIM card via AT+CPIN? command
+# Returns 0 if SIM ready, 1 if no SIM or error
+check_sim(){
+	[ -e /dev/ttyUSB0 ] || return 1
+	# Send AT command and read response with timeout
+	exec 3<>/dev/ttyUSB0
+	echo -e "AT+CPIN?\r" >&3
+	local response=""
+	local i=0
+	while [ $i -lt 10 ]; do
+		read -t 1 line <&3 2>/dev/null
+		response="$response$line"
+		if echo "$response" | grep -q "READY\|ERROR"; then
+			break
+		fi
+		i=$((i+1))
+	done
+	exec 3>&-
+	if echo "$response" | grep -q "READY"; then
+		return 0
+	fi
+	return 1
+}
 
 # Hardware boot
 enable_moudle(){
@@ -105,21 +126,20 @@ deal_fibocom()
 {
 	have_fibocom=`ps | grep "fibocom" | grep -v grep`
 	if [[ ! -n "$have_fibocom" ]]; then
-		# After repeated failures, back off (likely no SIM)
-		if [ "$nosim_count" -ge "$MAX_NOSIM_RETRIES" ]; then
-			sleep $NOSIM_BACKOFF
+		# Check SIM before restarting module
+		if ! check_sim; then
+			echo "4G: No SIM card detected, skipping" > /dev/console
+			sleep 30
 			return
 		fi
 		echo "4G mode restart module!" > /dev/console
 		in_rst_count=0
 		let rst_count++
-		let nosim_count++
 		checkMoudle
 		echo -e "AT+CFUN=15\r\n" > /dev/ttyUSB2
 		sleep 15
 	else
 		rst_count=0
-		nosim_count=0
 		module_err=`cat /tmp/fibocom/module_err`
 		card_status=`cat /tmp/fibocom/card_staus`
 		if [ x"$module_err" = x"1" ];then
