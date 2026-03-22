@@ -84,7 +84,7 @@ chmod 1777 "$ROOTFS_DIR/tmp"
 
 # ---- Create exclude file for mksquashfs ----
 EXCLUDE_FILE=$(mktemp /tmp/sqfs_exclude_XXXXXX)
-find "$ROOTFS_DIR" -name ".DS_Store" -o -name ".gitkeep" > "$EXCLUDE_FILE"
+(cd "$ROOTFS_DIR" && find . -name ".DS_Store" -o -name ".gitkeep") > "$EXCLUDE_FILE"
 # ---- Build SquashFS ----
 log "Building SquashFS from $ROOTFS_DIR/..."
 

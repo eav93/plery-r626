@@ -31,6 +31,54 @@ jobs:
           chmod +x build.sh
           ./build.sh "${{ env.FIRMWARE_VERSION }}.bin"
 
+      - name: Verify firmware
+        run: |
+          FW=dist/${{ env.FIRMWARE_VERSION }}.bin
+          SQFS_OFF=1435702
+          KERNEL_MD5_EXPECT="0b76b2b44cd46a4a93f1ac20941d57ee"
+          ERRORS=0
+
+          echo "=== Kernel ==="
+          K_MD5=$(dd if="$FW" bs=1 count=$SQFS_OFF 2>/dev/null | md5sum | awk '{print $1}')
+          if [ "$K_MD5" = "$KERNEL_MD5_EXPECT" ]; then
+            echo "Kernel V2.0.1.4 ✓"
+          else
+            echo "::error::Kernel mismatch! Got $K_MD5, expected $KERNEL_MD5_EXPECT"
+            ERRORS=$((ERRORS+1))
+          fi
+
+          echo "=== SquashFS ==="
+          dd if="$FW" bs=1 skip=$SQFS_OFF of=/tmp/rootfs.squashfs 2>/dev/null
+          mkdir -p /tmp/rootfs
+          unsquashfs -d /tmp/rootfs -f /tmp/rootfs.squashfs
+
+          echo "=== Critical directories ==="
+          for d in dev proc sys tmp overlay root mnt; do
+            if [ ! -d "/tmp/rootfs/$d" ]; then
+              echo "::error::Missing directory: /$d"
+              ERRORS=$((ERRORS+1))
+            fi
+          done
+          [ $ERRORS -eq 0 ] && echo "All directories present ✓"
+
+          echo "=== Artifacts ==="
+          GK=$(find /tmp/rootfs -name '.gitkeep' | wc -l)
+          DS=$(find /tmp/rootfs -name '.DS_Store' | wc -l)
+          echo ".gitkeep: $GK  .DS_Store: $DS"
+          if [ "$GK" -gt 0 ] || [ "$DS" -gt 0 ]; then
+            echo "::warning::Build artifacts found in image"
+          fi
+
+          echo "=== fwtool metadata ==="
+          MAGIC=$(xxd -l 4 -s -8 "$FW" | awk '{print $2$3}')
+          echo "Trailer magic: $MAGIC"
+
+          if [ $ERRORS -gt 0 ]; then
+            echo "::error::Firmware verification failed with $ERRORS errors"
+            exit 1
+          fi
+          echo "Firmware verification passed ✓"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
