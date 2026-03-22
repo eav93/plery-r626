@@ -73,6 +73,18 @@ fi
 echo -n "$FIRMWARE_VERSION" > "$VERSION_FILE"
 log "Firmware version: $FIRMWARE_VERSION"
 
+# ---- Ensure required directories exist (git doesn't track empty dirs) ----
+for dir in dev etc/crontabs etc/easy-rsa/pki/private etc/easy-rsa/pki/reqs \
+           etc/hotplug.d/ntp etc/openvpn/ccd etc/ssl/certs etc/ssl/private \
+           lib/firmware mnt overlay proc root sys tmp usr/lib/opkg/lists \
+           www www-comfast/upload; do
+    mkdir -p "$ROOTFS_DIR/$dir"
+done
+chmod 1777 "$ROOTFS_DIR/tmp"
+
+# ---- Remove macOS artifacts ----
+find "$ROOTFS_DIR" -name ".DS_Store" -delete 2>/dev/null
+
 # ---- Build SquashFS ----
 log "Building SquashFS from $ROOTFS_DIR/..."
 
@@ -81,6 +93,7 @@ trap "rm -f '$SQUASHFS_TMP' /tmp/firmware_raw_$$.bin" EXIT
 
 mksquashfs "$ROOTFS_DIR" "$SQUASHFS_TMP" \
     -comp xz \
+    -Xdict-size 100% \
     -b 262144 \
     -nopad \
     -noappend \
