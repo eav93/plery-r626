@@ -45,6 +45,9 @@ define(function (require, exports) {
 
     function initOtaShow(data) {
         //d("#UpgInfo").show();
+        if (!data.upgrade) data.upgrade = {};
+        if (!data.fota_status) data.fota_status = {};
+        if (!data.upgrage_status) data.upgrage_status = {};
         if (data.upgrade.switch == "1") {//当在线升级为绿色ON时==1
             d("#OnlineSwitch").attr("checked", true);
             d("#ManualDown").hide();

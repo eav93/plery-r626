@@ -256,8 +256,12 @@ a {
     content: "\e607"
 }
 
-.subMenu .item-has-children > a span {
-    font-family: inherit;
+.subMenu .item-has-children > a {
+    font-family: -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", Arial, "Microsoft YaHei", sans-serif !important;
+}
+
+.subMenu .item-has-children > a:after {
+    font-family: "iconfont" !important;
 }
 
 .subMenu .sub-menu {
@@ -265,12 +269,11 @@ a {
 }
 
 .subMenu .sub-menu a {
-    padding-left: 48px;
+    padding-left: 36px;
 }
 
 .subMenu .sub-menu .sub-menu a {
-    padding-left: 64px;
-    font-size: 13px;
+    padding-left: 52px;
 }
 
 /*subMenu end*/
