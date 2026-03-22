@@ -16,16 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Build mksquashfs with MIPS BCJ support
-        run: |
-          sudo apt-get update && sudo apt-get install -y zlib1g-dev liblzma-dev liblz4-dev libzstd-dev liblzo2-dev
-          git clone --depth 1 https://github.com/plougher/squashfs-tools.git /tmp/squashfs-tools
-          cd /tmp/squashfs-tools/squashfs-tools
-          # Add MIPS BCJ filter patch
-          sed -i 's/{"arm", LZMA_FILTER_ARMTHUMB}/{"arm", LZMA_FILTER_ARMTHUMB},\n\t{"mips", LZMA_FILTER_MIPSEL}/' xz_wrapper.c
-          sed -i 's/{"arm", LZMA_FILTER_ARMTHUMB}/{"arm", LZMA_FILTER_ARMTHUMB},\n\t{"mips", LZMA_FILTER_MIPSEL}/' unsquashfs_xz.c 2>/dev/null || true
-          make -j$(nproc)
-          sudo cp mksquashfs unsquashfs /usr/local/bin/
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y squashfs-tools
 
       - name: Set firmware version
         run: |
