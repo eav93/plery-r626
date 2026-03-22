@@ -92,7 +92,7 @@ var SHpack = {
         'led_swich': {
             'cn': 'LED灯开关',
             'en': 'LED Lights',
-            'ru': 'Светодиодные индикаторы'
+            'ru': 'LED-индикаторы'
         },
         'submit': {
             'cn': '设置',
@@ -102,7 +102,7 @@ var SHpack = {
         'band': {
             'cn': '频段设置',
             'en': 'Band Setting',
-            'ru': 'LTE Band'
+            'ru': 'Диапазон LTE'
         },
         'ttl': {
             'cn': 'TTL设置',
@@ -192,7 +192,7 @@ var SHpack = {
         'wireguard_shared': {
             'cn': '预共享密钥',
             'en': 'Pre-shared key',
-            'ru': 'Pre-shared key'
+            'ru': 'Общий ключ'
         },
         'wireguard_allowip': {
             'cn': '允许的IP',
@@ -292,7 +292,7 @@ var SHpack = {
         'ipLimitUpload': {
             'cn': '上行速率(KB/s)',
             'en': 'Upload Rate(KB/s)',
-            'ru': 'Скорость загрузки (КБ/с)'
+            'ru': 'Скорость отдачи (КБ/с)'
         },
         'ipLimitDownload': {
             'cn': '下行速率(KB/s)',
@@ -302,7 +302,7 @@ var SHpack = {
         'ipLimitUploadStor': {
             'cn': '上行速率',
             'en': 'Upload Rate',
-            'ru': 'Скорость загрузки'
+            'ru': 'Скорость отдачи'
         },
         'ipLimitDownloadStor': {
             'cn': '下行速率',
@@ -957,7 +957,7 @@ var SHpack = {
         'global_title': {
             'cn': '4G LTE ROUTER',
             'en': '4G LTE ROUTER',
-            'ru': '4G LTE РОУТЕР'
+            'ru': '4G LTE ROUTER'
         },
         'copyright': {
             "cn": "深圳市普锐网络科技有限公司",
@@ -972,7 +972,7 @@ var SHpack = {
         'tip': {
             'cn': '配置正在生效中，请稍等',
             'en': 'Saving settings, please wait.',
-            'ru': 'Сохранение настроек, пожалуйста подождите.'
+            'ru': 'Сохранение настроек, пожалуйста, подождите.'
         },
         'logout': {
             'cn': '退出',
@@ -1152,7 +1152,7 @@ var SHpack = {
         'wipe_data': {
             'cn': '恢复出厂设置',
             'en': 'Factory Reset',
-            'ru': 'Сброс до заводских настроек'
+            'ru': 'Заводской сброс'
         },
         'Import': {
             'cn': '导入配置',
@@ -1267,7 +1267,7 @@ var SHpack = {
         'total': {
             'cn': '流量监控',
             'en': 'Data Throughput (bytes)',
-            'ru': 'Пропускная способность (байт)'
+            'ru': 'Мониторинг трафика (байт)'
         },
         'access': {
             'cn': '获取方式',
@@ -1377,7 +1377,7 @@ var SHpack = {
         "lock_band": {
             "cn": "锁定频段",
             "en": "Locked frequency band",
-            "ru": "Заблокированный диапазон"
+            "ru": "Залоченный диапазон"
         },
         'bandwidth': {
             'cn': '带宽',
@@ -1617,7 +1617,7 @@ var SHpack = {
         'wifi_set': {
             'cn': '无线设置',
             'en': 'Wireless Settings',
-            'ru': 'Настройки беспроводной сети'
+            'ru': 'Настройки Wi-Fi'
         },
         'finish': {
             'cn': '完成',
@@ -1992,7 +1992,7 @@ var SHpack = {
         'unit': {
             'cn': '单位',
             'en': 'unit',
-            'ru': ''
+            'ru': 'Ед.'
         },
         'totalup': {
             'cn': '总上行',
@@ -2252,7 +2252,7 @@ var SHpack = {
         'onlineupg': {
             'cn': '在线升级',
             'en': 'Online Upgrade',
-            'ru': 'Автообновление'
+            'ru': 'Онлайн-обновление'
         },
         'BestNewVersion': {
             'cn': '最新版本',
@@ -2712,7 +2712,7 @@ var SHpack = {
         'setting_setting': {
             'cn': '确定导入配置',
             'en': 'Confirm configuration import?',
-            'ru': 'Подтвердите импорт конфигурации'
+            'ru': 'Подтвердить импорт конфигурации?'
         },
         'file_null': {
             'cn': '文件为空',
