@@ -887,6 +887,36 @@ var SHpack = {
             "en": "IP Speed Limit",
             "ru": "Лимит скорости"
         },
+        'upnp': {
+            'cn': 'UPnP',
+            'en': 'UPnP',
+            'ru': 'UPnP'
+        },
+        'upnpswitch': {
+            'cn': 'UPnP开关',
+            'en': 'UPnP',
+            'ru': 'UPnP'
+        },
+        'lanaddr': {
+            'cn': '内网地址',
+            'en': 'LAN Address',
+            'ru': 'LAN адрес'
+        },
+        'wanport': {
+            'cn': '外部端口',
+            'en': 'WAN Port',
+            'ru': 'WAN порт'
+        },
+        'lanport': {
+            'cn': '内部端口',
+            'en': 'LAN Port',
+            'ru': 'LAN порт'
+        },
+        'desc': {
+            'cn': '描述',
+            'en': 'Description',
+            'ru': 'Описание'
+        },
         'previous': {
             'cn': '上一页',
             'en': 'Previous',

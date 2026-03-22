@@ -223,6 +223,11 @@
           "urls": "iplimit.html"
         },
         {
+          "id": "upnp",
+          "name": "SHpack.upnp",
+          "urls": "upnp.html"
+        },
+        {
           "id": "ddos",
           "name": "SHpack.ddos",
           "urls": "ddos.html"
