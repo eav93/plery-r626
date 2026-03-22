@@ -51,6 +51,11 @@
           "urls": "ttl.html"
         },
         {
+          "id": "ddns",
+          "name": "SHpack.ddns",
+          "urls": "ddn_s.html"
+        },
+        {
           "id": "vpnclient",
           "name": "SHpack.vpnclient",
           "icon": "",

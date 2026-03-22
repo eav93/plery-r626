@@ -4,10 +4,15 @@ var SHpack = {
         'en': 'DDNS',
         'ru': 'DDNS'
     },
+    'ddns': {
+        'cn': 'DDNS',
+        'en': 'DDNS',
+        'ru': 'DDNS'
+    },
     'ddnsswitch': {
         'cn': 'DDNS开关',
         'en': 'DDNS switch',
-        'ru': 'Переключатель DDNS'
+        'ru': 'DDNS'
     },
     'provider': {
         'cn': '服务提供商',
