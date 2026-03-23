@@ -37,8 +37,8 @@ define(function (require, exports) {
 
         // Load installed firmware version
         f.getFirmwareInfo(function (data) {
-            if (data && data.errCode == 0 && data.firmware_info) {
-                d('#InstalledVersion').html(data.firmware_info.version || '-');
+            if (data && data.errCode == 0 && data.firmware) {
+                d('#InstalledVersion').html(data.firmware.version || '-');
             }
         });
 
