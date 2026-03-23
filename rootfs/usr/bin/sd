@@ -1,0 +1,6 @@
+#!/bin/sh
+# Safe sed delete (short alias)
+P=$(echo "$1" | tr -cd 'a-zA-Z0-9._:/-')
+F="$2"
+[ -z "$P" -o -z "$F" -o ! -f "$F" ] && exit 1
+sed -i "/${P}/d" "$F" 2>/dev/null

@@ -1,0 +1,5 @@
+#!/bin/sh
+# Safe ping (ping_config destination)
+T=$(echo "$1" | tr -cd 'a-zA-Z0-9._-')
+[ -z "$T" ] && exit 1
+ping "$T" -c 3

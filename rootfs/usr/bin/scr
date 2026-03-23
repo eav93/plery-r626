@@ -1,0 +1,9 @@
+#!/bin/sh
+# Safe cron entry add
+M=$(echo "$1" | tr -cd '0-9*/')
+H=$(echo "$2" | tr -cd '0-9*/')
+D=$(echo "$3" | tr -cd '0-9*/')
+CMD=$(echo "$4" | tr -cd 'a-zA-Z0-9 /_.-')
+FILE=$(echo "$5" | tr -cd 'a-zA-Z0-9/_.-')
+[ -z "$CMD" -o -z "$FILE" ] && exit 1
+echo "$M $H * * $D $CMD" >> "$FILE"

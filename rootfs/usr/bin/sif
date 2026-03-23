@@ -1,0 +1,6 @@
+#!/bin/sh
+# Safe ifdown/ifup
+I=$(echo "$1" | tr -cd 'a-zA-Z0-9._-')
+J=$(echo "$2" | tr -cd 'a-zA-Z0-9._-')
+[ -z "$I" ] && exit 1
+ifdown "$I"; ifup "${J:-$I}"
