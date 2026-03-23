@@ -97,8 +97,10 @@ define(function (require, exports) {
         g.shconfirm(nowLang, SHpack.upgrade_tip[nowLang], 'confirm', {
             onOk: function () {
                 g.loading_box(SHpack['tip'][nowLang]);
+                var keepSettings = d('#keep_settings').is(':checked');
+                var section = keepSettings ? 'system_upgrade_keep' : 'system_upgrade';
                 d("#firmware_upg").upload({
-                    url: '/cgi-bin/mbox-config?method=SET&section=system_upgrade_keep',
+                    url: '/cgi-bin/mbox-config?method=SET&section=' + section,
                     onComplate: function (data) {
                         if (data && data.errCode != 0) {
                             g.animationWidth(0, function () {

@@ -1139,6 +1139,11 @@ var SHpack = {
             'en': 'Choose File',
             'ru': 'Выбрать файл'
         },
+        'keep_settings': {
+            'cn': '保留设置',
+            'en': 'Keep Settings',
+            'ru': 'Сохранить настройки'
+        },
         'old_passwd': {
             'cn': '旧密码',
             'en': 'Old Password',
