@@ -1,0 +1,17 @@
+#!/bin/sh
+# Safe ping wrapper - prevents command injection
+# Usage: sping <ping_binary> <target> <interface>
+
+PING="$1"
+TARGET="$2"
+IFACE="$3"
+OUTFILE="/tmp/vpn_ping_response"
+
+# Sanitize: only allow IP addresses, hostnames (alphanumeric, dots, dashes)
+TARGET=$(echo "$TARGET" | tr -cd 'a-zA-Z0-9._-')
+IFACE=$(echo "$IFACE" | tr -cd 'a-zA-Z0-9._-')
+
+[ -z "$TARGET" ] && exit 1
+[ -z "$PING" ] && PING="/bin/ping"
+
+$PING $TARGET -I "$IFACE" -c 1 -w 1 > "$OUTFILE" 2>&1

@@ -1,0 +1,12 @@
+#!/bin/sh
+# Safe sed delete wrapper - prevents command injection
+# Usage: sdel <pattern> <file>
+
+PATTERN=$(echo "$1" | tr -cd 'a-zA-Z0-9._:/-')
+FILE="$2"
+
+[ -z "$PATTERN" ] && exit 1
+[ -z "$FILE" ] && exit 1
+[ ! -f "$FILE" ] && exit 1
+
+sed -i "/${PATTERN}/d" "$FILE" 2>/dev/null
