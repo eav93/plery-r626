@@ -65,6 +65,13 @@ check_update() {
 
 case "$1" in
     -c|-d)
+        # Run in background so webmgnt (get_cmd_result) returns immediately
+        # without blocking nginx → avoids 502 timeout.
+        # Status is written to $FOTA_DIR/fota_status and read by next poll.
+        check_update &
+        ;;
+    -w)
+        # Foreground mode for init.d daemon (waits for completion)
         check_update
         ;;
     *)
