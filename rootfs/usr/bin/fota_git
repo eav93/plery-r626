@@ -115,8 +115,10 @@ check_update() {
 
 case "$1" in
     -c|-d)
-        # Background: webmgnt вызывает синхронно, форк чтобы не блокировать nginx
-        check_update &
+        # Background: webmgnt calls get_cmd_result (popen) which reads stdout until EOF.
+        # Redirect stdout/stderr to /dev/null so the background process does not
+        # inherit the pipe write-end — otherwise popen blocks until download finishes.
+        check_update >/dev/null 2>&1 &
         ;;
     -w)
         # Foreground: для init.d демона
