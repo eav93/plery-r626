@@ -30,7 +30,7 @@ FWTOOL_DIR="fwtool"
 FWTOOL="$FWTOOL_DIR/fwtool"
 FWTOOL_REPO="https://git.openwrt.org/project/fwtool.git"
 FWTOOL_COMMIT="04cd252e4e9394ffacd51f56f1f124abc534f715"
-BASE_VERSION="CF-PLERY-R626-eav93"
+BASE_VERSION="CF-Plery-R626-eav93"
 # Note: release tag format must match version file format for OTA version comparison
 
 # ---- Colors ----
