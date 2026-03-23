@@ -15,9 +15,9 @@ wan_port_init() {
 
     json_select switch
 	json_select switch0
-	json_select ports
+	json_select ports 2>/dev/null || return
 	index=1
-	while json_select $index;do
+	while json_select $index 2>/dev/null; do
 		index=`expr $index + 1`
 		json_get_var role role
 		[ "$role" != "wan" ] && {
@@ -106,7 +106,7 @@ hotplug_portled_trigger() {
 
 get_lan_stat_fromfile() {
     # lan port
-    for portfile in $(ls ${PORT_STATUS_DIR}port*)
+    for portfile in $(ls ${PORT_STATUS_DIR}port* 2>/dev/null)
     do
         # skip wan port
         [ "${portfile}" != "${PORT_STATUS_DIR}port${wan_port}" ] && {
@@ -132,7 +132,7 @@ get_wan_port() {
         return
     }
     wan_port=$(wan_port_init)
-    [ "$wan_port" -ge "0" ] && {
+    [ -n "$wan_port" ] && [ "$wan_port" -ge "0" ] && {
         echo -n $wan_port >${PORT_STATUS_DIR}wan
     }
 }
