@@ -35,6 +35,13 @@ define(function (require, exports) {
         martop = (d(window).height() - d('.set_seat').height() - 180) / 2;
         d('.set_seat').css({'top': martop + 'px'});
 
+        // Load installed firmware version
+        f.getFirmwareInfo(function (data) {
+            if (data && data.errCode == 0 && data.firmware_info) {
+                d('#InstalledVersion').html(data.firmware_info.version || '-');
+            }
+        });
+
         f.getMConfig('ota_status', '', function (data) {
             if (data && data.errCode == 0) {
                 initOtaShow(data);
@@ -79,18 +86,23 @@ define(function (require, exports) {
         if (!data.upgrage_status) data.upgrage_status = {};
         var fota = data.fota_status;
         var ver = fota.fota_version || '';
-        d('#CurrentVersion').html(ver || '-');
-        //5 检测已经是最新版本 4 网络错误 3 检测到新版本未下载 2 检测到新版本正在下载  1 已经下载好最新版本  0 常态
+        // Show installed version (from hwrev/version file)
+        d('#InstalledVersion').html(data.firmware_version || ver || '-');
+        // New version - only show row when update available
+        d('#CurrentVersion').html('');
+        d('#NewVersionRow').hide();
+        // 5=latest version, 4=network error, 3=new version found (not downloaded), 2=downloading, 1=downloaded ready, 0=idle
         if (fota.fota_status == 5 && ver) {
             d('#UpgTip').html(SHpack.AlreadyNewVersion[nowLang]);
-            g.shconfirm(nowLang, SHtips.version[nowLang], "success");
         } else if (fota.fota_status == 2 || fota.fota_status == 3) {
             d('#UpgTip').html(SHpack.CheckNewVersion[nowLang]);
+            if (ver) { d('#CurrentVersion').html(ver); d('#NewVersionRow').show(); }
             d("#ManualDown").hide();
             if (data.upgrade.switch != "1") d("#ClearDown").show();
             showProgress(data);
         } else if (fota.fota_status == 1) {
             d('#UpgTip').html(SHpack.NewVersionOK[nowLang]);
+            if (ver) { d('#CurrentVersion').html(ver); d('#NewVersionRow').show(); }
             d("#ManualDown").hide();
             d("#ClearDown").hide();
             d("#Update").show();

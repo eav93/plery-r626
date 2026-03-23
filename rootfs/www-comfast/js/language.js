@@ -1989,10 +1989,15 @@ var SHpack = {
             'cn': '在线升级',
             'en': 'Install update',
             'ru': 'Установить'
-        },        'BestNewVersion': {
+        },        'current_ver': {
+            'cn': '当前版本',
+            'en': 'Current version',
+            'ru': 'Текущая версия'
+        },
+        'BestNewVersion': {
             'cn': '最新版本',
             'en': 'New version',
-            'ru': 'Новая версия'
+            'ru': 'Доступно обновление'
         },
         'CheckVersion': {
             'cn': '检查版本...',
