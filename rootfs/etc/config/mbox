@@ -1,0 +1,6 @@
+config mbox management
+	option username 'admin'
+	option password 'admin'
+
+config mbox workmode
+	option workmode 'router'
