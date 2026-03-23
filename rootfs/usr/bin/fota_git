@@ -11,6 +11,23 @@ API_URL="https://api.github.com/repos/$REPO/releases/latest"
 
 mkdir -p "$FOTA_DIR"
 
+https_get() {
+    local url="$1"
+    local host="${url#https://}"
+    host="${host%%/*}"
+    local path="${url#https://$host}"
+    printf "GET %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: fota_git/1.0\r\nConnection: close\r\n\r\n" \
+        "$path" "$host" | \
+        openssl s_client -quiet -connect "${host}:443" 2>/dev/null | \
+        sed '1,/^\r\{0,1\}$/d'
+}
+
+fetch_url() {
+    uclient-fetch -q -O - "$1" 2>/dev/null || \
+    wget -q -O - "$1" 2>/dev/null || \
+    https_get "$1"
+}
+
 get_current_version() {
     cat "$VERSION_FILE" 2>/dev/null || echo "unknown"
 }
@@ -19,7 +36,7 @@ check_update() {
     local current_version=$(get_current_version)
 
     # Fetch latest release info
-    local release_json=$(uclient-fetch -q -O - "$API_URL" 2>/dev/null || wget -q -O - "$API_URL" 2>/dev/null)
+    local release_json=$(fetch_url "$API_URL")
     if [ -z "$release_json" ]; then
         echo "5" > "$FOTA_DIR/fota_status"
         return 1
@@ -47,7 +64,7 @@ check_update() {
     echo "$asset_size" > "$FOTA_DIR/total_length"
     echo "3" > "$FOTA_DIR/fota_status"
 
-    uclient-fetch -q -O "$FOTA_DIR/firmware.bin" "$asset_url" 2>/dev/null || wget -q -O "$FOTA_DIR/firmware.bin" "$asset_url" 2>/dev/null
+    fetch_url "$asset_url" > "$FOTA_DIR/firmware.bin"
     if [ $? -ne 0 ] || [ ! -f "$FOTA_DIR/firmware.bin" ]; then
         echo "4" > "$FOTA_DIR/fota_status"
         return 1
