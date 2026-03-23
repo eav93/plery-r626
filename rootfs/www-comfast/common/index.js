@@ -235,9 +235,8 @@ define(function (require, exports) {
 
         d('#mac').html(firmware_info.macaddr.toUpperCase());
         if (firmware_info) {
-            deviceReg = new RegExp(/^CF-(.+?)-eav/);
-            var match = deviceReg.exec(firmware_info.version);
-            deviceName = match ? match[1] : ((/(.+)-V(.+)/).exec(firmware_info.version) || ['','',firmware_info.version])[1].split('-')[1];
+            var parts = firmware_info.version.replace(/^CF-/, '').split('-');
+            deviceName = parts.length >= 2 ? parts[0] + '-' + parts[1] : firmware_info.version;
             d("#deviceinfo").text(deviceName);
             d("#version").text(firmware_info.version);
         }
