@@ -3,3 +3,4 @@ fwtool/
 *.squashfs
 .DS_Store
 .idea/
+rootfs/etc/defconfig/cf-plery/version
