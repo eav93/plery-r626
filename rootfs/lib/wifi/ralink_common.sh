@@ -111,22 +111,22 @@ chk8021x() {
         if [ "1" == $x8021x ]; then
             if [ "$prefix" == "ra" ]; then
                 echo "killall 8021xd" >>/tmp/802.$device.log
-                killall 8021xd
+                killall 8021xd 2>/dev/null
                 echo "/bin/8021xd -d 9" >>/tmp/802.$device.log
                 8021xd -d 9 >> /tmp/802.$device.log 2>&1
             else # $prefixa == rai
                 echo "killall 8021xdi" >>/tmp/802.$device.log
-                killall 8021xdi
+                killall 8021xdi 2>/dev/null
                 echo "/bin/8021xdi -d 9" >>/tmp/802.$device.log
                 8021xdi -d 9 >> /tmp/802.$device.log 2>&1
             fi
         else
             if [ "$prefix" == "ra" ]; then
                 echo "killall 8021xd" >>/tmp/802.$device.log
-                killall 8021xd
+                killall 8021xd 2>/dev/null
             else # $prefixa == rai
                 echo "killall 8021xdi" >>/tmp/802.$device.log
-                killall 8021xdi
+                killall 8021xdi 2>/dev/null
             fi
         fi
 }

@@ -1,9 +1,2 @@
 #!/bin/sh
-
-if [ -e /tmp/smb.flag ];
-then
-  smp.sh storage
-else
-  smp.sh wifi
-fi
-
+# smp.sh is not available on MT7628 (single-core MIPS), nothing to do
