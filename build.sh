@@ -117,7 +117,7 @@ log "Kernel:   $KERNEL_SIZE bytes"
 log "SquashFS: $SQUASHFS_SIZE bytes"
 
 # ---- Pad to flash boundary ----
-FLASH_BOUNDARY=$((0xDB0000))
+FLASH_BOUNDARY=$((0x8A0000))
 
 if [ "$BODY_SIZE" -gt "$FLASH_BOUNDARY" ]; then
     err "Firmware too large! Body ($BODY_SIZE) exceeds flash boundary ($FLASH_BOUNDARY)"
