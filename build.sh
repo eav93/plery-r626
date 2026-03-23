@@ -30,8 +30,7 @@ FWTOOL_DIR="fwtool"
 FWTOOL="$FWTOOL_DIR/fwtool"
 FWTOOL_REPO="https://git.openwrt.org/project/fwtool.git"
 FWTOOL_COMMIT="04cd252e4e9394ffacd51f56f1f124abc534f715"
-BASE_VERSION="CF-Plery-R626-eav93"
-# Note: release tag format must match version file format for OTA version comparison
+BASE_VERSION="CF-Plery-R626-eav93"  # fallback для локальной сборки без CI
 
 # ---- Colors ----
 RED='\033[0;31m'
@@ -64,11 +63,13 @@ fi
 # ---- Write firmware version ----
 VERSION_FILE="$ROOTFS_DIR/etc/defconfig/cf-plery/version"
 
-if command -v git >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1; then
-    COMMIT_SHORT=$(git rev-parse --short HEAD 2>/dev/null || echo "dev")
-    FIRMWARE_VERSION="${BASE_VERSION}-${COMMIT_SHORT}"
-else
-    FIRMWARE_VERSION="${BASE_VERSION}-dev"
+if [ -z "$FIRMWARE_VERSION" ]; then
+    if command -v git >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1; then
+        COMMIT_SHORT=$(git rev-parse --short HEAD 2>/dev/null || echo "dev")
+        FIRMWARE_VERSION="${BASE_VERSION}-${COMMIT_SHORT}"
+    else
+        FIRMWARE_VERSION="${BASE_VERSION}-dev"
+    fi
 fi
 
 echo -n "$FIRMWARE_VERSION" > "$VERSION_FILE"
