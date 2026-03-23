@@ -50,9 +50,9 @@ https_get() {
         fi
 
         if [ -n "$out_file" ]; then
-            dd if="$tmp" of="$out_file" bs=1 skip="$skip" 2>/dev/null
+            tail -c +$((skip + 1)) "$tmp" > "$out_file"
         else
-            dd if="$tmp" bs=1 skip="$skip" 2>/dev/null
+            tail -c +$((skip + 1)) "$tmp"
         fi
         rm -f "$tmp"
         return 0
