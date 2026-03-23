@@ -41,6 +41,10 @@ platform_do_upgrade() {
 	esac
 }
 
+platform_copy_config() {
+	jffs2_copy_config
+}
+
 disable_watchdog() {
 	killall watchdog
 	( ps | grep -v 'grep' | grep '/dev/watchdog' ) && {
