@@ -1,0 +1,8 @@
+#!/bin/sh
+# Safe remove wrapper - only allows filenames in specific directory
+TYPE="$1"
+NAME=$(echo "$2" | tr -cd 'a-zA-Z0-9._-')
+[ -z "$NAME" ] && exit 1
+case "$TYPE" in
+    img) rm -f "/etc/wifilith/www/img/$NAME" ;;
+esac
