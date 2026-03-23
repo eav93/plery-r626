@@ -1101,13 +1101,18 @@ var SHpack = {
             'ru': 'Экспорт конфигурации'
         },        'heart_beat_sw': {
             'cn': '联网检测',
-            'en': 'Internet Detection',
-            'ru': 'Проверка подключения'
+            'en': 'COMFAST Telemetry',
+            'ru': 'Телеметрия COMFAST'
         },
         'hb_switch': {
             'cn': '联网检测',
-            'en': 'Internet Detection',
-            'ru': 'Проверка подключения'
+            'en': 'COMFAST Telemetry',
+            'ru': 'Телеметрия COMFAST'
+        },
+        'hb_desc': {
+            'cn': '发送设备信息（型号、版本、IP、SSID、运行时间）到 comfast002.oicp.net:58085',
+            'en': 'Sends device info (model, version, IP, SSID, uptime) to comfast002.oicp.net:58085',
+            'ru': 'Отправляет данные (модель, версию, IP, SSID, uptime) на comfast002.oicp.net:58085'
         },
         'upgrade': {
             'cn': '固件更新',
