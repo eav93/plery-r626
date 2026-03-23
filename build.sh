@@ -30,7 +30,6 @@ FWTOOL_DIR="fwtool"
 FWTOOL="$FWTOOL_DIR/fwtool"
 FWTOOL_REPO="https://git.openwrt.org/project/fwtool.git"
 FWTOOL_COMMIT="04cd252e4e9394ffacd51f56f1f124abc534f715"
-BASE_VERSION="CF-Plery-R626-eav93"  # fallback для локальной сборки без CI
 
 # ---- Colors ----
 RED='\033[0;31m'
@@ -62,6 +61,7 @@ fi
 
 # ---- Write firmware version ----
 VERSION_FILE="$ROOTFS_DIR/etc/defconfig/cf-plery/version"
+BASE_VERSION="CF-Plery-R626-eav93"
 
 if [ -z "$FIRMWARE_VERSION" ]; then
     if command -v git >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1; then
