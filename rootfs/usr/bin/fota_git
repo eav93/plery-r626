@@ -11,21 +11,63 @@ API_URL="https://api.github.com/repos/$REPO/releases/latest"
 
 mkdir -p "$FOTA_DIR"
 
+# Fetch URL over HTTPS via openssl s_client, following up to 3 redirects.
+# $1 = URL, $2 = output file (binary-safe via dd); if omitted prints to stdout.
 https_get() {
     local url="$1"
-    local host="${url#https://}"
-    host="${host%%/*}"
-    local path="${url#https://$host}"
-    printf "GET %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: fota_git/1.0\r\nConnection: close\r\n\r\n" \
-        "$path" "$host" | \
-        openssl s_client -quiet -connect "${host}:443" 2>/dev/null | \
-        sed '1,/^\r\{0,1\}$/d'
+    local out_file="$2"
+    local redirect=0
+
+    while [ $redirect -lt 3 ]; do
+        local host="${url#https://}"
+        host="${host%%/*}"
+        local path="${url#https://$host}"
+        [ -z "$path" ] && path="/"
+
+        local tmp=$(mktemp)
+        printf "GET %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: fota_git/1.0\r\nConnection: close\r\n\r\n" \
+            "$path" "$host" | \
+            openssl s_client -quiet -connect "${host}:443" 2>/dev/null > "$tmp"
+
+        local status=$(head -1 "$tmp" | grep -o "[0-9][0-9][0-9]" | head -1)
+
+        if [ "$status" = "301" ] || [ "$status" = "302" ] || \
+           [ "$status" = "303" ] || [ "$status" = "307" ] || [ "$status" = "308" ]; then
+            url=$(grep -i "^[Ll]ocation:" "$tmp" | head -1 | tr -d '\r\n' | sed 's/^[Ll]ocation: *//')
+            rm -f "$tmp"
+            redirect=$((redirect + 1))
+            continue
+        fi
+
+        # Find header/body boundary (binary-safe: byte offset of \r\n\r\n)
+        local hdr_end
+        hdr_end=$(grep -oba $'\r\n\r\n' "$tmp" 2>/dev/null | head -1 | cut -d: -f1)
+        if [ -z "$hdr_end" ]; then
+            hdr_end=$(grep -oba $'\n\n' "$tmp" 2>/dev/null | head -1 | cut -d: -f1)
+            local skip=$((hdr_end + 2))
+        else
+            local skip=$((hdr_end + 4))
+        fi
+
+        if [ -n "$out_file" ]; then
+            dd if="$tmp" of="$out_file" bs=1 skip="$skip" 2>/dev/null
+        else
+            dd if="$tmp" bs=1 skip="$skip" 2>/dev/null
+        fi
+        rm -f "$tmp"
+        return 0
+    done
+
+    rm -f "$tmp" 2>/dev/null
+    return 1
 }
 
-fetch_url() {
-    uclient-fetch -q -O - "$1" 2>/dev/null || \
-    wget -q -O - "$1" 2>/dev/null || \
-    https_get "$1"
+json_get() {
+    echo "$1" | grep -o "\"$2\":\"[^\"]*\"" | head -1 | sed "s/\"$2\":\"//;s/\"$//"
+}
+
+json_get_num() {
+    echo "$1" | grep -o "\"$2\":[0-9]*" | head -1 | sed "s/\"$2\"://"
 }
 
 get_current_version() {
@@ -35,24 +77,21 @@ get_current_version() {
 check_update() {
     local current_version=$(get_current_version)
 
-    # Fetch latest release info
-    local release_json=$(fetch_url "$API_URL")
+    local release_json=$(https_get "$API_URL")
     if [ -z "$release_json" ]; then
         echo "5" > "$FOTA_DIR/fota_status"
         return 1
     fi
 
-    # Parse release tag and asset URL
-    local latest_tag=$(echo "$release_json" | jsonfilter -e '@.tag_name' 2>/dev/null)
-    local asset_url=$(echo "$release_json" | jsonfilter -e '@.assets[0].browser_download_url' 2>/dev/null)
-    local asset_size=$(echo "$release_json" | jsonfilter -e '@.assets[0].size' 2>/dev/null)
+    local latest_tag=$(json_get "$release_json" "tag_name")
+    local asset_url=$(json_get "$release_json" "browser_download_url")
+    local asset_size=$(json_get_num "$release_json" "size")
 
     if [ -z "$latest_tag" ] || [ -z "$asset_url" ]; then
         echo "5" > "$FOTA_DIR/fota_status"
         return 1
     fi
 
-    # Compare versions
     if [ "$current_version" = "$latest_tag" ]; then
         echo "$current_version" > "$FOTA_DIR/version"
         echo "5" > "$FOTA_DIR/fota_status"
@@ -61,34 +100,29 @@ check_update() {
 
     # New version available - download
     echo "$latest_tag" > "$FOTA_DIR/version"
-    echo "$asset_size" > "$FOTA_DIR/total_length"
+    echo "${asset_size:-0}" > "$FOTA_DIR/total_length"
     echo "3" > "$FOTA_DIR/fota_status"
 
-    fetch_url "$asset_url" > "$FOTA_DIR/firmware.bin"
-    if [ $? -ne 0 ] || [ ! -f "$FOTA_DIR/firmware.bin" ]; then
+    https_get "$asset_url" "$FOTA_DIR/firmware.bin"
+    local actual_size=$(ls -l "$FOTA_DIR/firmware.bin" 2>/dev/null | awk '{print $5}')
+    if [ -z "$actual_size" ] || [ "$actual_size" -lt 1000000 ]; then
         echo "4" > "$FOTA_DIR/fota_status"
         return 1
     fi
 
-    # Calculate MD5
     md5sum "$FOTA_DIR/firmware.bin" | awk '{print $1}' > "$FOTA_DIR/md5sum"
-    local actual_size=$(ls -l "$FOTA_DIR/firmware.bin" | awk '{print $5}')
     echo "$actual_size" > "$FOTA_DIR/total_length"
-
-    # Downloaded OK
     echo "1" > "$FOTA_DIR/fota_status"
     return 0
 }
 
 case "$1" in
     -c|-d)
-        # Run in background so webmgnt (get_cmd_result) returns immediately
-        # without blocking nginx → avoids 502 timeout.
-        # Status is written to $FOTA_DIR/fota_status and read by next poll.
+        # Background: webmgnt вызывает синхронно, форк чтобы не блокировать nginx
         check_update &
         ;;
     -w)
-        # Foreground mode for init.d daemon (waits for completion)
+        # Foreground: для init.d демона
         check_update
         ;;
     *)
