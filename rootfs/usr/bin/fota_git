@@ -11,55 +11,52 @@ API_URL="https://api.github.com/repos/$REPO/releases/latest"
 
 mkdir -p "$FOTA_DIR"
 
-# Fetch URL over HTTPS via openssl s_client, following up to 3 redirects.
-# $1 = URL, $2 = output file (binary-safe via dd); if omitted prints to stdout.
+# Resolve redirect chain via HEAD requests, return final URL
+https_resolve() {
+    local url="$1"
+    local i=0
+    while [ $i -lt 5 ]; do
+        local host="${url#https://}"; host="${host%%/*}"
+        local path="${url#https://$host}"; [ -z "$path" ] && path="/"
+        local hdr=$(printf "HEAD %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: fota_git/1.0\r\nConnection: close\r\n\r\n" \
+            "$path" "$host" | openssl s_client -quiet -connect "${host}:443" 2>/dev/null)
+        local status=$(echo "$hdr" | head -1 | grep -o "[0-9][0-9][0-9]" | head -1)
+        case "$status" in
+            301|302|303|307|308)
+                url=$(echo "$hdr" | grep -i "^[Ll]ocation:" | head -1 | tr -d '\r\n' | sed 's/^[Ll]ocation: *//')
+                i=$((i + 1))
+                ;;
+            *) echo "$url"; return 0 ;;
+        esac
+    done
+    return 1
+}
+
+# Stream HTTPS response body to stdout (no tmpfile, sed strips headers)
+https_stream() {
+    local url="$1"
+    local host="${url#https://}"; host="${host%%/*}"
+    local path="${url#https://$host}"; [ -z "$path" ] && path="/"
+    printf "GET %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: fota_git/1.0\r\nConnection: close\r\n\r\n" \
+        "$path" "$host" | \
+        openssl s_client -quiet -connect "${host}:443" 2>/dev/null | \
+        sed '1,/^\r\{0,1\}$/d'
+}
+
+# Fetch text URL (small responses, no redirect needed usually)
 https_get() {
     local url="$1"
-    local out_file="$2"
-    local redirect=0
+    local final_url=$(https_resolve "$url")
+    [ -n "$final_url" ] && https_stream "$final_url" || https_stream "$url"
+}
 
-    while [ $redirect -lt 3 ]; do
-        local host="${url#https://}"
-        host="${host%%/*}"
-        local path="${url#https://$host}"
-        [ -z "$path" ] && path="/"
-
-        local tmp=$(mktemp)
-        printf "GET %s HTTP/1.0\r\nHost: %s\r\nUser-Agent: fota_git/1.0\r\nConnection: close\r\n\r\n" \
-            "$path" "$host" | \
-            openssl s_client -quiet -connect "${host}:443" 2>/dev/null > "$tmp"
-
-        local status=$(head -1 "$tmp" | grep -o "[0-9][0-9][0-9]" | head -1)
-
-        if [ "$status" = "301" ] || [ "$status" = "302" ] || \
-           [ "$status" = "303" ] || [ "$status" = "307" ] || [ "$status" = "308" ]; then
-            url=$(grep -i "^[Ll]ocation:" "$tmp" | head -1 | tr -d '\r\n' | sed 's/^[Ll]ocation: *//')
-            rm -f "$tmp"
-            redirect=$((redirect + 1))
-            continue
-        fi
-
-        # Find header/body boundary (binary-safe: byte offset of \r\n\r\n)
-        local hdr_end
-        hdr_end=$(grep -oba $'\r\n\r\n' "$tmp" 2>/dev/null | head -1 | cut -d: -f1)
-        if [ -z "$hdr_end" ]; then
-            hdr_end=$(grep -oba $'\n\n' "$tmp" 2>/dev/null | head -1 | cut -d: -f1)
-            local skip=$((hdr_end + 2))
-        else
-            local skip=$((hdr_end + 4))
-        fi
-
-        if [ -n "$out_file" ]; then
-            tail -c +$((skip + 1)) "$tmp" > "$out_file"
-        else
-            tail -c +$((skip + 1)) "$tmp"
-        fi
-        rm -f "$tmp"
-        return 0
-    done
-
-    rm -f "$tmp" 2>/dev/null
-    return 1
+# Download binary URL to file (resolve redirects first, then stream)
+https_download() {
+    local url="$1"
+    local out="$2"
+    local final_url=$(https_resolve "$url")
+    [ -z "$final_url" ] && final_url="$url"
+    https_stream "$final_url" > "$out"
 }
 
 json_get() {
@@ -103,7 +100,7 @@ check_update() {
     echo "${asset_size:-0}" > "$FOTA_DIR/total_length"
     echo "3" > "$FOTA_DIR/fota_status"
 
-    https_get "$asset_url" "$FOTA_DIR/firmware.bin"
+    https_download "$asset_url" "$FOTA_DIR/firmware.bin"
     local actual_size=$(ls -l "$FOTA_DIR/firmware.bin" 2>/dev/null | awk '{print $5}')
     if [ -z "$actual_size" ] || [ "$actual_size" -lt 1000000 ]; then
         echo "4" > "$FOTA_DIR/fota_status"
