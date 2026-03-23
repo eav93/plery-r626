@@ -1464,14 +1464,14 @@ main.menu_open {
 }
 
 .Loadbox .maxbox {
-    width: 280px;
+    width: 320px;
     height: 80px;
     text-align: center;
     position: fixed;
     z-index: 60;
     background: rgba(145, 131, 131, 0.66);
     color: #ffffff;
-    font-size: 18px;
+    font-size: 13px;
     border-radius: 8px;
     line-height: 80px;
 }
@@ -1483,7 +1483,6 @@ main.menu_open {
     z-index: 30;
     color: #ffffff;
     background: rgba(0, 209, 40, 0.9);
-    font-size: 12px;
     border-radius: 8px;
 }
 
@@ -1491,9 +1490,12 @@ main.menu_open {
     z-index: 99;
     color: #ffffff;
     position: absolute;
-    font-size: 12px;
+    font-size: 13px;
     text-align: center;
     width: 100%;
+    line-height: normal;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .login_footer {
