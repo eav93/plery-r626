@@ -22,10 +22,10 @@ jobs:
       - name: Set firmware version
         run: |
           COMMIT_SHORT=$(git rev-parse --short HEAD)
-          VERSION="Plery-R626-eav93-${COMMIT_SHORT}"
+          VERSION="CF-PLERY-R626-eav93-${COMMIT_SHORT}"
           echo "FIRMWARE_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "Firmware version: $VERSION"
-          echo "CF-PLERY-R626-eav93-${COMMIT_SHORT}" > rootfs/etc/defconfig/cf-plery/version
+          echo "$VERSION" > rootfs/etc/defconfig/cf-plery/version
 
       - name: Build firmware
         run: |
