@@ -19,7 +19,7 @@ check_update() {
     local current_version=$(get_current_version)
 
     # Fetch latest release info
-    local release_json=$(wget -q -O - "$API_URL" 2>/dev/null)
+    local release_json=$(uclient-fetch -q -O - "$API_URL" 2>/dev/null || wget -q -O - "$API_URL" 2>/dev/null)
     if [ -z "$release_json" ]; then
         echo "5" > "$FOTA_DIR/fota_status"
         return 1
@@ -47,7 +47,7 @@ check_update() {
     echo "$asset_size" > "$FOTA_DIR/total_length"
     echo "3" > "$FOTA_DIR/fota_status"
 
-    wget -q -O "$FOTA_DIR/firmware.bin" "$asset_url" 2>/dev/null
+    uclient-fetch -q -O "$FOTA_DIR/firmware.bin" "$asset_url" 2>/dev/null || wget -q -O "$FOTA_DIR/firmware.bin" "$asset_url" 2>/dev/null
     if [ $? -ne 0 ] || [ ! -f "$FOTA_DIR/firmware.bin" ]; then
         echo "4" > "$FOTA_DIR/fota_status"
         return 1
