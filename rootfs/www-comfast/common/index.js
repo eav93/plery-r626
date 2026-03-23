@@ -237,7 +237,7 @@ define(function (require, exports) {
         if (firmware_info) {
             deviceReg = new RegExp(/(.+)-V(.+)/);
             var match = deviceReg.exec(firmware_info.version);
-            deviceName = match ? match[1].split('-')[1] : firmware_info.version;
+            deviceName = match ? match[1].split('-')[1] : 'Plery R626';
             d("#deviceinfo").text(deviceName);
             d("#version").text(firmware_info.version);
         }
