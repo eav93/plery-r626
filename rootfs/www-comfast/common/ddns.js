@@ -94,6 +94,22 @@ define(function (require, exports) {
         d("#user_table").html(html);
     }
 
+    function openbox() {
+        var addbox = '.add_box', marleft, martop;
+        d('.mask').addClass('mask_show');
+        marleft = (d(window).innerWidth() - d(addbox).innerWidth()) / 2;
+        martop = (d(window).innerHeight() - d(addbox).innerHeight()) / 2;
+        d(addbox).css({'left': marleft + 'px', 'top': martop + 'px'});
+        d(addbox).addClass('add_show');
+        d('.onError').remove();
+    }
+
+    function closebox(evt) {
+        d('.mask').removeClass('mask_show');
+        d(evt).parents('.add_box').removeClass('add_show');
+        d('.onError').remove();
+    }
+
     et.add = function () {
         optflag = 'add';
         d('#switch').val('1');
@@ -102,7 +118,7 @@ define(function (require, exports) {
         d('#username').val('');
         d('#password').val('');
         d('#src_ip').val('network');
-        g.showbox();
+        openbox();
     };
 
     et.edit = function (event) {
@@ -117,7 +133,7 @@ define(function (require, exports) {
         d('#username').val(item.username || '');
         d('#password').val(item.password || '');
         d('#src_ip').val(item.ip_source || 'network');
-        g.showbox();
+        openbox();
     };
 
     et.save = function () {
@@ -140,7 +156,8 @@ define(function (require, exports) {
         f.setMConfig('ddns_config', config, function (data) {
             if (data.errCode == 0) {
                 g.shconfirm(nowLang, SHtips.set_ok[nowLang], "success");
-                g.hidebox();
+                d('.mask').removeClass('mask_show');
+                d('.add_box').removeClass('add_show');
                 refresh_init();
             } else {
                 g.shconfirm(nowLang, SHtips.set_err[nowLang], "error");
