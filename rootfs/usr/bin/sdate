@@ -1,0 +1,13 @@
+#!/bin/sh
+# Safe date wrapper - sanitizes input to prevent command injection (CVE-2023-38865)
+# Only allows date format: YYYY-MM-DD HH:MM:SS
+
+INPUT="$*"
+
+# Strip everything except digits, dashes, colons, spaces
+CLEAN=$(echo "$INPUT" | tr -cd '0-9: -')
+
+# Validate format
+if echo "$CLEAN" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$'; then
+    date -s "$CLEAN" > /dev/null 2>&1
+fi
