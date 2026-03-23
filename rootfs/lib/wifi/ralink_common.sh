@@ -17,7 +17,7 @@ repair_wireless_uci() {
         if [ "$device" == "" ]; then
             device_def=`uci -q get ${vif}.device_def`
              if [[ "$device_def" != "" && "$netif" != "" ]]; then
-                 ifconfig $netif down
+                 ifconfig $netif down 2>/dev/null
                  continue
              fi
             echo "device cannot be empty!!" >>/tmp/wifi.log
@@ -174,7 +174,7 @@ disable_ralink_wifi() {
     config_get vifs "$device" vifs
     for vif in $vifs; do
         config_get ifname $vif ifname
-        ifconfig $ifname down
+        [ -n "$ifname" ] && ifconfig $ifname down 2>/dev/null
     done
 
     # kill any running ap_clients
@@ -190,12 +190,15 @@ enable_ralink_wifi() {
     # shut down all vifs first
     for vif in $vifs; do
         config_get ifname $vif ifname
-        ifconfig $ifname down
+        [ -n "$ifname" ] && ifconfig $ifname down 2>/dev/null
     done
 
     # in some case we have to reload drivers. (mbssid)
-    ref=`cat /sys/module/$module/refcnt`
-    if [ $ref != "0" ]; then
+    ref=`cat /sys/module/$module/refcnt 2>/dev/null`
+    if [ -z "$ref" ]; then
+        echo "$module not loaded, loading" >>/tmp/wifi.log
+        insmod $module
+    elif [ "$ref" != "0" ]; then
         # but for single driver, we only need to reload once.
         echo "$module ref=$ref, skip reload module" >>/tmp/wifi.log
     else
