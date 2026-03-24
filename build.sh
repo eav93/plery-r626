@@ -12,7 +12,8 @@
 #   fwtool              — compiled OpenWrt fwtool (appends metadata + CRC)
 #
 # Output firmware layout:
-#   [kernel.bin][SquashFS][0xFF padding][fwimage_header + metadata.json + FWx trailer]
+#   [kernel.bin][SquashFS][fwimage_header + metadata.json + FWx trailer]
+#   rootfs_data is placed dynamically by mtdsplit right after squashfs end (no fixed boundary)
 #
 
 set -e
@@ -118,21 +119,24 @@ BODY_SIZE=$((KERNEL_SIZE + SQUASHFS_SIZE))
 log "Kernel:   $KERNEL_SIZE bytes"
 log "SquashFS: $SQUASHFS_SIZE bytes"
 
-# ---- Pad to flash boundary ----
-FLASH_BOUNDARY=$((0x8A0000))
+# ---- Size check ----
+# firmware partition = 0xFB0000 (~15.7 MB), leave at least 1 MB for rootfs_data overlay
+FIRMWARE_PARTITION=$((0xFB0000))
+MIN_OVERLAY=$((0x100000))
+MAX_IMAGE=$((FIRMWARE_PARTITION - MIN_OVERLAY))
 
-if [ "$BODY_SIZE" -gt "$FLASH_BOUNDARY" ]; then
-    err "Firmware too large! Body ($BODY_SIZE) exceeds flash boundary ($FLASH_BOUNDARY)"
+if [ "$BODY_SIZE" -gt "$MAX_IMAGE" ]; then
+    err "Firmware too large! kernel+squashfs ($BODY_SIZE) > max allowed ($MAX_IMAGE)"
 fi
 
-PAD_SIZE=$((FLASH_BOUNDARY - BODY_SIZE))
-log "Padding:  $PAD_SIZE bytes (0xFF to offset 0x$(printf '%X' $FLASH_BOUNDARY))"
+log "Size OK:  $BODY_SIZE / $MAX_IMAGE bytes ($(( BODY_SIZE * 100 / MAX_IMAGE ))% used)"
 
 # ---- Assemble raw firmware ----
+# No 0xFF padding — rootfs_data is placed dynamically by mtdsplit right after squashfs.
+# Adding padding would overwrite existing jffs2 overlay on sysupgrade.
 RAW_FW="/tmp/firmware_raw_$$.bin"
 
 cat "$KERNEL" "$SQUASHFS_TMP" > "$RAW_FW"
-dd if=/dev/zero bs=1 count="$PAD_SIZE" 2>/dev/null | tr '\0' '\377' >> "$RAW_FW"
 
 # ---- Append metadata with fwtool ----
 log "Appending metadata with fwtool (CRC32 calculated automatically)..."
