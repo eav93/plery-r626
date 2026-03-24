@@ -8,12 +8,15 @@ define(function (require, exports) {
 
     var device, data_info;
     let ltelband = [
-        { name: 1, value: '101' },
-        { name: 3, value: '103' },
-        { name: 5, value: '105' },
-        { name: 7, value: '107' },
-        { name: 8, value: '108' },
-        { name: 20, value: '120' }
+        { name: 1,  value: '101' },
+        { name: 3,  value: '103' },
+        { name: 5,  value: '105' },
+        { name: 7,  value: '107' },
+        { name: 8,  value: '108' },
+        { name: 20, value: '120' },
+        { name: 38, value: '138' },
+        { name: 40, value: '140' },
+        { name: 41, value: '141' }
     ]
 
     exports.init = function () {
