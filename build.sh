@@ -31,7 +31,6 @@ ROOTFS_SRC="rootfs"
 ROOTFS_DIR=""
 BUILD_ROOT=""
 LANG_JS=""
-LEGACY_LANG_JS=""
 METADATA="metadata.json"
 FWTOOL_DIR="fwtool"
 FWTOOL="$FWTOOL_DIR/fwtool"
@@ -75,14 +74,6 @@ prune_locale_file() {
     perl -0777 -i -pe 's/,\n(\s*})/\n$1/g' "$file"
 }
 
-generate_langs_json() {
-    local out_file="$1"
-    local langs_csv="$2"
-    local lang_json
-
-    lang_json="$(echo "$langs_csv" | awk -F',' '{for(i=1;i<=NF;i++){gsub(/^[ \t]+|[ \t]+$/, "", $i); if($i!=""){printf("%s\"%s\"", (c++?",":""), $i)}}}')"
-    printf '{"langs":[%s]}\n' "$lang_json" > "$out_file"
-}
 
 # ---- Check dependencies ----
 log "Checking dependencies..."
@@ -112,7 +103,6 @@ BUILD_ROOT="$(mktemp -d /tmp/rootfs_build_XXXXXX)"
 cp -a "$ROOTFS_SRC/." "$BUILD_ROOT/"
 ROOTFS_DIR="$BUILD_ROOT"
 LANG_JS="$ROOTFS_DIR/www-comfast/js/language.js"
-LEGACY_LANG_JS="$ROOTFS_DIR/www-comfast/js/2q"
 log "Using temporary rootfs workspace: $ROOTFS_DIR"
 
 # ---- Write firmware version ----
@@ -146,8 +136,7 @@ trap "rm -f '$SQUASHFS_TMP' /tmp/firmware_raw_$$.bin; [ -n '$BUILD_ROOT' ] && rm
 # ---- Optional language pruning ----
 log "Pruning UI locales..."
 prune_locale_file "$LANG_JS"
-prune_locale_file "$LEGACY_LANG_JS"
-generate_langs_json "$ROOTFS_DIR/www-comfast/js/langs.json" "$KEEP_LANGS"
+
 
 # ---- Build SquashFS ----
 log "Building SquashFS from $ROOTFS_DIR/..."

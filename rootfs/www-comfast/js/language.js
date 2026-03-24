@@ -1,114 +1,55 @@
+var Langs = {
+    'cn': '中文',
+    'en': 'English',
+    'ru': 'Русский'
+};
+
 var SHpack = {
-    'home': {
-        'cn': '状态信息',
-        'en': 'Status',
-        'ru': 'Состояние'
-    },
-    'band': {
-        'cn': '频段设置',
-        'en': 'Band Setting',
-        'ru': 'Диапазон LTE'
-    },
-    'network': {
-        'cn': '网络管理',
-        'en': 'Network',
-        'ru': 'Сеть'
-    },
-    'system': {
-        'cn': '系统管理',
-        'en': 'System',
-        'ru': 'Система'
-    },
-    'firewall': {
-        'cn': '防火墙',
-        'en': 'Firewall',
-        'ru': 'Безопасность'
-    },
-    'ipfilter': {
-        'cn': 'IP过滤',
-        'en': 'IP Filter',
-        'ru': 'IP-фильтр'
-    },
-    'macfilter': {
-        'cn': 'MAC过滤',
-        'en': 'MAC Filter',
-        'ru': 'MAC-фильтр'
-    },
-    'urlfilter': {
-        'cn': 'URL过滤',
-        'en': 'URL Filter',
-        'ru': 'URL-фильтр'
-    },
-    'portforward': {
-        'cn': '端口转发',
-        'en': 'Port Forward',
-        'ru': 'Проброс портов'
-    },
-    'onlineupg': {
-        'cn': '在线升级',
-        'en': 'Online Upgrade',
-        'ru': 'Онлайн-обновление'
-    },
-    'vpnclient': {
-        'cn': 'VPN客户端',
-        'en': 'VPN Client',
-        'ru': 'VPN-клиент'
-    },
-    'vpnservice': {
-        'cn': 'VPN服务器',
-        'en': 'VPN Server',
-        'ru': 'VPN-сервер'
-    },
-    'openvpn': {
-        'cn': 'OPENVPN',
-        'en': 'OpenVPN',
-        'ru': 'OpenVPN'
-    },
-    'ddns': {
-        'cn': 'DDNS',
-        'en': 'DDNS',
-        'ru': 'DDNS'
-    },
-    'ddnsswitch': {
-        'cn': 'DDNS开关',
-        'en': 'DDNS switch',
-        'ru': 'DDNS'
-    },
-    'provider': {
-        'cn': '服务提供商',
-        'en': 'Service provider',
-        'ru': 'Поставщик услуг'
-    },
-    'domainname': {
-        'cn': '域名',
-        'en': 'Domain name',
-        'ru': 'Доменное имя'
-    },
-    'nameEmail': {
-        'cn': '用户名/邮箱',
-        'en': 'Username/Email',
-        'ru': 'Имя пользователя/Email'
-    },
-    'Passwordkey': {
-        'cn': '密码/密钥',
-        'en': 'Password/Key',
-        'ru': 'Пароль/Ключ'
-    },
-    'ipaddress': {
-        'cn': 'IP地址来源',
-        'en': 'IP Address Source',
-        'ru': 'Источник IP-адреса'
-    },
-    'resolve': {
-        'cn': '解析网卡',
-        'en': 'Resolve Interface',
-        'ru': 'Сетевой интерфейс'
-    },
-    'networkword': {
-        'cn': '网络',
-        'en': 'Network',
-        'ru': 'Сеть'
-    },        'login': {
+        'ddns': {
+            'cn': 'DDNS',
+            'en': 'DDNS',
+            'ru': 'DDNS'
+        },
+        'ddnsswitch': {
+            'cn': 'DDNS开关',
+            'en': 'DDNS switch',
+            'ru': 'DDNS'
+        },
+        'provider': {
+            'cn': '服务提供商',
+            'en': 'Service provider',
+            'ru': 'Поставщик услуг'
+        },
+        'domainname': {
+            'cn': '域名',
+            'en': 'Domain name',
+            'ru': 'Доменное имя'
+        },
+        'nameEmail': {
+            'cn': '用户名/邮箱',
+            'en': 'Username/Email',
+            'ru': 'Имя пользователя/Email'
+        },
+        'Passwordkey': {
+            'cn': '密码/密钥',
+            'en': 'Password/Key',
+            'ru': 'Пароль/Ключ'
+        },
+        'ipaddress': {
+            'cn': 'IP地址来源',
+            'en': 'IP Address Source',
+            'ru': 'Источник IP-адреса'
+        },
+        'resolve': {
+            'cn': '解析网卡',
+            'en': 'Resolve Interface',
+            'ru': 'Сетевой интерфейс'
+        },
+        'networkword': {
+            'cn': '网络',
+            'en': 'Network',
+            'ru': 'Сеть'
+        }, 'login': {
             'cn': '登录',
             'en': 'Login',
             'ru': 'Вход'
@@ -122,11 +63,11 @@ var SHpack = {
             'cn': '密码',
             'en': 'Password',
             'ru': 'Пароль'
-        },        'led_swich': {
+        }, 'led_swich': {
             'cn': 'LED灯开关',
             'en': 'LED Lights',
             'ru': 'LED-индикаторы'
-        },        'ttl': {
+        }, 'ttl': {
             'cn': 'TTL设置',
             'en': 'TTL Setting',
             'ru': 'Настройка TTL'
@@ -246,11 +187,6 @@ var SHpack = {
             'en': 'Peer 1',
             'ru': 'Пир 1'
         },
-        'wireguard_tow': {
-            'cn': '对端2',
-            'en': 'Peer 2',
-            'ru': 'Пир 2'
-        },
         'wireguard_goSet': {
             'cn': '设置对端2',
             'en': 'Configure Peer 2',
@@ -280,11 +216,11 @@ var SHpack = {
             'cn': '请输入密码',
             'en': 'Please Enter Password',
             'ru': 'Введите пароль'
-        },        'wizard': {
+        }, 'wizard': {
             'cn': '配置向导',
             'en': 'Wizard',
             'ru': 'Мастер настройки'
-        },        'users': {
+        }, 'users': {
             'cn': '用户管理',
             'en': 'Users',
             'ru': 'Пользователи'
@@ -368,7 +304,7 @@ var SHpack = {
             'cn': '5.8G 无线设置',
             'en': '5.8G Wireless',
             'ru': '5.8G Беспроводная сеть'
-        },        'config': {
+        }, 'config': {
             'cn': '配置管理',
             'en': 'Manage Config',
             'ru': 'Конфигурация'
@@ -872,7 +808,7 @@ var SHpack = {
             'cn': '修改管理密码',
             'en': 'Change Password',
             'ru': 'Изменить пароль'
-        },        "arp": {
+        }, "arp": {
             "cn": "ARP绑定",
             "en": "ARP Binding",
             "ru": "Привязка ARP"
@@ -917,45 +853,6 @@ var SHpack = {
             'en': 'Description',
             'ru': 'Описание'
         },
-        'previous': {
-            'cn': '上一页',
-            'en': 'Previous',
-            'ru': 'Назад'
-        },
-        'nextpage': {
-            'cn': '下一页',
-            'en': 'Next',
-            'ru': 'Далее'
-        },
-        'page': {
-            'cn': '页',
-            'en': 'Page',
-            'ru': 'Стр.'
-        },
-        'altogether': {
-            'cn': '共',
-            'en': 'Total',
-            'ru': 'Всего'
-        },
-        'item': {
-            'cn': '条',
-            'en': 'Item',
-            'ru': 'Запись'
-        },        'success_title': {
-            'cn': '成功提示',
-            'en': 'Success',
-            'ru': 'Успешно'
-        },
-        'error_title': {
-            'cn': '错误提示',
-            'en': 'Error',
-            'ru': 'Ошибка'
-        },
-        'confirm_title': {
-            'cn': '确认提示',
-            'en': 'Confirm',
-            'ru': 'Подтверждение'
-        },
         'global_title': {
             'cn': '4G LTE ROUTER',
             'en': '4G LTE ROUTER',
@@ -971,11 +868,6 @@ var SHpack = {
             'en': 'Shenzhen Plery Network Tech Co., Ltd.',
             'ru': 'Shenzhen Plery Network Tech Co., Ltd.'
         },
-        'tip': {
-            'cn': '配置正在生效中，请稍等',
-            'en': 'Saving settings, please wait.',
-            'ru': 'Сохранение настроек, пожалуйста, подождите.'
-        },
         'logout': {
             'cn': '退出',
             'en': 'Logout',
@@ -985,25 +877,6 @@ var SHpack = {
             'cn': '操作',
             'en': 'Oper',
             'ru': 'Действие'
-        },
-        'confirm': {
-            'cn': '确定',
-            'en': 'Confirm',
-            'ru': 'Подтвердить'
-        },
-        'cancel': {
-            'cn': '取消',
-            'en': 'Cancel',
-            'ru': 'Отмена'
-        },        'selectall': {
-            'cn': '全选',
-            'en': 'Select',
-            'ru': 'Выбрать все'
-        },
-        'cancelall': {
-            'cn': '取消全选',
-            'en': 'Cancel',
-            'ru': 'Снять выделение'
         },
         'modify': {
             'cn': '设置',
@@ -1019,7 +892,7 @@ var SHpack = {
             'cn': '上一步',
             'en': 'Prev',
             'ru': 'Назад'
-        },        "Statu_bind": {
+        }, "Statu_bind": {
             "cn": "已绑定",
             "en": "Bound",
             "ru": "Привязан"
@@ -1043,11 +916,11 @@ var SHpack = {
             'cn': '下行',
             'en': 'Down',
             'ru': 'Входящий'
-        },        'no_date': {
+        }, 'no_date': {
             'cn': '尚未获取到数据',
             'en': 'No Data',
             'ru': 'Нет данных'
-        },        'remote': {
+        }, 'remote': {
             'cn': '远程管理',
             'en': 'Remote Management',
             'ru': 'Удал. управление'
@@ -1071,7 +944,7 @@ var SHpack = {
             'cn': '设置',
             'en': 'Apply',
             'ru': 'Применить'
-        },        'system_version': {
+        }, 'system_version': {
             'cn': '当前版本',
             'en': 'Version',
             'ru': 'Версия'
@@ -1080,7 +953,7 @@ var SHpack = {
             'cn': '系统日志',
             'en': 'Logs ',
             'ru': 'Журнал'
-        },        'refresh': {
+        }, 'refresh': {
             'cn': '刷新',
             'en': 'Refresh',
             'ru': 'Обновить'
@@ -1099,7 +972,7 @@ var SHpack = {
             'cn': '导出配置',
             'en': 'Export Config',
             'ru': 'Экспорт конфигурации'
-        },        'heart_beat_sw': {
+        }, 'heart_beat_sw': {
             'cn': '联网检测',
             'en': 'COMFAST Telemetry',
             'ru': 'Телеметрия COMFAST'
@@ -1163,7 +1036,7 @@ var SHpack = {
             'cn': '广域网设置',
             'en': 'WAN',
             'ru': 'WAN'
-        },        'current_state': {
+        }, 'current_state': {
             'cn': '当前状态',
             'en': 'Current State',
             'ru': 'Текущее состояние'
@@ -1182,7 +1055,7 @@ var SHpack = {
             'cn': '无线信息',
             'en': 'Wireless Info',
             'ru': 'Информация о Wi-Fi'
-        },        'bridgeinfo': {
+        }, 'bridgeinfo': {
             'cn': '连接信息',
             'en': 'Connected Info',
             'ru': 'Информация о подключении'
@@ -1201,7 +1074,7 @@ var SHpack = {
             'cn': '获取方式',
             'en': 'Access',
             'ru': 'Способ доступа'
-        },        'bridge_status': {
+        }, 'bridge_status': {
             'cn': '连接状态',
             'en': 'Connect Status',
             'ru': 'Состояние подключения'
@@ -1245,7 +1118,7 @@ var SHpack = {
             'cn': '未分配',
             'en': 'Unassigned',
             'ru': 'Не назначен'
-        },        'ssid_name_24g': {
+        }, 'ssid_name_24g': {
             'cn': '2.4G SSID',
             'en': '2.4G SSID',
             'ru': '2.4G SSID'
@@ -1254,11 +1127,11 @@ var SHpack = {
             'cn': '5.8G SSID',
             'en': '5.8G SSID',
             'ru': '5.8G SSID'
-        },        "scan_bind": {
+        }, "scan_bind": {
             "cn": "扫描频段",
             "en": "Scan Band",
             "ru": "Диапазон сканирования"
-        },        "lock_band": {
+        }, "lock_band": {
             "cn": "锁定频段",
             "en": "Locked frequency band",
             "ru": "Залоченный диапазон"
@@ -1387,7 +1260,7 @@ var SHpack = {
             'cn': '无法连接到互联网',
             'en': 'No Network',
             'ru': 'Нет сети'
-        },        'sim_unknown': {
+        }, 'sim_unknown': {
             'cn': '未检测到SIM卡',
             'en': 'No SIM card detected',
             'ru': 'SIM-карта не обнаружена'
@@ -1431,7 +1304,7 @@ var SHpack = {
             "cn": "MESH",
             "en": "MESH",
             "ru": "MESH"
-        },        "hwmode": {
+        }, "hwmode": {
             "cn": "模式",
             "en": "hwmode",
             "ru": "Режим"
@@ -1445,7 +1318,7 @@ var SHpack = {
             'cn': '中继客户端',
             'en': 'Repeater Client',
             'ru': 'Клиент ретранслятора'
-        },        'wan_set': {
+        }, 'wan_set': {
             'cn': '外网设置',
             'en': 'WAN Settings',
             'ru': 'Настройки WAN'
@@ -1454,7 +1327,7 @@ var SHpack = {
             'cn': '内网设置',
             'en': 'LAN Settings',
             'ru': 'Настройки LAN'
-        },        'repeater_set': {
+        }, 'repeater_set': {
             'cn': '中继设置',
             'en': 'Repeater Settings',
             'ru': 'Настройки ретранслятора'
@@ -1463,11 +1336,11 @@ var SHpack = {
             'cn': '网桥设置',
             'en': 'Bridge Settings',
             'ru': 'Настройки моста'
-        },        'finish': {
+        }, 'finish': {
             'cn': '完成',
             'en': 'Finish',
             'ru': 'Завершить'
-        },        'netmask': {
+        }, 'netmask': {
             'cn': '子网掩码',
             'en': 'Subnet Mask',
             'ru': 'Маска подсети'
@@ -1476,7 +1349,7 @@ var SHpack = {
             'cn': '网关',
             'en': 'Gateway',
             'ru': 'Шлюз'
-        },        'ssid': {
+        }, 'ssid': {
             'cn': 'WiFi名称',
             'en': 'WiFi Name',
             'ru': 'Имя Wi-Fi'
@@ -1495,7 +1368,7 @@ var SHpack = {
             'cn': 'DNS服务器',
             'en': 'DNS',
             'ru': 'DNS'
-        },        'country_cn': {
+        }, 'country_cn': {
             'cn': '中国',
             'en': 'China',
             'ru': 'Китай'
@@ -1514,7 +1387,7 @@ var SHpack = {
             'cn': '英国',
             'en': 'Britain',
             'ru': 'Великобритания'
-        },        "edit": {
+        }, "edit": {
             "cn": "编辑",
             "en": "Edit",
             "ru": "Редактировать"
@@ -1533,7 +1406,7 @@ var SHpack = {
             "cn": "绑定",
             "en": "bind",
             "ru": "Привязать"
-        },        "ip_filter": {
+        }, "ip_filter": {
             "cn": "IP过滤",
             "en": "IP Filter",
             "ru": "IP-фильтр"
@@ -1562,7 +1435,7 @@ var SHpack = {
             "cn": "删除所选",
             "en": "Delete",
             "ru": "Удалить"
-        },        "number": {
+        }, "number": {
             "cn": "编号",
             "en": "No",
             "ru": "№"
@@ -1591,7 +1464,7 @@ var SHpack = {
             "cn": "结束IP",
             "en": "End IP",
             "ru": "Конечный IP"
-        },        "url": {
+        }, "url": {
             "cn": "URL地址",
             "en": "URL Address",
             "ru": "URL-адрес"
@@ -1655,7 +1528,7 @@ var SHpack = {
             "cn": "保存",
             "en": "Save",
             "ru": "Сохранить"
-        },        'advanced': {
+        }, 'advanced': {
             'cn': '高级设置',
             'en': 'Advanced Setting',
             'ru': 'Расширенные настройки'
@@ -1704,7 +1577,7 @@ var SHpack = {
             "cn": "防Ping",
             "en": "Anti Ping",
             "ru": "Защита от Ping"
-        },        'sta_ssid': {
+        }, 'sta_ssid': {
             'cn': '上级SSID',
             'en': 'Upstream SSID',
             'ru': 'SSID вышестоящей сети'
@@ -1898,7 +1771,7 @@ var SHpack = {
             'cn': '次DNS',
             'en': 'Secondary DNS',
             'ru': 'Вторичный DNS'
-        },        'pptpclient': {
+        }, 'pptpclient': {
             'cn': 'PPTP客户端',
             'en': 'PPTP Client',
             'ru': 'PPTP-клиент'
@@ -1912,11 +1785,11 @@ var SHpack = {
             'cn': 'ZeroTier',
             'en': 'ZeroTier',
             'ru': 'ZeroTier'
-        },        'pptpservice': {
+        }, 'pptpservice': {
             'cn': 'PPTP服务器',
             'en': 'PPTP Server',
             'ru': 'PPTP-сервер'
-        },        'openvpn_service': {
+        }, 'openvpn_service': {
             'cn': 'OPENVPN服务器',
             'en': 'OpenVPN Server',
             'ru': 'OpenVPN-сервер'
@@ -1995,15 +1868,15 @@ var SHpack = {
             'cn': '服务器/IP',
             'en': 'Server /IP',
             'ru': 'Сервер/IP'
-        },        'OnlineUpg': {
+        }, 'OnlineUpg': {
             'cn': '在线升级',
             'en': 'Online update',
             'ru': 'Онлайн-обновление'
-        },        'AutoUpgSwitch': {
+        }, 'AutoUpgSwitch': {
             'cn': '自动升级',
             'en': 'Auto update',
             'ru': 'Автообновление'
-        },        'current_ver': {
+        }, 'current_ver': {
             'cn': '当前版本',
             'en': 'Current version',
             'ru': 'Текущая версия'
@@ -2012,11 +1885,6 @@ var SHpack = {
             'cn': '最新版本',
             'en': 'New version',
             'ru': 'Доступно обновление'
-        },
-        'CheckVersion': {
-            'cn': '检查版本...',
-            'en': 'Checking version',
-            'ru': 'Проверка версии...'
         },
         'ManualCheck': {
             'cn': '检测更新并下载固件',
@@ -2066,70 +1934,10 @@ var SHpack = {
         }
     },
     SHeg = {
-        'auto': {
-            'cn': '自动获取',
-            'en': 'Automatic',
-            'ru': 'Автоматически'
-        },
-        'max63char': {
-            'cn': '最多63个英文字符',
-            'en': 'Max Length 63 Characters',
-            'ru': 'Макс. длина 63 символа'
-        },
-        'max128char': {
-            'cn': '最多128个字符',
-            'en': 'Max Length 128 Characters',
-            'ru': 'Макс. длина 128 символов'
-        },
-        'max32char': {
-            'cn': '最多32英文个字符',
-            'en': 'Max Length 32 Characters',
-            'ru': 'Макс. длина 32 символа'
-        },
-        'emp832char': {
-            'cn': '密码可为空或请输入8-32个字符',
-            'en': 'Empty or 8-32 Characters',
-            'ru': 'Пусто или 8-32 символа'
-        },
-        'isfrag': {
-            'cn': '请输入256-2346之间的数字',
-            'en': 'Number between 256-2346',
-            'ru': 'Число от 256 до 2346'
-        },
-        'isrts': {
-            'cn': '请输入0-2347之间的数字',
-            'en': 'Number between 0-2347',
-            'ru': 'Число от 0 до 2347'
-        },
-        'isdhcpaddr': {
-            'cn': '请输入1-254之间的数字',
-            'en': 'Number between 1-254',
-            'ru': 'Число от 1 до 254'
-        },
-        'isdhcpnum': {
-            'cn': '请输入1-1000之间的数字',
-            'en': 'Number between 1-1000',
-            'ru': 'Число от 1 до 1000'
-        },
-        'ismtu': {
-            'cn': '请输入128-1500之间的数字',
-            'en': 'Number between 128-1500',
-            'ru': 'Число от 128 до 1500'
-        },
         'ip': {
             'cn': '如：xxx.xxx.xxx.xxx',
             'en': 'e.g:xxx.xxx.xxx.xxx',
             'ru': 'Пример: xxx.xxx.xxx.xxx'
-        },
-        'gwip': {
-            'cn': '如：192.168.9.1/24',
-            'en': 'e.g:192.168.9.1/24',
-            'ru': 'Пример: 192.168.9.1/24'
-        },
-        'ipnull': {
-            'cn': '如：xxx.xxx.xxx.xxx(选填)',
-            'en': 'e.g:xxx.xxx.xxx.xxx(Optional)',
-            'ru': 'Пример: xxx.xxx.xxx.xxx (необязательно)'
         },
         'mac': {
             'cn': '如：xx:xx:xx:xx:xx:xx',
@@ -2155,115 +1963,14 @@ var SHpack = {
             'cn': '如:202.96.134.133',
             'en': 'e.g:202.96.134.133',
             'ru': 'Пример: 202.96.134.133'
-        },
-        'isdhcptime': {
-            'cn': '2-10080分钟',
-            'en': '2 - 10080 minutes',
-            'ru': '2 - 10080 минут'
-        },
-        'isassoc': {
-            'cn': '1-256',
-            'en': '1-256',
-            'ru': '1-256'
-        }
-    },
+        },},
     SHtips = {//提示
-        'maxlength': {
-            'cn': '已达到最大数量',
-            'en': 'Maximum number reached',
-            'ru': 'Достигнуто максимальное количество'
+        "nossid": {
+            "cn": "SSID不能为空！",
+            "en": "The SSID cannot be empty！",
+            "ru": "SSID не может быть пустым!"
         },
-        'sameas': {
-            'cn': '用户名已存在',
-            'en': 'Username already exists',
-            'ru': 'Имя пользователя уже существует'
-        },
-        'probe_server_url_ok': {
-            'cn': 'URL格式正确',
-            'en': 'URL format is correct',
-            'ru': 'Формат URL верный'
-        },
-        'openvpnInfo_update': {
-            'cn': '证书还未更新成功',
-            'en': 'The certificate has not been successfully updated yet',
-            'ru': 'Сертификат ещё не был успешно обновлён'
-        },
-        'pptpd_server_remoteip_not_network': {
-            'cn': '客户端地址池不在同一个网段！',
-            'en': 'Client address pool is not in the same network!',
-            'ru': 'Пул адресов клиента не в одной подсети!'
-        },
-        'ssid_null': {
-            'cn': 'SSID不能为空！',
-            'en': 'Please enter the correct SSID',
-            'ru': 'Введите корректный SSID'
-        },
-	'wep_char': {
-            'cn': '请输入5/10/13/26个字符',
-            'en': '5/10/13/26 Characters',
-            'ru': '5/10/13/26 символов'
-        },
-	'wifiSelect': {
-            'cn': '请点击扫描并选择SSID',
-            'en': 'Please click Scan and select SSID',
-            'ru': 'Нажмите «Сканирование» и выберите SSID'
-        },
-	'modification': {
-            'cn': '修改成功，三秒后退出登陆！',
-            'en': 'The modification is successful. Log out after three seconds ',
-            'ru': 'Изменение выполнено. Выход через три секунды.'
-	},
-	'namen_ull': {
-            'cn': '用户名不能为空！',
-            'en': 'The user name cannot be empty',
-            'ru': 'Имя пользователя не может быть пустым'
-	},
-	'pwd_null': {
-            'cn': '密码不能为空！',
-            'en': 'The password cannot be empty',
-            'ru': 'Пароль не может быть пустым'
-	},
-	'no_null_name': {
-            'cn': '用户及密码不能为空！',
-            'en': 'The user and password cannot be empty',
-            'ru': 'Логин и пароль не могут быть пустыми'
-	},
-	'chinese': {
-            'cn': '密码不能输入汉字',
-            'en': 'The password cannot contain Chinese characters',
-            'ru': 'Пароль не может содержать китайские иероглифы'
-	},
-	'old_passwords': {
-            'cn': '旧密码错误',
-            'en': 'Incorrect old password',
-            'ru': 'Старый пароль неверен'
-	},
-	'set_null': {
-            'cn': '旧密码与新密码不能为空',
-            'en': 'The old password and the new password cannot be empty',
-            'ru': 'Старый и новый пароли не могут быть пустыми'
-	},
-	'oldpasswd_msg': {
-            'cn': '请输入旧密码',
-            'en': 'Please enter your old password',
-            'ru': 'Введите старый пароль'
-	},
-	'newpasswd_msg': {
-            'cn': '请输入新密码',
-            'en': 'Please enter a new password',
-            'ru': 'Введите новый пароль'
-	},
-	'passwd_err': {
-            'cn': '请注意密码格式',
-            'en': 'Pay attention to the password format',
-            'ru': 'Проверьте формат пароля'
-	},
-	"nossid": {
-	    "cn": "SSID不能为空！",
-	    "en": "The SSID cannot be empty！",
-	    "ru": "SSID не может быть пустым!"
-	},
-	 "version": {
+        "version": {
             "cn": "已经是最新版本啦！",
             "en": "It's the latest version!",
             "ru": "Уже установлена последняя версия!"
@@ -2288,130 +1995,25 @@ var SHpack = {
             "en": "Not null",
             "ru": "Не может быть пустым"
         },
-        'gatewayandip': {
-            'cn': '网关不能和IP地址相同',
-            'en': 'The gateway cannot be the same as the IP address ',
-            'ru': 'Шлюз не может совпадать с IP-адресом'
-        },
-        'dnsandip': {
-            'cn': 'DNS不能和IP地址相同',
-            'en': 'DNS cannot be the same as the IP address',
-            'ru': 'DNS не может совпадать с IP-адресом'
-        },
-        'probe_radio': {
-            'cn': '探针频段',
-            'en': 'Probe Band',
-            'ru': 'Диапазон зондирования'
-        },
-        'probe_server_config': {
-            'cn': '探针服务器配置',
-            'en': 'Probe Server Configuration',
-            'ru': 'Конфигурация сервера зондирования'
-        },
-        'probe_addr': {
-            'cn': '探针服务器地址',
-            'en': 'Probe server IP',
-            'ru': 'IP сервера зондирования'
-        },
-        'probe_port': {
-            'cn': '探针服务器端口号',
-            'en': 'Probe server port',
-            'ru': 'Порт сервера зондирования'
-        },
-        'probe_server_url': {
-            'cn': '请输入探针服务器地址及端口号',
-            'en': 'Enter Probe server IP and port',
-            'ru': 'Введите IP и порт сервера зондирования'
-        },
-        'probeserver_url_is_null': {
-            'cn': '探针服务器地址及端口号为空',
-            'en': 'Probe server IP and port is null!',
-            'ru': 'IP и порт сервера зондирования пусты!'
-        },
-        'domain': {
-            'cn': '请输入正确的IP或英文域名',
-            'en': 'Enter the correct IP or domain',
-            'ru': 'Введите корректный IP или доменное имя'
-        },
-        'Example': {
-            'cn': '输入格式如',
-            'en': 'e.g. ',
-            'ru': 'Пример: '
-        },
         "port_err": {
             "cn": "端口范围1-65535",
             "en": "Port Range 1-65535",
             "ru": "Диапазон портов 1-65535"
-        },
-        'StartIP': {
-            'cn': '开始IP地址不能为空',
-            'en': 'Start IP cannot be empty',
-            'ru': 'Начальный IP не может быть пустым'
-        },
-        'EndIP': {
-            'cn': '结束IP地址不能为空',
-            'en': 'End IP cannot be empty',
-            'ru': 'Конечный IP не может быть пустым'
-        },
-        'StartNoGrtThEnd': {
-            'cn': '开始地址不能大于结束地址',
-            'en': 'The begin address cannot be greater than the end',
-            'ru': 'Начальный адрес не может быть больше конечного'
-        },
-        'StartPort': {
-            'cn': '开始端口不能为空',
-            'en': 'Start port cannot be empty',
-            'ru': 'Начальный порт не может быть пустым'
-        },
-        'EndPort': {
-            'cn': '结束端口不能为空',
-            'en': 'End port cannot be empty',
-            'ru': 'Конечный порт не может быть пустым'
-        },
-        'SPort_NoGrtTh_EPort': {
-            'cn': '开始端口不能大于结束端口',
-            'en': 'Start port cannot be greater than end port',
-            'ru': 'Начальный порт не может быть больше конечного'
         },
         '8-32char': {
             'cn': '请输入8-32个字符',
             'en': '8-32 Characters',
             'ru': '8-32 символа'
         },
-        'max63char': {
-            'cn': '最多63个英文字符',
-            'en': 'Max Length : 63 Characters',
-            'ru': 'Макс. длина: 63 символа'
-        },
-        'urlmax63char': {
-            'cn': '最多63个字符',
-            'en': 'Max Length : 63 Characters',
-            'ru': 'Макс. длина: 63 символа'
-        },
         '1-32char': {
             'cn': '1-32个字符',
             'en': '1-32 Characters',
             'ru': '1-32 символа'
         },
-        'wifiSelect': {
-            'cn': '请点击扫描并选择SSID',
-            'en': 'Please click Scan and select SSID',
-            'ru': 'Нажмите «Сканирование» и выберите SSID'
-        },
-        'max32char': {
-            'cn': '最多32个英文字符',
-            'en': 'Max Length 32 Characters',
-            'ru': 'Макс. длина 32 символа'
-        },
         '0-32charAlias': {
             'cn': '别名：0-32个字符',
             'en': 'Alias:0-32 Characters',
             'ru': 'Псевдоним: 0-32 символа'
-        },
-        'max128char': {
-            'cn': '最多128个英文字符',
-            'en': 'Max Length 128 Characters',
-            'ru': 'Макс. длина 128 символов'
         },
         'empOr8-32char': {
             'cn': '密码可为空或请输入8-32个英文字符',
@@ -2423,148 +2025,13 @@ var SHpack = {
             'en': '4-31 Characters',
             'ru': '4-31 символа'
         },
-        'network_err': {
-            'cn': '网络错误',
-            'en': 'Network  Error',
-            'ru': 'Ошибка сети'
-        },
-        'set_ok': {
-            'cn': '设置成功',
-            'en': 'Settings saved successfully',
-            'ru': 'Настройки сохранены'
-        },
-        'date_err': {
-            'cn': '日期不能为空',
-            'en': 'Date cannot be empty',
-            'ru': 'Дата не может быть пустой'
-        },
-        'set_err': {
-            'cn': '设置失败',
-            'en': 'Settings failed',
-            'ru': 'Ошибка сохранения'
-        },
-        'set_tip': {
-            'cn': '请先正确设置对端1的参数',
-            'en': 'Please set the parameters of the opposite end 1 correctly first',
-            'ru': 'Сначала правильно настройте параметры пира 1'
-        },
-        'band_carderr': {
-            'cn': 'SIM卡未插入或信号太差',
-            'en': 'SIM card not inserted or signal too poor',
-            'ru': 'SIM-карта не вставлена или слишком слабый сигнал'
-        },
-        'band_no': {
-            'cn': '当前设置的频段不支持',
-            'en': 'The currently set frequency band is not supported',
-            'ru': 'Установленный диапазон не поддерживается'
-        },
-        'band_err': {
-            'cn': '锁屏设置失败，请稍后再试',
-            'en': 'Band lock setting failed, please try again later',
-            'ru': 'Ошибка настройки, попробуйте позже'
-        },        'password_error': {
-            'cn': '密码错误',
-            'en': 'Password Error',
-            'ru': 'Ошибка пароля'
-        },
-        'factory_sure': {
-            'cn': '确定恢复出厂设置',
-            'en': 'All configuration will be reset,are you sure?',
-            'ru': 'Все настройки будут сброшены. Вы уверены?'
-        },
-        'setting_setting': {
-            'cn': '确定导入配置',
-            'en': 'Confirm configuration import?',
-            'ru': 'Подтвердить импорт конфигурации?'
-        },
-        'file_null': {
-            'cn': '文件为空',
-            'en': 'Please choose file',
-            'ru': 'Выберите файл'
-        },
-        'ban_set': {
-            'cn': '此模式无法设置',
-            'en': 'This Mode Cannot Be Set ',
-            'ru': 'В этом режиме настройка невозможна'
-        },
-        'illegal': {
-            'cn': '请输入数字',
-            'en': 'Enter a number',
-            'ru': 'Введите число'
-        },
         'number': {
             'cn': '请输入整数',
             'en': 'Enter an integer',
             'ru': 'Введите целое число'
         },
-        'isdhcptime': {
-            'cn': '2-10080分钟',
-            'en': '2 - 10080 minutes',
-            'ru': '2 - 10080 минут'
-        },
-        'isassoc': {
-            'cn': '1-256',
-            'en': '1-256',
-            'ru': '1-256'
-        },
-        'isInterval': {
-            'cn': '请输入1-999之间的数字',
-            'en': 'Number between 1-999',
-            'ru': 'Число от 1 до 999'
-        },
-        'isfrag': {
-            'cn': '请输入256-2346之间的数字',
-            'en': 'Number between 256-2346',
-            'ru': 'Число от 256 до 2346'
-        },
-        'isrts': {
-            'cn': '请输入0-2347之间的数字',
-            'en': 'Number between 0-2347',
-            'ru': 'Число от 0 до 2347'
-        },
         "format_err": {
             "cn": "非法字符",
             "en": "Illegal Character",
             "ru": "Недопустимый символ"
-        },
-        'isdhcpaddr': {
-            'cn': '请输入1-254之间的数字',
-            'en': 'Number between 1-254',
-            'ru': 'Число от 1 до 254'
-        },
-        'isdhcpnum': {
-            'cn': '请输入1-1000之间的数字',
-            'en': 'Number between 1-1000',
-            'ru': 'Число от 1 до 1000'
-        },
-        'ismtu': {
-            'cn': '请输入128-1500之间的数字',
-            'en': 'Number between 128-1500',
-            'ru': 'Число от 128 до 1500'
-        },
-        'notsetting': {
-            'cn': '当前模式无法设置',
-            'en': 'The current mode cannot be set',
-            'ru': 'В текущем режиме настройка невозможна'
-        },
-        'ispower': {
-            'cn': '请输入0-22之间的数字',
-            'en': 'Number between 0-22',
-            'ru': 'Число от 0 до 22'
-        },
-        'dubip': {
-            'cn': '已经存在相同IP',
-            'en': 'The same IP already exists',
-            'ru': 'Такой IP уже существует'
-        },
-        'dubset': {
-            'cn': '已经存在相同设置',
-            'en': 'The same settings already exist',
-            'ru': 'Такие настройки уже существуют'
-        },
-        'forbid_ssid': {
-            'cn': '桥接只能开启第一个SSID',
-            'en': 'In bridge mode, only the first SSID can be enabled',
-            'ru': 'В режиме моста можно включить только первый SSID'
-        }
-    };
+        },};
