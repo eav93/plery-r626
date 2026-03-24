@@ -42,7 +42,10 @@ platform_do_upgrade() {
 }
 
 platform_copy_config() {
-	jffs2_copy_config
+	# rootfs_data is virtual (lives inside firmware partition), so
+	# jffs2_copy_config would be overwritten by the firmware write anyway.
+	# Config is preserved via mtd -j in default_do_upgrade instead.
+	:
 }
 
 disable_watchdog() {
