@@ -158,11 +158,14 @@ define(function (require, exports) {
     // }
 
     et.set_config = function () {
+        if (!wireguard_info || !wireguard_info.wireguard_local || !wireguard_info.wireguard_peer) {
+            return;
+        }
         if (!g.volide_ok('.shbox')) {
             g.shconfirm(nowLang, SHtips.set_err[nowLang], "error");
             return;
         }
-        
+
         wireguard_info.wireguard_local[0].enable = d("#wireguard_switch").val()
         wireguard_info.wireguard_local[0].public_key = d("#wireguard_public_1").val()
         wireguard_info.wireguard_local[0].private_key = d("#wireguard_Private").val()
