@@ -10,15 +10,17 @@ port_type=""
 [ -f ${PORT_STATUS_DIR} ] || mkdir -p ${PORT_STATUS_DIR}
 
 wan_port_init() {
+    local _json_no_warning=1
+
     json_init
     json_load "$(cat /etc/board.json)"
 
-    json_select switch
-	json_select switch0
+    json_select switch 2>/dev/null || return
+	json_select switch0 2>/dev/null || return
 	json_select ports 2>/dev/null || return
 	index=1
 	while json_select $index 2>/dev/null; do
-		index=`expr $index + 1`
+		index=$((index + 1))
 		json_get_var role role
 		[ "$role" != "wan" ] && {
 			json_select ..
@@ -94,7 +96,7 @@ hotplug_portled_start() {
 }
 
 hotplug_portled_trigger() {
-    if [ $PORT = $wan_port ]; then
+    if [ -n "$PORT" ] && [ -n "$wan_port" ] && [ "$PORT" = "$wan_port" ]; then
         port_type=wan
         STATUS=$(get_wan_stat_fromfile)
     else
@@ -132,7 +134,10 @@ get_wan_port() {
         return
     }
     wan_port=$(wan_port_init)
-    [ -n "$wan_port" ] && [ "$wan_port" -ge "0" ] && {
+    case "$wan_port" in
+        ''|*[!0-9]*) return ;;
+    esac
+    [ "$wan_port" -ge "0" ] && {
         echo -n $wan_port >${PORT_STATUS_DIR}wan
     }
 }
@@ -141,7 +146,8 @@ get_wan_port
 [ -n "${STATUS}" ] && echo -n ${STATUS} >${PORT_STATUS_DIR}port${PORT}
 
 cmd=$1
-[ $(uci -q get led.led_off) = "1" ] && cmd=stop
+led_off="$(uci -q get led.led_off 2>/dev/null)"
+[ "$led_off" = "1" ] && cmd=stop
 case "${cmd}" in
     trigger)
         hotplug_portled_trigger

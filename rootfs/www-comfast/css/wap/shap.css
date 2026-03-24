@@ -423,6 +423,18 @@ header label {
     padding-left: 58px;
 }
 
+/* Menu typography levels:
+   L1 (main) equal weight for all items,
+   L2 and L3 slightly lighter and equal between them. */
+.subMenu .navigation > li > a {
+    font-weight: 500;
+}
+
+.subMenu .navigation > li > .sub-menu > li > a,
+.subMenu .navigation > li > .sub-menu > li > .sub-menu > li > a {
+    font-weight: 400;
+}
+
 .subMenu em.current {
     background-color: #3a4a4d;
     color: #FFF;
@@ -476,6 +488,7 @@ header label {
 .subMenu .item-has-children > a span {
     font-family: "Microsoft Yahei", Tahoma, Arial, Roboto, "Droid Sans", "Helvetica Neue", "Droid Sans Fallback", "Heiti SC", "Hiragino Sans GB", Simsun, sans-self;
     font-size: 14px;
+    font-weight: inherit;
 }
 
 .main_content {

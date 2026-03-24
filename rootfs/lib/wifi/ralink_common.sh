@@ -177,8 +177,8 @@ disable_ralink_wifi() {
         [ -n "$ifname" ] && ifconfig $ifname down 2>/dev/null
     done
 
-    # kill any running ap_clients
-    killall ap_client || true
+    # kill any running ap_clients (silently if not running)
+    pidof ap_client >/dev/null 2>&1 && killall ap_client >/dev/null 2>&1
 }
 
 enable_ralink_wifi() {
@@ -280,6 +280,5 @@ config wifi-iface
 
 EOF
 }
-
 
 

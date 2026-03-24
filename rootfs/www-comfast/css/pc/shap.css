@@ -279,6 +279,23 @@ a {
     padding-left: 60px;
 }
 
+/* Menu typography levels:
+   L1 (main) equal weight for all items,
+   L2 and L3 slightly lighter and equal between them. */
+.subMenu .navigation > li > a {
+    font-weight: 500;
+}
+
+.subMenu .navigation > li > .sub-menu > li > a,
+.subMenu .navigation > li > .sub-menu > li > .sub-menu > li > a {
+    font-weight: 400;
+}
+
+.subMenu .navigation a > span {
+    font-family: -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", Arial, "Microsoft YaHei", sans-serif !important;
+    font-weight: inherit;
+}
+
 /*subMenu end*/
 
 /*content_box start*/
