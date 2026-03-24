@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <meta http-equiv="Cache" content="no-cache">
+    <title></title>
+    <link type="image/x-icon" href="/images/favicon.ico" rel="shortcut icon"/>
+    <link rel="stylesheet" href="/css/shreset.css"/>
+    <link rel="stylesheet" href="/css/pc/shap.css"/>
+	<style>
+			body::-webkit-scrollbar {
+			      display: none;
+			   width: 0 !important;
+			  }
+		</style>
+</head>
+<body module="ddns" device="computer" id="mbox_container">
+<div class="container-fluid header">
+    <div class="row">
+        <div class="logo"><a id="logo_herf" target="_blank"><img src="/images/logo.png"></a></div>
+        <ul class="out">
+            <li id="login_out">
+                <a href="#"><i class="iconfont icon-tuichu"></i><span sh_lang="SHpack.logout"></span></a>
+            </li>
+        </ul>
+    </div>
+</div>
+<div class="wapper clearfix">
+    <div class="subMenu clearfix" id="subMenu">
+        <ul class="navigation clearfix"></ul>
+    </div><!--#submenu-->
+
+    <div class="content_box clearfix">
+        <div class="content container-fluid clearfix">
+            <div class="firewall_tab">
+                <div class="row firewall_head">
+                    <div class="col-xs-4">
+                        <span sh_lang="SHpack.ddns"></span>
+                    </div>
+                    <div class="col-xs-8 btngroup">
+                        <a class="btn btn-warning" id="add" data-name="url" et="click:add" sh_lang="SHpack.add"></a>
+                        <a class="btn btn-warning" id="del" data-name="url" et="click:delsele" sh_lang="SHpack.del"></a>
+                    </div>
+                </div>
+                <div class="row">
+                    <div style="overflow-x: scroll; width: 100%;">
+                        <table width="100%" style="min-width: 1280px;">
+                            <thead class="table_head">
+                            <tr>
+                                <th class="hidden"></th>
+                                <th width="7%">
+                                    <input id="allchecked" type="checkbox" et="click:selectall" data-value="0"/>
+                                </th>
+                                <th width="7%" sh_lang="SHpack.number"></th>
+                                <th width="13%" sh_lang="SHpack.ddnsswitch"></th>
+                                <th width="12%" sh_lang="SHpack.provider"></th>
+                                <th width="10%" sh_lang="SHpack.domainname"></th>
+                                <th width="11%" sh_lang="SHpack.nameEmail"></th>
+                                <th width="10%" sh_lang="SHpack.Passwordkey"></th>
+                                <th width="11%" sh_lang="SHpack.ipaddress"></th>
+                                <th width="11%" sh_lang="SHpack.resolve"></th>
+                                <th width="8%" sh_lang="SHpack.operation"></th>
+                            </tr>
+                            </thead>
+                            <tbody id="user_table">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="copyright" sh_lang="SHpack.copyright1"></div>
+        </div>
+    </div>
+</div>
+<div class="mask"></div>
+<input type="text" id="real_num" class="hide"/>
+<div class="add_box url_add">
+    <div class="add_box_head">
+        <i class="iconfont icon-cuowu" et="click:closewin"></i>
+        <h4><span sh_lang="SHpack.add"></span><span sh_lang="SHpack.ddns"></span></h4>
+    </div>
+    <div class="add_box_body modal-body">
+        <div class="add_box_list clearfix">
+            <div class="col-xs-4">
+                <div class="row"><span sh_lang="SHpack.ddnsswitch"></span></div>
+            </div>
+            <div class="col-xs-8">
+                <div class="row">
+                    <select id="switch" class="text" et="change:switchConfig">
+                        <option value="1" sh_lang="SHpack.enable"></option>
+                        <option value="0" sh_lang="SHpack.disable"></option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="add_box_list clearfix">
+            <div class="col-xs-4">
+                <div class="row"><span sh_lang="SHpack.provider"></span></div>
+            </div>
+            <div class="col-xs-8">
+                <div class="row">
+                    <select id="service_name" class="text">
+                        <option value="dyndns.org" >dyndns.org</option>
+                        <option value="3322.org" >3322.org</option>
+                        <option value="Oray.com" >Oray.com</option>
+                        <option value="changeip.com" >changeip.com</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="add_box_list clearfix">
+            <div class="col-xs-4">
+                <div class="row"><span sh_lang="SHpack.domainname"></span></div>
+            </div>
+            <div class="col-xs-8">
+                <div class="row"><input type="text" maxlength="128" id="domain" class="require isNonull isEnglish"/></div>
+            </div>
+        </div>
+        <div class="add_box_list clearfix">
+            <div class="col-xs-4">
+                <div class="row"><span sh_lang="SHpack.nameEmail"></span></div>
+            </div>
+            <div class="col-xs-8">
+                <div class="row"><input type="text" maxlength="50" id="username" class="require isNonull isEnglish"/></div>
+            </div>
+        </div>
+        <div class="add_box_list clearfix">
+            <div class="col-xs-4">
+                <div class="row"><span sh_lang="SHpack.Passwordkey"></span></div>
+            </div>
+            <div class="col-xs-8">
+                <div class="row"><input type="text" maxlength="50" id="password" class="require isNonull isEnglish"/></div>
+            </div>
+        </div>
+        <div class="add_box_list clearfix">
+            <div class="col-xs-4">
+                <div class="row"><span sh_lang="SHpack.ipaddress"></span></div>
+            </div>
+            <div class="col-xs-8">
+                <div class="row">
+                    <select id="src_ip" class="text" et="change:srcipselect">
+                        <option value="network" sh_lang="SHpack.resolve"></option>
+                        <option value="web" sh_lang="SHpack.networkword"></option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="add_box_list clearfix" id="interfacelist">
+            <div class="col-xs-4">
+                <div class="row"><span sh_lang="SHpack.resolve"></span></div>
+            </div>
+            <div class="col-xs-8">
+                <div class="row">
+                    <select id="interfacename" class="text">
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="add_box_foot clearfix">
+        <button class="btn btn-warning pull-right firewall_save ifbtn" et="click:save" sh_lang="SHpack.save"></button>
+    </div>
+</div>
+</body>
+</html>
+<script type="text/javascript" src="/common/sea.js"></script>
+<script type="text/javascript">
+    var moduleName = document.body.getAttribute("module");
+    if (moduleName) {
+        seajs.use([moduleName], function (page) {
+            page.init();
+        });
+    }
+</script>
