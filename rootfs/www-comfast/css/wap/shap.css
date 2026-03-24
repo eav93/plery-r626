@@ -526,6 +526,23 @@ main.menu_open {
     width: 55%;
 }
 
+/* Upgrade page: reduce left label footprint and keep filename on one line */
+body[module="upgrade"] .system li .row_name {
+    display: inline-block;
+    width: 80px;
+    padding-right: 6px;
+    text-align: right;
+}
+
+body[module="upgrade"] #firmware_upg_text {
+    display: inline-block;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
 .list .right .text {
     min-width: 0px;
     width: 100%;

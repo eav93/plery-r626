@@ -804,6 +804,21 @@ a {
     text-align: right;
 }
 
+/* Upgrade page: free more room for firmware filename */
+body[module="upgrade"] .system li label.row_name {
+    width: 180px;
+    padding-right: 8px;
+}
+
+body[module="upgrade"] #firmware_upg_text {
+    display: inline-block;
+    max-width: 380px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
 .system a {
     background-color: #eea236;
 }
