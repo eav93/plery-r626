@@ -21,8 +21,20 @@ jobs:
 
       - name: Set firmware version
         run: |
-          COMMIT_SHORT=$(git rev-parse --short HEAD)
-          VERSION="CF-PLERY-R626-eav93-${COMMIT_SHORT}"
+          # compare_version in libshared.so zeroes any component >= 33.
+          # Keep all four numeric components in range 0..32.
+          MAJOR=2
+          BUILD_NUM=${GITHUB_RUN_NUMBER}
+          C1=$(( BUILD_NUM / (33 * 33) ))
+          C2=$(( (BUILD_NUM / 33) % 33 ))
+          C3=$(( BUILD_NUM % 33 ))
+
+          # Clamp C1 as well to stay within compare_version constraints.
+          if [ "$C1" -gt 32 ]; then
+            C1=32
+          fi
+
+          VERSION="CF-PLERY-R626-eav93-V${MAJOR}.${C1}.${C2}.${C3}"
           echo "FIRMWARE_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "Firmware version: $VERSION"
 
