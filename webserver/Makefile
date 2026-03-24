@@ -12,7 +12,7 @@ all:
 	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS)
 
 cross:
-	$(CC_CROSS) $(CFLAGS) -static -o $(TARGET) $(SRCS)
+	$(CC_CROSS) $(CFLAGS) -static -s -o $(TARGET) $(SRCS)
 
 clean:
 	rm -f $(TARGET)
