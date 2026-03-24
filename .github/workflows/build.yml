@@ -32,7 +32,7 @@ jobs:
 
       # ---- fwtool ----
       - name: Cache fwtool
-        uses: actions/cache@v6
+        uses: actions/cache@v5
         id: fwtool-cache
         with:
           path: fwtool/fwtool
@@ -47,7 +47,7 @@ jobs:
 
       # ---- LEDE SDK (for wbsrv cross-compile) ----
       - name: Cache LEDE SDK
-        uses: actions/cache@v6
+        uses: actions/cache@v5
         id: sdk-cache
         with:
           path: ${{ env.SDK_NAME }}.tar.xz
@@ -194,7 +194,7 @@ jobs:
 
       # ---- Release ----
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.FIRMWARE_VERSION }}
           path: dist/*.bin
