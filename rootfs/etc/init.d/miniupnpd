@@ -191,14 +191,6 @@ start() {
 		# start firewall
 		iptables -L MINIUPNPD >/dev/null 2>/dev/null || fw3 reload
 
-		# miniupnpd 2.0 compiled with ENABLE_IPV6 calls getifaddr_count_ipv6()
-		# at startup; if IPv6 interfaces exist it creates an IPv6 NAT-PMP socket
-		# and calls setsockopt(IPV6_RECVPKTINFO) which this kernel does not support.
-		# Disabling IPv6 briefly forces IPv4-only detection.
-		for _f in /proc/sys/net/ipv6/conf/*/disable_ipv6; do
-			echo 1 > "$_f" 2>/dev/null
-		done
-
 		if [ "$logging" = "1" ]; then
 			SERVICE_DAEMONIZE=1 \
 			service_start /usr/sbin/miniupnpd $args -d
@@ -206,12 +198,6 @@ start() {
 			SERVICE_DAEMONIZE= \
 			service_start /usr/sbin/miniupnpd $args
 		fi
-
-		sleep 1
-
-		for _f in /proc/sys/net/ipv6/conf/*/disable_ipv6; do
-			echo 0 > "$_f" 2>/dev/null
-		done
 	else
 		logger -t "upnp daemon" "external interface not found, not starting"
 	fi
