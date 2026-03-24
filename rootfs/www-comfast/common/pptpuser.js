@@ -9,6 +9,7 @@ define(function (require, exports) {
     require("shpages")(d);
 
     var device, pptpd_user, action;
+    var pagerState = null;
 
     exports.init = function () {
         e.plugInit(et, start_model);
@@ -44,6 +45,7 @@ define(function (require, exports) {
         f.getPPTPuser(function (data) {
             if (data.errCode == 0) {
                 pptpd_user = data.pptpd_user || [];
+                pagerState = parsePagerState(data, pptpd_user.length);
                 refresh_userlist();
             }
         });
@@ -51,24 +53,63 @@ define(function (require, exports) {
     }
 
     function refresh_userlist() {
-        var defapage, defanum;
         if (!pptpd_user.length) {
             d("#user_table").html('');
+            d('#url_page').hide();
             d('.PageInfo').html('');
             d('.PageCode').html('');
             return;
         }
-        defapage = 1;
-        defanum = 10;
-        urllist_show(defapage, defanum);
-        d("#url_page").SHPages({
-            total: pptpd_user.length,
-            pageTotal: defanum,
-            current: defapage,
-            PageFn: function (p) {
-                urllist_show(p, defanum);
-            }
-        }, nowLang);
+
+        if (pagerState && pagerState.enabled) {
+            urllist_show(pagerState.current, pagerState.pageSize);
+            d('#url_page').show();
+            d("#url_page").SHPages({
+                total: pagerState.total,
+                pageTotal: pagerState.pageSize,
+                current: pagerState.current,
+                PageFn: function (p) {
+                    urllist_show(p, pagerState.pageSize);
+                }
+            }, nowLang);
+            return;
+        }
+
+        d('#url_page').hide();
+        d('.PageInfo').html('');
+        d('.PageCode').html('');
+        urllist_show();
+    }
+
+    function parsePagerState(data, listLength) {
+        var pageSize = parseInt(data.pageTotal || data.page_size || data.pageSize || 0, 10);
+        var current = parseInt(data.current || data.page || data.page_no || 1, 10);
+        var total = parseInt(data.total || data.total_count || listLength, 10);
+        var enabled = false;
+
+        if (isNaN(pageSize) || pageSize <= 0) {
+            return null;
+        }
+
+        if (isNaN(current) || current <= 0) {
+            current = 1;
+        }
+
+        if (isNaN(total) || total <= 0) {
+            total = listLength;
+        }
+
+        enabled = total > pageSize;
+        if (!enabled) {
+            return null;
+        }
+
+        return {
+            enabled: true,
+            pageSize: pageSize,
+            current: current,
+            total: total
+        };
     }
 
     function urllist_show(currentline, pageline) {
@@ -76,20 +117,28 @@ define(function (require, exports) {
         d('.row_checkbox').prop('checked', false).attr('data-value', '0');
         d('#allchecked').prop('checked', false).attr('data-value', '0');
         var this_html = '';
+        var startIndex = 0;
+        var endIndex = pptpd_user.length;
         d("#user_table").empty();
-        d.each(pptpd_user, function (n, m) {
-            if (n >= (parseInt(currentline) - 1) * pageline && n < parseInt(currentline) * pageline) {
 
-                this_html += '<tr>';
-                this_html += '<td><input type="checkbox" et="click:select_row" class="row_checkbox"></td>';
-                this_html += '<td>' + (n + 1) + '</td>';
-                this_html += '<td class="pptp_username" >' + m.username + '</td>';
-                this_html += '<td class="pptp_password" >' + m.password + '</td>';
-                this_html += '<td class="real_num" style="display: none">' + m.real_num + '</td>';
-                this_html += '<td ><i et="click:edit" class="list_edit" sh_title = "SHpack.edit" title = "' + SHpack.edit[nowLang] + '"></i><i et="click:del" class="list_del" sh_title = "SHpack.del" title = "' + SHpack.del[nowLang] + '"></i></td>';
-                this_html += '</tr>';
+        if (currentline && pageline) {
+            startIndex = (parseInt(currentline, 10) - 1) * pageline;
+            endIndex = parseInt(currentline, 10) * pageline;
+        }
+
+        d.each(pptpd_user, function (n, m) {
+            if (n < startIndex || n >= endIndex) {
+                return;
             }
-        })
+            this_html += '<tr>';
+            this_html += '<td><input type="checkbox" et="click:select_row" class="row_checkbox"></td>';
+            this_html += '<td>' + (n + 1) + '</td>';
+            this_html += '<td class="pptp_username" >' + m.username + '</td>';
+            this_html += '<td class="pptp_password" >' + m.password + '</td>';
+            this_html += '<td class="real_num" style="display: none">' + m.real_num + '</td>';
+            this_html += '<td ><i et="click:edit" class="list_edit" sh_title = "SHpack.edit" title = "' + SHpack.edit[nowLang] + '"></i><i et="click:del" class="list_del" sh_title = "SHpack.del" title = "' + SHpack.del[nowLang] + '"></i></td>';
+            this_html += '</tr>';
+        });
         d("#user_table").append(this_html);
     }
 

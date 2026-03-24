@@ -1042,6 +1042,21 @@ body[module="onlineupg"] .list .right {
     font-size: 14px;
 }
 
+/* usersreal: compact wrapped headers for long translated titles */
+body[module="usersreal"] .user_tab table thead {
+    height: auto;
+    line-height: normal;
+    font-size: 14px;
+}
+
+body[module="usersreal"] .user_tab table th {
+    padding: 6px 4px;
+    line-height: 1.2;
+    white-space: normal;
+    word-break: break-word;
+    vertical-align: middle;
+}
+
 .user_tab table tbody tr {
     height: 48px;
     padding: 6px 0;

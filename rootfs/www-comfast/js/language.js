@@ -1054,8 +1054,8 @@ var SHpack = {
         },
         'remoteswitch': {
             'cn': '开关',
-            'en': 'Remote Management',
-            'ru': 'Удал. управление'
+            'en': 'Enable/Disable',
+            'ru': 'Вкл/Выкл'
         },
         'port': {
             'cn': '端口',
