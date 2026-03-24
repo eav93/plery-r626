@@ -423,16 +423,46 @@ header label {
     padding-left: 58px;
 }
 
+.subMenu .sub-menu .item-has-children > a {
+    padding-left: 58px;
+}
+
+.subMenu .sub-menu .sub-menu a,
+.subMenu .sub-menu .sub-menu .item-has-children > a {
+    padding-left: 72px;
+}
+
+.subMenu .sub-menu a > span {
+    margin: 0 !important;
+}
+
 /* Menu typography levels:
    L1 (main) equal weight for all items,
    L2 and L3 slightly lighter and equal between them. */
 .subMenu .navigation > li > a {
+    display: flex;
+    align-items: center;
     font-weight: 500;
+}
+
+.subMenu .navigation > li > a > span {
+    -webkit-font-smoothing: auto !important;
+    -moz-osx-font-smoothing: auto !important;
+}
+
+.subMenu .navigation > li.item-has-children > a,
+.subMenu .navigation > li.item-has-children > a > span {
+    font-weight: 500 !important;
 }
 
 .subMenu .navigation > li > .sub-menu > li > a,
 .subMenu .navigation > li > .sub-menu > li > .sub-menu > li > a {
-    font-weight: 400;
+    font-weight: 400 !important;
+    font-size: 14px !important;
+}
+
+.subMenu .navigation > li > a > i {
+    line-height: 1;
 }
 
 .subMenu em.current {
@@ -489,6 +519,8 @@ header label {
     font-family: "Microsoft Yahei", Tahoma, Arial, Roboto, "Droid Sans", "Helvetica Neue", "Droid Sans Fallback", "Heiti SC", "Hiragino Sans GB", Simsun, sans-self;
     font-size: 14px;
     font-weight: inherit;
+    -webkit-font-smoothing: auto !important;
+    -moz-osx-font-smoothing: auto !important;
 }
 
 .main_content {

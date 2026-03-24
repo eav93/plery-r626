@@ -249,22 +249,29 @@ a {
     position: relative;
 }
 
-.subMenu .item-has-children a.iconfont:after {
-    width: 20px;
-    height: 40px;
-    position: absolute;
-    top: 0;
-    right: 24px;
+.subMenu .item-has-children > a:after {
+    content: "\e607";
     display: block;
-    content: "\e607"
+    width: 12px;
+    height: 12px;
+    line-height: 12px;
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
 }
 
 .subMenu .item-has-children > a {
-    font-family: -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", Arial, "Microsoft YaHei", sans-serif !important;
+    position: relative;
+    font-family: "Microsoft Yahei", Tahoma, Arial, Roboto, "Droid Sans", "Helvetica Neue", "Droid Sans Fallback", "Heiti SC", "Hiragino Sans GB", Simsun, sans-self !important;
 }
 
 .subMenu .item-has-children > a:after {
     font-family: "iconfont" !important;
+}
+
+.subMenu .item-has-children > a.submenu-open:after {
+    transform: translateY(-50%) rotate(90deg);
 }
 
 .subMenu .sub-menu {
@@ -279,21 +286,60 @@ a {
     padding-left: 60px;
 }
 
+.subMenu .sub-menu .item-has-children > a {
+    padding-left: 40px;
+}
+
+.subMenu .sub-menu .sub-menu .item-has-children > a {
+    padding-left: 60px;
+}
+
+.subMenu .sub-menu a > span {
+    margin: 0 !important;
+}
+
 /* Menu typography levels:
    L1 (main) equal weight for all items,
    L2 and L3 slightly lighter and equal between them. */
 .subMenu .navigation > li > a {
+    display: flex;
+    align-items: center;
     font-weight: 500;
+}
+
+.subMenu .navigation > li > a > span {
+    font-family: "Microsoft Yahei", Tahoma, Arial, Roboto, "Droid Sans", "Helvetica Neue", "Droid Sans Fallback", "Heiti SC", "Hiragino Sans GB", Simsun, sans-self !important;
+    font-size: 16px;
+    font-weight: 500 !important;
+    -webkit-font-smoothing: auto !important;
+    -moz-osx-font-smoothing: auto !important;
+}
+
+.subMenu .item-has-children > a > span {
+    font-family: "Microsoft Yahei", Tahoma, Arial, Roboto, "Droid Sans", "Helvetica Neue", "Droid Sans Fallback", "Heiti SC", "Hiragino Sans GB", Simsun, sans-self !important;
+    -webkit-font-smoothing: auto !important;
+    -moz-osx-font-smoothing: auto !important;
+}
+
+.subMenu .navigation > li.item-has-children > a,
+.subMenu .navigation > li.item-has-children > a > span {
+    font-weight: 500 !important;
 }
 
 .subMenu .navigation > li > .sub-menu > li > a,
 .subMenu .navigation > li > .sub-menu > li > .sub-menu > li > a {
-    font-weight: 400;
+    font-weight: 400 !important;
+    font-size: 14px !important;
 }
 
-.subMenu .navigation a > span {
-    font-family: -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", Arial, "Microsoft YaHei", sans-serif !important;
-    font-weight: inherit;
+.subMenu .navigation > li > .sub-menu > li > a > span,
+.subMenu .navigation > li > .sub-menu > li > .sub-menu > li > a > span {
+    font-weight: 400 !important;
+    font-size: 14px !important;
+}
+
+.subMenu .navigation > li > a > i {
+    line-height: 1;
 }
 
 /*subMenu end*/
