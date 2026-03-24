@@ -26,28 +26,20 @@ jobs:
 
       - name: Build frontend payload (no package.json)
         run: |
-          rm -rf dist/www-comfast
-          mkdir -p dist
-          cp -a rootfs/www-comfast dist/www-comfast
           echo "Frontend size before minify:"
-          du -sh dist/www-comfast
+          du -sh rootfs/www-comfast
 
-          # Minify CSS in copied frontend tree
-          find dist/www-comfast/css -type f -name '*.css' -print0 | \
+          # Minify CSS in-place
+          find rootfs/www-comfast/css -type f -name '*.css' -print0 | \
             xargs -0 -n 1 -P 8 -I{} sh -c \
             'npx -y -p csso-cli csso -i "$1" -o "$1"' _ {}
 
-          # Minify legacy JS files in place (SeaJS/common scripts included)
-          find dist/www-comfast -type f -name '*.js' ! -name '*.min.js' -print0 | \
+          # Minify legacy JS in-place (SeaJS/common scripts included)
+          find rootfs/www-comfast -type f -name '*.js' ! -name '*.min.js' -print0 | \
             xargs -0 -n 1 -P 8 -I{} sh -c \
             'npx -y -p terser terser "$1" --compress --mangle --ecma 5 --comments false -o "$1"' _ {}
           echo "Frontend size after minify:"
-          du -sh dist/www-comfast
-
-      - name: Use built frontend in firmware rootfs
-        run: |
-          rm -rf rootfs/www-comfast
-          cp -a dist/www-comfast rootfs/www-comfast
+          du -sh rootfs/www-comfast
 
       - name: Set firmware version
         run: |
