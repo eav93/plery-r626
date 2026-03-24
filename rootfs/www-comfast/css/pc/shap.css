@@ -1162,21 +1162,6 @@ body[module="onlineupg"] .list .right {
     font-size: 14px;
 }
 
-/* usersreal: compact wrapped headers for long translated titles */
-body[module="usersreal"] .user_tab table thead {
-    height: auto;
-    line-height: normal;
-    font-size: 14px;
-}
-
-body[module="usersreal"] .user_tab table th {
-    padding: 8px 6px;
-    line-height: 1.2;
-    white-space: normal;
-    word-break: break-word;
-    vertical-align: middle;
-}
-
 .user_tab table tbody tr {
     height: 40px;
 }
@@ -1213,84 +1198,6 @@ body[module="usersreal"] .user_tab table th {
 }
 
 /*user end*/
-
-/*page start*/
-.page {
-    padding-top: 15px;
-    height: 45px;
-}
-
-.page div.PageInfo {
-    position: absolute;
-    left: 15px;
-    height: 25px;
-    line-height: 25px;
-    font-size: 14px;
-}
-
-.page div.PageInfo .number {
-    margin: 0px 6px;
-}
-
-.page .PageInfo input {
-    width: 30px;
-    text-align: center;
-    border: 1px solid #eeeeee;
-    margin: 0px 4px;
-}
-
-.page .PageInfo button {
-    margin: 0px 4px;
-    background: #eeeeee;
-    border-radius: 4px;
-    font-size: 12px;
-    padding: 4px;
-}
-
-.page ul.PageCode {
-    position: absolute;
-    right: 15px;
-    text-align: center;
-    color: #ccc;
-}
-
-.page ul.PageCode a, .page ul.PageCode span.current, .page ul.PageCode span.disabled, .page ul.PageCode span.more {
-    display: inline-block;
-    height: 25px;
-    line-height: 20px;
-    padding: 0 10px;
-    margin: 0 2px;
-    border-radius: 4px;
-    vertical-align: middle;
-}
-
-.page ul.PageCode a {
-    color: #bababa;
-    border: 1px solid #ddd;
-}
-
-.page ul.PageCode a:hover {
-    text-decoration: none;
-    border: 1px solid #e0aa08;
-}
-
-.page ul.PageCode span.current {
-    color: #fff;
-    background-color: #1d1e1f;
-    border: 1px solid #1d1e1f;
-}
-
-.page ul.PageCode span.disabled {
-    color: #bfbfbf;
-    background: #f2f2f2;
-    border: 1px solid #bfbfbf;
-}
-
-.page ul.PageCode span.more {
-    color: #bfbfbf;
-}
-
-/*page end*/
 
 /*logs start*/
 

@@ -6,8 +6,6 @@ define(function (require, exports) {
         nowLang,
         et = {};
 
-    require("shpages")(d);
-
     var device, urlfilter_info, optflag;
 
     exports.init = function () {
@@ -39,7 +37,6 @@ define(function (require, exports) {
     }
 
     function refresh_init() {
-        d('#select_laber').text(SHpack.selectall[nowLang]);
         d('input[type=checkbox]').prop('checked', false).attr('data-value', '0');
         f.getUrlFilter(function (data) {
             if (data.errCode == 0) {
@@ -51,43 +48,26 @@ define(function (require, exports) {
     }
 
     function refresh_urllist() {
-        var defapage, defanum;
         if (!urlfilter_info.length) {
             d("#url_filters_table").html('');
-            d('.PageInfo').html('');
-            d('.PageCode').html('');
             return;
         }
-        defapage = 1;
-        defanum = 10;
-        urllist_show(defapage, defanum);
-        d("#url_page").SHPages({
-            total: urlfilter_info.length,
-            pageTotal: defanum,
-            current: defapage,
-            PageFn: function (p) {
-                urllist_show(p, defanum);
-            }
-        }, nowLang);
+        urllist_show();
     }
 
-    function urllist_show(currentline, pageline) {
-        d('#select_laber').text(SHpack.selectall[nowLang]);
+    function urllist_show() {
         d('.row_checkbox').prop('checked', false).attr('data-value', '0');
         d('#allchecked').prop('checked', false).attr('data-value', '0');
         var this_html = '';
         d("#url_filters_table").empty();
         d.each(urlfilter_info, function (n, m) {
-            if (n >= (parseInt(currentline) - 1) * pageline && n < parseInt(currentline) * pageline) {
-
-                this_html += '<tr>';
-                this_html += '<td><input type="checkbox" et="click:select_row" class="row_checkbox"></td>';
-                this_html += '<td>' + (n + 1) + '</td>';
-                this_html += '<td class="url_name" >' + m.url_name + '</td>';
-                this_html += '<td class="url_rnum" style="display: none">' + m.url_com_num + '</td>';
-                this_html += '<td ><i et="click:edit" class="list_edit" sh_title = "SHpack.edit" title = "' + SHpack.edit[nowLang] + '"></i><i et="click:del" class="list_del" sh_title = "SHpack.del" title = "' + SHpack.del[nowLang] + '"></i></td>';
-                this_html += '</tr>';
-            }
+            this_html += '<tr>';
+            this_html += '<td><input type="checkbox" et="click:select_row" class="row_checkbox"></td>';
+            this_html += '<td>' + (n + 1) + '</td>';
+            this_html += '<td class="url_name" >' + m.url_name + '</td>';
+            this_html += '<td class="url_rnum" style="display: none">' + m.url_com_num + '</td>';
+            this_html += '<td ><i et="click:edit" class="list_edit" sh_title = "SHpack.edit" title = "' + SHpack.edit[nowLang] + '"></i><i et="click:del" class="list_del" sh_title = "SHpack.del" title = "' + SHpack.del[nowLang] + '"></i></td>';
+            this_html += '</tr>';
         })
         d("#url_filters_table").append(this_html);
     }
@@ -95,11 +75,9 @@ define(function (require, exports) {
     et.selectall = function () {
         var allcheckvalue = d('#allchecked').attr('data-value');
         if (allcheckvalue == '0') {
-            d('#select_laber').text(SHpack.cancelall[nowLang]);
             d('.row_checkbox').prop('checked', true).attr('data-value', '1');
             d('#allchecked').prop('checked', true).attr('data-value', '1');
         } else {
-            d('#select_laber').text(SHpack.selectall[nowLang]);
             d('.row_checkbox').prop('checked', false).attr('data-value', '0');
             d('#allchecked').prop('checked', false).attr('data-value', '0');
         }
@@ -108,14 +86,12 @@ define(function (require, exports) {
     et.select_row = function (evt) {
         var rowcheck = d(evt).attr('data-value');
         if (rowcheck == '1') {
-            d('#select_laber').text(SHpack.selectall[nowLang]);
             d(evt).prop('checked', false).attr('data-value', '0');
             d('#allchecked').prop('checked', false).attr('data-value', '0');
         } else {
             d(evt).prop('checked', true).attr('data-value', '1');
         }
         if (d('.row_checkbox').length == d('.row_checkbox:checked').length) {
-            d('#select_laber').text(SHpack.cancelall[nowLang]);
             d('#allchecked').prop('checked', true).attr('data-value', '1');
         }
     }

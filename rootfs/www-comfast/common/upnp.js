@@ -6,8 +6,6 @@ define(function (require, exports) {
         nowLang,
         et = {};
 
-    require("shpages")(d);
-
     var device, upnp_list = [], upnp_enabled = 0;
 
     exports.init = function () {
@@ -54,30 +52,17 @@ define(function (require, exports) {
     }
 
     function refresh_list() {
-        var defapage = 1, defanum = 10;
-
         if (!upnp_list.length) {
             d("#port_table").html('');
-            d('.PageInfo').html('');
-            d('.PageCode').html('');
             return;
         }
 
-        list_show(defapage, defanum);
-        d("#port_page").SHPages({
-            total: upnp_list.length,
-            pageTotal: defanum,
-            current: defapage,
-            PageFn: function (p) {
-                list_show(p, defanum);
-            }
-        });
+        list_show();
     }
 
-    function list_show(page, num) {
-        var html = '', start = (page - 1) * num, end = Math.min(start + num, upnp_list.length);
-
-        for (var i = start; i < end; i++) {
+    function list_show() {
+        var html = '';
+        for (var i = 0; i < upnp_list.length; i++) {
             var item = upnp_list[i];
             html += '<tr>';
             html += '<td>' + (i + 1) + '</td>';

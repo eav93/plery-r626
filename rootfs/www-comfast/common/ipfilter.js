@@ -6,8 +6,6 @@ define(function (require, exports) {
         nowLang,
         et = {};
 
-    require("shpages")(d);
-
     var device, ipfilter_info, optflag;
 
     exports.init = function () {
@@ -40,7 +38,6 @@ define(function (require, exports) {
     }
 
     function refresh_init() {
-        d('#select_laber').text(SHpack.selectall[nowLang]);
         d('input[type=checkbox]').attr('checked', false).attr('data-value', '0');
         f.getIpFilter(function (data) {
             if (data.errCode == 0) {
@@ -51,53 +48,37 @@ define(function (require, exports) {
     }
 
     function refresh_iplist() {
-        var defapage, defanum;
         if (!ipfilter_info.length) {
             d("#ip_filters_table").html('');
-            d('.PageInfo').html('');
-            d('.PageCode').html('');
             return;
         }
-        defapage = 1;
-        defanum = 10;
-        list_show(defapage, defanum);
-        d("#ip_page").SHPages({
-            total: ipfilter_info.length,
-            pageTotal: defanum,
-            current: defapage,
-            PageFn: function (p) {
-                list_show(p, defanum);
-            }
-        }, nowLang);
+        list_show();
     }
 
-    function list_show(currentline, pageline) {
+    function list_show() {
         var this_html = '';
-        d('#select_laber').text(SHpack.selectall[nowLang]);
         d('.row_checkbox').prop('checked', false).attr('data-value', '0');
         d('#allchecked').prop('checked', false).attr('data-value', '0');
         d("#ip_filters_table").empty();
         d.each(ipfilter_info, function (n, m) {
-            if (n >= (parseInt(currentline) - 1) * pageline && n < parseInt(currentline) * pageline) {
-                var iplist, src_ip, dst_ip;
-                if (m.src_ip.indexOf('-') < 0) {
-                    src_ip = dst_ip = m.src_ip;
-                } else {
-                    iplist = m.src_ip.split("-");
-                    src_ip = iplist[0];
-                    dst_ip = iplist[1];
-                }
-                this_html += '<tr>';
-                this_html += '<td><input type="checkbox"  et="click:select_row" class="row_checkbox"></td>';
-                this_html += '<td>' + (n + 1) + '</td>';
-                this_html += '<td class="ip_proto">' + m.proto.toUpperCase() + '</td>';
-                this_html += '<td class="ip_sip">' + src_ip + '</td>';
-                this_html += '<td class="ip_dip">' + dst_ip + '</td>';
-                this_html += '<td class="ip_reamek">' + m.name + '</td>';
-                this_html += '<td class="real_num" style="display: none">' + m.real_num + '</td>';
-                this_html += '<td ><i et="click:edit" data-value="0" class="list_edit" sh_title = "SHpack.edit" title = "' + SHpack.edit[nowLang] + '"></i><i et="click:del" sh_title = "SHpack.del" title = "' + SHpack.del[nowLang] + '" class="list_del"></i></td>';
-                this_html += '</tr>';
+            var iplist, src_ip, dst_ip;
+            if (m.src_ip.indexOf('-') < 0) {
+                src_ip = dst_ip = m.src_ip;
+            } else {
+                iplist = m.src_ip.split("-");
+                src_ip = iplist[0];
+                dst_ip = iplist[1];
             }
+            this_html += '<tr>';
+            this_html += '<td><input type="checkbox"  et="click:select_row" class="row_checkbox"></td>';
+            this_html += '<td>' + (n + 1) + '</td>';
+            this_html += '<td class="ip_proto">' + m.proto.toUpperCase() + '</td>';
+            this_html += '<td class="ip_sip">' + src_ip + '</td>';
+            this_html += '<td class="ip_dip">' + dst_ip + '</td>';
+            this_html += '<td class="ip_reamek">' + m.name + '</td>';
+            this_html += '<td class="real_num" style="display: none">' + m.real_num + '</td>';
+            this_html += '<td ><i et="click:edit" data-value="0" class="list_edit" sh_title = "SHpack.edit" title = "' + SHpack.edit[nowLang] + '"></i><i et="click:del" sh_title = "SHpack.del" title = "' + SHpack.del[nowLang] + '" class="list_del"></i></td>';
+            this_html += '</tr>';
         });
         d("#ip_filters_table").append(this_html);
     }
@@ -105,11 +86,9 @@ define(function (require, exports) {
     et.selectall = function () {
         var allcheckvalue = d('#allchecked').attr('data-value');
         if (allcheckvalue == '0') {
-            d('#select_laber').text(SHpack.cancelall[nowLang]);
             d('.row_checkbox').prop('checked', true).attr('data-value', '1');
             d('#allchecked').prop('checked', true).attr('data-value', '1');
         } else {
-            d('#select_laber').text(SHpack.selectall[nowLang]);
             d('.row_checkbox').prop('checked', false).attr('data-value', '0');
             d('#allchecked').prop('checked', false).attr('data-value', '0');
         }
@@ -118,14 +97,12 @@ define(function (require, exports) {
     et.select_row = function (evt) {
         var rowcheck = d(evt).attr('data-value');
         if (rowcheck == '1') {
-            d('#select_laber').text(SHpack.selectall[nowLang]);
             d(evt).prop('checked', false).attr('data-value', '0');
             d('#allchecked').prop('checked', false).attr('data-value', '0');
         } else {
             d(evt).prop('checked', true).attr('data-value', '1');
         }
         if (d('.row_checkbox').length == d('.row_checkbox:checked').length) {
-            d('#select_laber').text(SHpack.cancelall[nowLang]);
             d('#allchecked').prop('checked', true).attr('data-value', '1');
         }
     }

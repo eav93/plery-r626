@@ -6,8 +6,6 @@ define(function (require, exports) {
         nowLang,
         et = {};
 
-    require("shpages")(d);
-
     var device, ddns_info = [], optflag;
 
     exports.init = function () {
@@ -40,7 +38,6 @@ define(function (require, exports) {
     }
 
     function refresh_init() {
-        d('#select_laber').text(SHpack.selectall[nowLang]);
         d('input[type=checkbox]').prop('checked', false).attr('data-value', '0');
 
         f.getMConfig('ddns', '', function (data) {
@@ -53,30 +50,17 @@ define(function (require, exports) {
     }
 
     function refresh_list() {
-        var defapage = 1, defanum = 10;
-
         if (!ddns_info.length) {
             d("#user_table").html('');
-            d('.PageInfo').html('');
-            d('.PageCode').html('');
             return;
         }
 
-        list_show(defapage, defanum);
-        d("#url_page").SHPages({
-            total: ddns_info.length,
-            pageTotal: defanum,
-            current: defapage,
-            PageFn: function (p) {
-                list_show(p, defanum);
-            }
-        });
+        list_show();
     }
 
-    function list_show(page, num) {
-        var html = '', start = (page - 1) * num, end = Math.min(start + num, ddns_info.length);
-
-        for (var i = start; i < end; i++) {
+    function list_show() {
+        var html = '';
+        for (var i = 0; i < ddns_info.length; i++) {
             var item = ddns_info[i];
             html += '<tr>';
             html += '<td><input type="checkbox" data-value="0" data-index="' + i + '" class="itemcheck"/></td>';

@@ -6,8 +6,6 @@ define(function (require, exports) {
         nowLang,
         et = {};
 
-    require("shpages")(d);
-
     var device, port_info, optflag;
 
     exports.init = function () {
@@ -39,7 +37,6 @@ define(function (require, exports) {
     }
 
     function refresh_init() {
-        d('#select_laber').text(SHpack.selectall[nowLang]);
         d('input[type=checkbox]').prop('checked', false).attr('data-value', '0');
         f.getPortforward(function (data) {
             if (data.errCode == 0) {
@@ -50,61 +47,45 @@ define(function (require, exports) {
     }
 
     function refresh_portlist() {
-        var defapage, defanum;
         if (!port_info.length) {
             d("#port_table").html('');
-            d('.PageInfo').html('');
-            d('.PageCode').html('');
             return;
         }
-        defapage = 1;
-        defanum = 10;
-        portlist_show(defapage, defanum);
-        d("#port_page").SHPages({
-            total: port_info.length,
-            pageTotal: defanum,
-            current: defapage,
-            PageFn: function (p) {
-                portlist_show(p, defanum);
-            }
-        }, nowLang);
+        portlist_show();
     }
 
-    function portlist_show(currentline, pageline) {
-        d('#select_laber').text(SHpack.selectall[nowLang]);
+    function portlist_show() {
         d('.row_checkbox').prop('checked', false).attr('data-value', '0');
         d('#allchecked').prop('checked', false).attr('data-value', '0');
         var this_html = '';
         d("#port_table").empty();
         d.each(port_info, function (n, m) {
-            if (n >= (parseInt(currentline) - 1) * pageline && n < parseInt(currentline) * pageline) {
-                var portlist, start_port, end_port;
+            var portlist, start_port, end_port;
 
-                if (m.src_dport.indexOf('-') < 0) {
-                    start_port = end_port = m.src_dport;
-                } else {
-                    portlist = m.src_dport.split("-");
-                    start_port = portlist[0];
-                    end_port = portlist[1];
-                }
-
-                this_html += '<tr>';
-                this_html += '<td><input type="checkbox" et="click:select_row" class="row_checkbox"></td>';
-                this_html += '<td>' + (n + 1) + '</td>';
-                this_html += '<td class="dest_ip">' + m.dest_ip + '</td>';
-                this_html += '<td class="pf_proto">' + m.proto.toUpperCase() + '</td>';
-                if (m.proto.toUpperCase() == 'ALL') {
-                    this_html += '<td class="pf_sp">1</td>';
-                    this_html += '<td class="pf_ep">65535</td>';
-                } else {
-                    this_html += '<td class="pf_sp">' + start_port + '</td>';
-                    this_html += '<td class="pf_ep">' + end_port + '</td>';
-                }
-                this_html += '<td class="pf_name">' + m.name + '</td>';
-                this_html += '<td class="pf_rnum" style="display: none">' + m.real_num + '</td>';
-                this_html += '<td ><i et="click:edit" class="list_edit" sh_title = "SHpack.edit" title = "' + SHpack.edit[nowLang] + '"></i><i et="click:del" class="list_del" sh_title = "SHpack.del" title = "' + SHpack.del[nowLang] + '"></i></td>';
-                this_html += '</tr>';
+            if (m.src_dport.indexOf('-') < 0) {
+                start_port = end_port = m.src_dport;
+            } else {
+                portlist = m.src_dport.split("-");
+                start_port = portlist[0];
+                end_port = portlist[1];
             }
+
+            this_html += '<tr>';
+            this_html += '<td><input type="checkbox" et="click:select_row" class="row_checkbox"></td>';
+            this_html += '<td>' + (n + 1) + '</td>';
+            this_html += '<td class="dest_ip">' + m.dest_ip + '</td>';
+            this_html += '<td class="pf_proto">' + m.proto.toUpperCase() + '</td>';
+            if (m.proto.toUpperCase() == 'ALL') {
+                this_html += '<td class="pf_sp">1</td>';
+                this_html += '<td class="pf_ep">65535</td>';
+            } else {
+                this_html += '<td class="pf_sp">' + start_port + '</td>';
+                this_html += '<td class="pf_ep">' + end_port + '</td>';
+            }
+            this_html += '<td class="pf_name">' + m.name + '</td>';
+            this_html += '<td class="pf_rnum" style="display: none">' + m.real_num + '</td>';
+            this_html += '<td ><i et="click:edit" class="list_edit" sh_title = "SHpack.edit" title = "' + SHpack.edit[nowLang] + '"></i><i et="click:del" class="list_del" sh_title = "SHpack.del" title = "' + SHpack.del[nowLang] + '"></i></td>';
+            this_html += '</tr>';
         });
         d("#port_table").append(this_html);
     }
@@ -112,11 +93,9 @@ define(function (require, exports) {
     et.selectall = function () {
         var allcheckvalue = d('#allchecked').attr('data-value');
         if (allcheckvalue == '0') {
-            d('#select_laber').text(SHpack.cancelall[nowLang]);
             d('.row_checkbox').prop('checked', true).attr('data-value', '1');
             d('#allchecked').prop('checked', true).attr('data-value', '1');
         } else {
-            d('#select_laber').text(SHpack.selectall[nowLang]);
             d('.row_checkbox').prop('checked', false).attr('data-value', '0');
             d('#allchecked').prop('checked', false).attr('data-value', '0');
         }
@@ -125,14 +104,12 @@ define(function (require, exports) {
     et.select_row = function (evt) {
         var rowcheck = d(evt).attr('data-value');
         if (rowcheck == '1') {
-            d('#select_laber').text(SHpack.selectall[nowLang]);
             d(evt).prop('checked', false).attr('data-value', '0');
             d('#allchecked').prop('checked', false).attr('data-value', '0');
         } else {
             d(evt).prop('checked', true).attr('data-value', '1');
         }
         if (d('.row_checkbox').length == d('.row_checkbox:checked').length) {
-            d('#select_laber').text(SHpack.cancelall[nowLang]);
             d('#allchecked').prop('checked', true).attr('data-value', '1');
         }
     }

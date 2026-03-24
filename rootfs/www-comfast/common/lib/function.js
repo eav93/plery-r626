@@ -10,9 +10,26 @@ define(function(require, exports) {
 	var nowLang, menu_html = '';
 	var this_url = location.pathname;
 
+	function applyRuntimeLanguage(lang) {
+		var htmlLang = 'en';
+		if (lang === 'ru') {
+			htmlLang = 'ru';
+		} else if (lang === 'cn') {
+			htmlLang = 'zh-CN';
+		}
+
+		d('html').attr('lang', htmlLang).attr('translate', 'no').addClass('notranslate');
+		d('body').attr('translate', 'no').addClass('notranslate');
+
+		if (!d('meta[name="google"]').length) {
+			d('<meta>', {name: 'google', content: 'notranslate'}).appendTo('head');
+		}
+	}
+
 	/* common init */
 	exports.login_init = function(data, device) {
 		nowLang = data;
+		applyRuntimeLanguage(nowLang);
 		document.title = SHpack.global_title[nowLang];
         click_href()
 		d('#login_out').on('click', function() {
@@ -45,6 +62,7 @@ define(function(require, exports) {
 	/* common init */
 	exports.common = function(data, device) {
 		nowLang = data;
+		applyRuntimeLanguage(nowLang);
 		document.title = SHpack.global_title[nowLang];
 		click_href()
 		d('#login_out').on('click', function() {
@@ -540,6 +558,7 @@ define(function(require, exports) {
 		};
 		f.setlanguage(this_data, function(data) {
 			if (data.errCode == '0') {
+				applyRuntimeLanguage(arg);
 				e.replacetext(arg);
 				//location.replace(location);
 				//e.replacetext(arg);

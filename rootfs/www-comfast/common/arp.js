@@ -6,8 +6,6 @@ define(function (require, exports) {
         nowLang,
         et = {};
 
-    require("shpages")(d);
-
     var device, arpbind_info = [], arp_info, optflag;
 
     exports.init = function () {
@@ -39,7 +37,6 @@ define(function (require, exports) {
     }
 
     function refresh_init() {
-        d('#select_laber').text(SHpack.selectall[nowLang]);
         d('input[type=checkbox]').prop('checked', false).attr('data-value', '0');
         f.getArpBind(function (data) {
             if (data.errCode == 0) {
@@ -56,12 +53,8 @@ define(function (require, exports) {
     }
 
     function refresh_arplist() {
-        var defapage, defanum;
-
         if (!arp_info.length && !arpbind_info.length) {
             d("#arp_table").html('');
-            d('.PageInfo').html('');
-            d('.PageCode').html('');
             return;
         }
         d.each(arp_info, function (n, m) {
@@ -69,53 +62,40 @@ define(function (require, exports) {
                 arpbind_info.push(m);
             }
         })
-        defapage = 1;
-        defanum = 10;
-        arplist_show(defapage, defanum);
-        d("#arp_page").SHPages({
-            total: arpbind_info.length,
-            pageTotal: defanum,
-            current: defapage,
-            PageFn: function (p) {
-                arplist_show(p, defanum);
-            }
-        }, nowLang);
+        arplist_show();
     }
 
-    function arplist_show(currentline, pageline) {
-        d('#select_laber').text(SHpack.selectall[nowLang]);
+    function arplist_show() {
         d('.row_checkbox').prop('checked', false).attr('data-value', '0');
         d('#allchecked').prop('checked', false).attr('data-value', '0');
         var this_html = '';
         d("#arp_table").empty();
         d.each(arpbind_info, function (n, m) {
-            if (n >= (parseInt(currentline) - 1) * pageline && n < parseInt(currentline) * pageline) {
-                this_html += "<tr>";
-                if (m.static != '0') {
-                    if (device == 'mobile') {
-                        this_html += '<td><input type="checkbox" et="tap:select_row" class="row_checkbox"></td>';
-                    } else {
-                        this_html += '<td><input type="checkbox" et="click:select_row" class="row_checkbox"></td>';
-                    }
+            this_html += "<tr>";
+            if (m.static != '0') {
+                if (device == 'mobile') {
+                    this_html += '<td><input type="checkbox" et="tap:select_row" class="row_checkbox"></td>';
                 } else {
-                    this_html += '<td><input type="checkbox" disabled class="row_checkbox"></td>';
+                    this_html += '<td><input type="checkbox" et="click:select_row" class="row_checkbox"></td>';
                 }
-                this_html += '<td>' + (n + 1) + '</td>';
-                this_html += '<td class="arp_ipaddr">' + m.ip + '</td>';
-                this_html += '<td class="arp_mac">' + m.mac.toUpperCase() + '</td>';
-                this_html += '<td class="arp_network">' + m.ifname.slice(0, 3).toUpperCase() + '</td>';
-                this_html += '<td class="arp_name">' + (m.remark || "") + '</td>';
-                if (m.static != '0') {
-                    this_html += '<td class="arp_bind" sh_lang="SHpack.Statu_bind">' + SHpack.Statu_bind[nowLang] + '</td>';
-                    this_html += '<td class="arp_rnum" style="display: none">' + m.real_num + '</td>';
-                    this_html += '<td ><i et="click tap:edit" class="list_edit" sh_title = "SHpack.edit" title = "' + SHpack.edit[nowLang] + '"></i><i et="click tap:del" class="list_unlink" sh_title = "SHpack.arp_unbind" title = "' + SHpack.arp_unbind[nowLang] + '"></i></td>';
-                } else {
-                    this_html += '<td class="arp_bind" sh_lang="SHpack.Statu_bind">' + SHpack.Statu_unbind[nowLang] + '</td>';
-                    this_html += '<td ><i et="click tap:bind" class="list_link" sh_title = "SHpack.arp_bind" title = "' + SHpack.arp_bind[nowLang] + '"></i></td>';
-                }
-
-                this_html += '</tr>';
+            } else {
+                this_html += '<td><input type="checkbox" disabled class="row_checkbox"></td>';
             }
+            this_html += '<td>' + (n + 1) + '</td>';
+            this_html += '<td class="arp_ipaddr">' + m.ip + '</td>';
+            this_html += '<td class="arp_mac">' + m.mac.toUpperCase() + '</td>';
+            this_html += '<td class="arp_network">' + m.ifname.slice(0, 3).toUpperCase() + '</td>';
+            this_html += '<td class="arp_name">' + (m.remark || "") + '</td>';
+            if (m.static != '0') {
+                this_html += '<td class="arp_bind" sh_lang="SHpack.Statu_bind">' + SHpack.Statu_bind[nowLang] + '</td>';
+                this_html += '<td class="arp_rnum" style="display: none">' + m.real_num + '</td>';
+                this_html += '<td ><i et="click tap:edit" class="list_edit" sh_title = "SHpack.edit" title = "' + SHpack.edit[nowLang] + '"></i><i et="click tap:del" class="list_unlink" sh_title = "SHpack.arp_unbind" title = "' + SHpack.arp_unbind[nowLang] + '"></i></td>';
+            } else {
+                this_html += '<td class="arp_bind" sh_lang="SHpack.Statu_bind">' + SHpack.Statu_unbind[nowLang] + '</td>';
+                this_html += '<td ><i et="click tap:bind" class="list_link" sh_title = "SHpack.arp_bind" title = "' + SHpack.arp_bind[nowLang] + '"></i></td>';
+            }
+
+            this_html += '</tr>';
         })
         d("#arp_table").append(this_html);
     }
@@ -123,11 +103,9 @@ define(function (require, exports) {
     et.selectall = function () {
         var allcheckvalue = d('#allchecked').attr('data-value');
         if (allcheckvalue == '0') {
-            d('#select_laber').text(SHpack.cancelall[nowLang]);
             d('.row_checkbox:enabled').prop('checked', true).attr('data-value', '1');
             d('#allchecked').prop('checked', true).attr('data-value', '1');
         } else {
-            d('#select_laber').text(SHpack.selectall[nowLang]);
             d('.row_checkbox:enabled').prop('checked', false).attr('data-value', '0');
             d('#allchecked').prop('checked', false).attr('data-value', '0');
         }
@@ -136,14 +114,12 @@ define(function (require, exports) {
     et.select_row = function (evt) {
         var rowcheck = d(evt).attr('data-value');
         if (rowcheck == '1') {
-            d('#select_laber').text(SHpack.selectall[nowLang]);
             d(evt).prop('checked', false).attr('data-value', '0');
             d('#allchecked').prop('checked', false).attr('data-value', '0');
         } else {
             d(evt).prop('checked', true).attr('data-value', '1');
         }
         if (d('.row_checkbox:enabled').length == d('.row_checkbox:checked').length) {
-            d('#select_laber').text(SHpack.cancelall[nowLang]);
             d('#allchecked').prop('checked', true).attr('data-value', '1');
         }
     }

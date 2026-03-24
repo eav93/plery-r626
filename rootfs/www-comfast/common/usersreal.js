@@ -6,12 +6,8 @@ define(function (require, exports) {
         nowLang,
         et = {};
 
-    require("shpages")(d);
-
     var device, dhcp_status, arp_list, dhcp_info, assoc_info, filter_data, filter_type, filter_info = [],
-        assoc_array = [], filter_array, macfilter_info, set_num = [], now_num, workmode;
-
-    var listpage = 1, listnum = 10;
+        assoc_array = [], macfilter_info, set_num = [], now_num, workmode;
 
     exports.init = function () {
         e.plugInit(et, start_model);
@@ -67,12 +63,8 @@ define(function (require, exports) {
                 dhcp_info = data.dhcp;
             }
         }, false);
-        assoc_and_filter();
-    }
-
-    function assoc_and_filter() {
-        filter_init();
         assoc_init();
+        filter_list();
     }
 
     function assoc_init() {
@@ -83,7 +75,7 @@ define(function (require, exports) {
                 d.each(m, function (x, y) {
                     if (x != 0) {
                         var filter_flag;
-                        d.each(filter_array, function (z, l) {
+                        d.each(filter_info, function (z, l) {
                             if (y.mac == l.macaddr || y.mac.toUpperCase() == l.macaddr || y.mac == l.macaddr.toUpperCase()) {
                                 filter_flag = 1;
 
@@ -128,15 +120,7 @@ define(function (require, exports) {
     }
 
     function showassoctable() {
-        list_show(listpage, listnum);
-        d("#online_device_page").SHPages({
-            total: assoc_array.length,
-            pageTotal: listnum,
-            current: listpage,
-            PageFn: function (p) {
-                list_show(p, listnum);
-            }
-        }, nowLang);
+        list_show();
     }
 
     function list_show(currentline, pageline) {
@@ -204,37 +188,11 @@ define(function (require, exports) {
         return t;
     }
 
-    function filter_init() {
-        filter_array = [];
-        if (!filter_info.length) {
-            filter_info = [];
-        }
-
-        d.each(filter_info, function (n, m) {
-            filter_array.push(m);
-        });
-        showfiltertable();
-    }
-
-    function showfiltertable() {
-        var defapage, defanum;
-        defapage = 1;
-        defanum = 10;
-        filter_list(defapage, defanum);
-        d("#pageinfo").SHPages({
-            total: filter_array.length,
-            pageTotal: defanum,
-            current: defapage,
-            PageFn: function (p) {
-                filter_list(p, defanum);
-            }
-        }, nowLang);
-    }
-
     function filter_list() {
         var this_html = '';
         d("#black_info").empty();
-        d.each(filter_array, function (n, m) {
+        set_num = [];
+        d.each(filter_info, function (n, m) {
             set_num.push(m.num);
             this_html += '<tr>';
             this_html += '<td class="text-center user_name">' + (m.name || '*') + '</td>';
