@@ -48,7 +48,7 @@ define(function (require, exports) {
                 //console.dir(XMLHttpRequest.readyState);
                 //window.location.href = location.href;
             },
-            contentType: "appliation/json",
+            contentType: "application/json",
             dataType: "json",
             type: "POST",
             async: F(async),
@@ -58,7 +58,7 @@ define(function (require, exports) {
 
     exports.setlanguage = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -71,7 +71,7 @@ define(function (require, exports) {
 
     exports.modifypassword = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: a,
@@ -84,7 +84,7 @@ define(function (require, exports) {
 
     exports.login = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: a,
@@ -96,7 +96,7 @@ define(function (require, exports) {
 
     exports.loginout = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: a,
@@ -108,7 +108,7 @@ define(function (require, exports) {
 
     exports.getsystemusage = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -120,7 +120,7 @@ define(function (require, exports) {
 
     exports.getguide = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -132,7 +132,7 @@ define(function (require, exports) {
 
     exports.setguide = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -144,7 +144,7 @@ define(function (require, exports) {
 
     exports.scanwifi = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: a,
@@ -156,7 +156,7 @@ define(function (require, exports) {
 
     exports.getWanConfig = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -168,7 +168,7 @@ define(function (require, exports) {
 
     exports.setWanConfig = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -180,7 +180,7 @@ define(function (require, exports) {
 
     exports.setDnsConfig = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -192,7 +192,7 @@ define(function (require, exports) {
 
     exports.setLanConfig = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -204,7 +204,7 @@ define(function (require, exports) {
 
     exports.setWifiConfig = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -216,7 +216,7 @@ define(function (require, exports) {
 
     exports.getwwanstatus = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -228,7 +228,7 @@ define(function (require, exports) {
 
     exports.getwifiinfo = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -240,7 +240,7 @@ define(function (require, exports) {
 
     exports.getCpuUsageAndFlow = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -252,7 +252,7 @@ define(function (require, exports) {
 
     exports.getIpFilter = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -264,7 +264,7 @@ define(function (require, exports) {
 
     exports.setIpFilter = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -276,7 +276,7 @@ define(function (require, exports) {
 
     exports.getMacFilter = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -288,7 +288,7 @@ define(function (require, exports) {
 
     exports.setMacFilter = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -300,7 +300,7 @@ define(function (require, exports) {
 
     exports.getUrlFilter = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -312,7 +312,7 @@ define(function (require, exports) {
 
     exports.setUrlFilter = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -324,7 +324,7 @@ define(function (require, exports) {
 
     exports.getPortforward = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -336,7 +336,7 @@ define(function (require, exports) {
 
     exports.setPortforward = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -348,7 +348,7 @@ define(function (require, exports) {
 
     exports.getArpBind = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -360,7 +360,7 @@ define(function (require, exports) {
 
     exports.setArpBind = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -372,7 +372,7 @@ define(function (require, exports) {
 
     exports.getArpList = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -384,7 +384,7 @@ define(function (require, exports) {
 
     exports.getDmzInfo = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -396,7 +396,7 @@ define(function (require, exports) {
 
     exports.setDmzInfo = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -408,7 +408,7 @@ define(function (require, exports) {
 
     exports.getDdosInfo = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -420,7 +420,7 @@ define(function (require, exports) {
 
     exports.setDdosInfo = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -432,7 +432,7 @@ define(function (require, exports) {
 
     exports.getFirmwareInfo = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -444,7 +444,7 @@ define(function (require, exports) {
 
     exports.getRemote = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -456,7 +456,7 @@ define(function (require, exports) {
 
     exports.setRemote = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -468,7 +468,7 @@ define(function (require, exports) {
 
     exports.getLogs = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -480,7 +480,7 @@ define(function (require, exports) {
 
     exports.setReset = function (a) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -508,7 +508,7 @@ define(function (require, exports) {
 
     exports.setModifyPsd = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -520,7 +520,7 @@ define(function (require, exports) {
 
     exports.setReboot = function (a) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -532,7 +532,7 @@ define(function (require, exports) {
 
     exports.getWifiFilter = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -544,7 +544,7 @@ define(function (require, exports) {
 
     exports.setWifiFilter = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -556,7 +556,7 @@ define(function (require, exports) {
 
     exports.getWifiAssoc = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -568,7 +568,7 @@ define(function (require, exports) {
 
     exports.getSystemLog = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -580,7 +580,7 @@ define(function (require, exports) {
 
     exports.getNetworkLink = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -592,7 +592,7 @@ define(function (require, exports) {
 
     exports.getPortStatus = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -604,7 +604,7 @@ define(function (require, exports) {
 
     exports.getMemUsage = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -616,7 +616,7 @@ define(function (require, exports) {
 
     exports.getDhcpList = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -628,7 +628,7 @@ define(function (require, exports) {
 
     exports.getLanDhcp = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -640,7 +640,7 @@ define(function (require, exports) {
 
     exports.setLanDhcp = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -652,7 +652,7 @@ define(function (require, exports) {
 
     exports.getprobeserver = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -664,7 +664,7 @@ define(function (require, exports) {
 
     exports.setprobeserver = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -676,7 +676,7 @@ define(function (require, exports) {
 
     exports.getledstatus = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -688,7 +688,7 @@ define(function (require, exports) {
 
     exports.setledstatus = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -700,7 +700,7 @@ define(function (require, exports) {
     
     exports.get_hb_status = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -712,7 +712,7 @@ define(function (require, exports) {
 
     exports.getPPTPclient = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -724,7 +724,7 @@ define(function (require, exports) {
 
     exports.setPPTPclient = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -736,7 +736,7 @@ define(function (require, exports) {
 
     exports.getLTPclient = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -748,7 +748,7 @@ define(function (require, exports) {
 
     exports.setLTPclient = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -760,7 +760,7 @@ define(function (require, exports) {
     
     exports.getPPTPservice = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -772,7 +772,7 @@ define(function (require, exports) {
 
     exports.setPPTPservice = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),
@@ -784,7 +784,7 @@ define(function (require, exports) {
 
     exports.getPPTPuser = function (a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: "{}",
             dataType: "json",
             success: E(a),
@@ -796,7 +796,7 @@ define(function (require, exports) {
 
     exports.setPPTPuser = function (data, a, async) {
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(data),
             dataType: "json",
             success: E(a),

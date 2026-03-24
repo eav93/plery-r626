@@ -110,7 +110,7 @@ define(function (require, exports) {
             d("#ClearDown").hide();
             d("#Update").show();
         } else {
-            d('#UpgTip').html(ver && currentInstalled && ver == currentInstalled ? SHpack.AlreadyNewVersion[nowLang] : '');
+            d('#UpgTip').html('');
             if (data.upgrade.switch != "1") {
                 d("#ManualDown").show();
             }
@@ -158,7 +158,7 @@ define(function (require, exports) {
         d('#auto_tips').html(SHpack['CheckVersion'][nowLang]);
         check_arg.manual_check = "1";
         d.ajax({
-            contentType: "appliation/json",
+            contentType: "application/json",
             data: JSON.stringify(check_arg),
             dataType: "json",
             success: function (data) {
