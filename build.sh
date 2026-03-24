@@ -75,6 +75,15 @@ prune_locale_file() {
     perl -0777 -i -pe 's/,\n(\s*})/\n$1/g' "$file"
 }
 
+generate_langs_json() {
+    local out_file="$1"
+    local langs_csv="$2"
+    local lang_json
+
+    lang_json="$(echo "$langs_csv" | awk -F',' '{for(i=1;i<=NF;i++){gsub(/^[ \t]+|[ \t]+$/, "", $i); if($i!=""){printf("%s\"%s\"", (c++?",":""), $i)}}}')"
+    printf '{"langs":[%s]}\n' "$lang_json" > "$out_file"
+}
+
 # ---- Check dependencies ----
 log "Checking dependencies..."
 
@@ -138,6 +147,7 @@ trap "rm -f '$SQUASHFS_TMP' /tmp/firmware_raw_$$.bin; [ -n '$BUILD_ROOT' ] && rm
 log "Pruning UI locales..."
 prune_locale_file "$LANG_JS"
 prune_locale_file "$LEGACY_LANG_JS"
+generate_langs_json "$ROOTFS_DIR/www-comfast/js/langs.json" "$KEEP_LANGS"
 
 # ---- Build SquashFS ----
 log "Building SquashFS from $ROOTFS_DIR/..."

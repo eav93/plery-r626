@@ -7,6 +7,11 @@ define(function (require, exports) {
         et = {};
 
     var device, device_config, firstlogin_flag;
+    var knownLangLabels = {
+        ru: 'Русский',
+        en: 'English',
+        cn: '简体中文'
+    };
 
     exports.init = function () {
         e.plugInit(et, start_model);
@@ -15,13 +20,80 @@ define(function (require, exports) {
     function start_model(data) {
         device_config = data;
         nowLang = data.language.language;
+        if (!SHpack.login || !SHpack.login[nowLang]) {
+            nowLang = SHpack.login && SHpack.login.ru ? 'ru' : 'en';
+        }
         g.login_init(nowLang);
         device = d('body').attr('device');
+        initLanguageOptions(nowLang);
         page();
         selectedlanguage(nowLang);
     }
 
     /* */
+    function getFallbackLangs() {
+        var langs = [];
+        d.each(['ru', 'en', 'cn'], function (_, code) {
+            if (SHpack.login && SHpack.login[code] !== undefined) {
+                langs.push(code);
+            }
+        });
+        if (!langs.length) {
+            langs = ['en'];
+        }
+        return langs;
+    }
+
+    function applyLanguageOptions(langs) {
+        var select = d("#l_select");
+        var html = '';
+
+        if (!langs || !langs.length) {
+            langs = getFallbackLangs();
+        }
+
+        d.each(langs, function (_, code) {
+            if (!knownLangLabels[code]) {
+                return;
+            }
+            html += '<option value="' + code + '">' + knownLangLabels[code] + '</option>';
+        });
+
+        if (!html) {
+            d.each(getFallbackLangs(), function (_, code) {
+                html += '<option value="' + code + '">' + knownLangLabels[code] + '</option>';
+            });
+        }
+
+        select.html(html);
+
+        if (!select.find('option[value="' + nowLang + '"]').length) {
+            nowLang = select.find('option').first().val() || 'en';
+            g.setlanguage(nowLang);
+        }
+
+        selectedlanguage(nowLang);
+    }
+
+    function initLanguageOptions(currentLang) {
+        nowLang = currentLang;
+        applyLanguageOptions(getFallbackLangs());
+
+        d.ajax({
+            type: 'GET',
+            dataType: 'json',
+            url: '/js/langs.json',
+            cache: false,
+            success: function (data) {
+                var langs = (data && data.langs) || [];
+                if (Object.prototype.toString.call(langs) !== '[object Array]') {
+                    return;
+                }
+                applyLanguageOptions(langs);
+            }
+        });
+    }
+
     function selectedlanguage(data) {
         d("#l_select").val(data)
         d("#selected").text(d("#l_select")[0].selectedOptions[0].innerText)
@@ -57,7 +129,7 @@ define(function (require, exports) {
 
         if (device_config.changed == '0') {
             var currentLang = (navigator.language || navigator.browserLanguage).toLowerCase();
-            if (currentLang.indexOf("cn") > -1) {
+            if (currentLang.indexOf("cn") > -1 && d("#l_select option[value='cn']").length) {
                 g.setlanguage('cn', firstlogin_flag);
                 nowLang = 'cn';
             }
