@@ -6,6 +6,15 @@ on:
   pull_request:
     branches: [main, master]
   workflow_dispatch:
+    inputs:
+      keep_langs:
+        description: 'UI languages to keep (e.g. en,ru)'
+        default: 'en,ru'
+
+env:
+  KEEP_LANGS: ${{ inputs.keep_langs || 'en,ru' }}
+  SDK_NAME: lede-sdk-17.01.7-ramips-mt7628_gcc-5.4.0_musl-1.1.16.Linux-x86_64
+  FWTOOL_COMMIT: 04cd252e4e9394ffacd51f56f1f124abc534f715
 
 jobs:
   build:
@@ -17,33 +26,50 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y squashfs-tools
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y squashfs-tools perl bc
 
+      # ---- fwtool ----
+      - name: Cache fwtool
+        uses: actions/cache@v4
+        id: fwtool-cache
+        with:
+          path: fwtool/fwtool
+          key: fwtool-${{ env.FWTOOL_COMMIT }}
+
+      - name: Build fwtool
+        if: steps.fwtool-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone -q https://git.openwrt.org/project/fwtool.git fwtool
+          cd fwtool && git checkout -q ${{ env.FWTOOL_COMMIT }}
+          cc -o fwtool fwtool.c -Wall -O2
+
+      # ---- LEDE SDK (for wbsrv cross-compile) ----
       - name: Cache LEDE SDK
         uses: actions/cache@v4
         id: sdk-cache
         with:
-          path: lede-sdk.tar.xz
-          key: lede-sdk-17.01.7-ramips-mt7628
+          path: ${{ env.SDK_NAME }}.tar.xz
+          key: ${{ env.SDK_NAME }}
 
       - name: Download LEDE SDK
         if: steps.sdk-cache.outputs.cache-hit != 'true'
         run: |
-          wget -q "https://archive.lede-project.org/releases/17.01.7/targets/ramips/mt7628/lede-sdk-17.01.7-ramips-mt7628_gcc-5.4.0_musl-1.1.16.Linux-x86_64.tar.xz" \
-            -O lede-sdk.tar.xz
+          wget -q "https://archive.openwrt.org/releases/17.01.7/targets/ramips/mt7628/${{ env.SDK_NAME }}.tar.xz"
 
       - name: Extract SDK
-        run: |
-          tar xf lede-sdk.tar.xz
-          echo "SDK_DIR=${{ github.workspace }}/lede-sdk-17.01.7-ramips-mt7628_gcc-5.4.0_musl-1.1.16.Linux-x86_64" >> $GITHUB_ENV
+        run: tar xf ${{ env.SDK_NAME }}.tar.xz
 
-      - name: Build wbsrv (MIPS)
+      # ---- Build wbsrv ----
+      - name: Build wbsrv (MIPS static)
         run: |
           cd webserver
-          make cross SDK_DIR=${{ env.SDK_DIR }}
+          make cross SDK_DIR=${{ github.workspace }}/${{ env.SDK_NAME }}
           cp wbsrv ../rootfs/usr/sbin/wbsrv
-          echo "wbsrv: $(file ../rootfs/usr/sbin/wbsrv)"
+          echo "wbsrv: $(file rootfs/usr/sbin/wbsrv)" || true
 
+      # ---- CSS minification ----
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -52,8 +78,9 @@ jobs:
       - name: Minify CSS
         run: |
           find rootfs/www-comfast/css -type f -name '*.css' \
-            -exec sh -c 'for f do npx -y -p csso-cli csso -i "$f" -o "$f"; done' sh {} +
+            -exec sh -c 'for f; do npx -y -p csso-cli csso -i "$f" -o "$f"; done' sh {} +
 
+      # ---- Firmware version ----
       - name: Set firmware version
         run: |
           MAJOR=2
@@ -64,64 +91,106 @@ jobs:
           [ "$C1" -gt 32 ] && C1=32
           VERSION="CF-PLERY-R626-eav93-V${MAJOR}.${C1}.${C2}.${C3}"
           echo "FIRMWARE_VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "Firmware version: $VERSION"
+          echo "Version: $VERSION"
 
+      # ---- Build firmware (inlined from build.sh) ----
       - name: Build firmware
         run: |
-          chmod +x build.sh
-          FIRMWARE_VERSION=${{ env.FIRMWARE_VERSION }} ./build.sh "${{ env.FIRMWARE_VERSION }}.bin"
+          set -euo pipefail
 
+          OUTPUT="dist/${FIRMWARE_VERSION}.bin"
+          mkdir -p dist
+
+          # Prune locales
+          LANG_JS="rootfs/www-comfast/js/language.js"
+          KEEP_LANGS_SET=",${{ env.KEEP_LANGS }},"
+          for lang in cn en ru; do
+            if [[ "$KEEP_LANGS_SET" != *",$lang,"* ]]; then
+              perl -i -ne "next if /^\s*'$lang'\s*:\s*'[^']*'\s*,?\s*$/; print;" "$LANG_JS"
+              perl -0777 -i -pe "s/\n\s*'$lang'\s*:\s*\{[^{}]*\}\s*,?//gs" "$LANG_JS"
+            fi
+          done
+          perl -0777 -i -pe 's/,\n(\s*})/\n$1/g' "$LANG_JS"
+
+          # Build workspace
+          BUILD_ROOT=$(mktemp -d /tmp/rootfs_build_XXXXXX)
+          trap "rm -rf '$BUILD_ROOT'" EXIT
+          cp -a rootfs/. "$BUILD_ROOT/"
+
+          # Write version
+          echo -n "$FIRMWARE_VERSION" > "$BUILD_ROOT/etc/defconfig/cf-plery/version"
+
+          # Required empty dirs
+          for dir in dev etc/crontabs etc/easy-rsa/pki/private etc/easy-rsa/pki/reqs \
+                     etc/hotplug.d/ntp etc/openvpn/ccd etc/ssl/certs etc/ssl/private \
+                     lib/firmware mnt overlay proc root sys tmp usr/lib/opkg/lists \
+                     www www-comfast/upload; do
+            mkdir -p "$BUILD_ROOT/$dir"
+          done
+          chmod 1777 "$BUILD_ROOT/tmp"
+
+          # Remove build artifacts
+          find "$BUILD_ROOT" -name ".DS_Store" -delete 2>/dev/null || true
+          find "$BUILD_ROOT" -name ".gitkeep"  -delete 2>/dev/null || true
+
+          # Build SquashFS
+          SQUASHFS_TMP=$(mktemp /tmp/rootfs_XXXXXX.squashfs)
+          XZ_BCJ_OPT=""
+          mksquashfs -help-comp xz 2>&1 | grep -q mips && XZ_BCJ_OPT="-Xbcj mips"
+          mksquashfs "$BUILD_ROOT" "$SQUASHFS_TMP" \
+            -comp xz $XZ_BCJ_OPT -Xdict-size 100% \
+            -b 262144 -nopad -noappend -no-xattrs -all-root -quiet
+
+          KERNEL_SIZE=$(stat -c%s kernel.bin)
+          SQUASHFS_SIZE=$(stat -c%s "$SQUASHFS_TMP")
+          BODY_SIZE=$(( KERNEL_SIZE + SQUASHFS_SIZE ))
+          MAX_IMAGE=$(( 0xFB0000 - 0x100000 ))
+
+          echo "Kernel:   $KERNEL_SIZE bytes"
+          echo "SquashFS: $SQUASHFS_SIZE bytes"
+          echo "Total:    $BODY_SIZE / $MAX_IMAGE ($(( BODY_SIZE * 100 / MAX_IMAGE ))% used)"
+
+          [ "$BODY_SIZE" -le "$MAX_IMAGE" ] || { echo "Firmware too large!"; exit 1; }
+
+          # Assemble + metadata
+          RAW_FW="/tmp/firmware_raw_$$.bin"
+          cat kernel.bin "$SQUASHFS_TMP" > "$RAW_FW"
+          fwtool/fwtool -I metadata.json "$RAW_FW"
+          fwtool/fwtool -i /dev/stdout "$RAW_FW"
+          mv "$RAW_FW" "$OUTPUT"
+
+          FINAL_SIZE=$(stat -c%s "$OUTPUT")
+          echo "Built: $OUTPUT ($FINAL_SIZE bytes)"
+
+      # ---- Verify ----
       - name: Verify firmware
         run: |
-          FW=dist/${{ env.FIRMWARE_VERSION }}.bin
+          FW="dist/${FIRMWARE_VERSION}.bin"
           SQFS_OFF=1435702
-          KERNEL_MD5_EXPECT="0b76b2b44cd46a4a93f1ac20941d57ee"
           ERRORS=0
 
-          echo "=== Kernel ==="
           K_MD5=$(dd if="$FW" bs=1 count=$SQFS_OFF 2>/dev/null | md5sum | awk '{print $1}')
-          if [ "$K_MD5" = "$KERNEL_MD5_EXPECT" ]; then
-            echo "Kernel V2.0.1.4 OK"
-          else
-            echo "::error::Kernel mismatch! Got $K_MD5, expected $KERNEL_MD5_EXPECT"
-            ERRORS=$((ERRORS+1))
-          fi
+          [ "$K_MD5" = "0b76b2b44cd46a4a93f1ac20941d57ee" ] \
+            && echo "Kernel OK" \
+            || { echo "::error::Kernel mismatch: $K_MD5"; ERRORS=$((ERRORS+1)); }
 
-          echo "=== SquashFS ==="
           dd if="$FW" bs=1 skip=$SQFS_OFF of=/tmp/rootfs.squashfs 2>/dev/null
-          mkdir -p /tmp/rootfs
           unsquashfs -d /tmp/rootfs -f /tmp/rootfs.squashfs
 
-          echo "=== Critical binaries ==="
           for b in usr/sbin/wbsrv usr/bin/webmgnt; do
-            if [ -f "/tmp/rootfs/$b" ]; then
-              echo "$b present ($(file /tmp/rootfs/$b | grep -o 'ELF.*'))"
-            else
-              echo "::error::Missing: /$b"
-              ERRORS=$((ERRORS+1))
-            fi
+            [ -f "/tmp/rootfs/$b" ] && echo "$b OK" \
+              || { echo "::error::Missing /$b"; ERRORS=$((ERRORS+1)); }
           done
 
-          echo "=== Critical directories ==="
           for d in dev proc sys tmp overlay root mnt; do
-            if [ ! -d "/tmp/rootfs/$d" ]; then
-              echo "::error::Missing directory: /$d"
-              ERRORS=$((ERRORS+1))
-            fi
+            [ -d "/tmp/rootfs/$d" ] && echo "/$d OK" \
+              || { echo "::error::Missing dir /$d"; ERRORS=$((ERRORS+1)); }
           done
 
-          echo "=== Build artifacts ==="
-          GK=$(find /tmp/rootfs -name '.gitkeep' | wc -l)
-          DS=$(find /tmp/rootfs -name '.DS_Store' | wc -l)
-          [ "$GK" -gt 0 ] || [ "$DS" -gt 0 ] && echo "::warning::Build artifacts found in image"
+          [ $ERRORS -eq 0 ] || exit 1
+          echo "All checks passed"
 
-          echo "=== fwtool metadata ==="
-          MAGIC=$(xxd -l 4 -s -8 "$FW" | awk '{print $2$3}')
-          echo "Trailer magic: $MAGIC"
-
-          [ $ERRORS -eq 0 ] || { echo "::error::Firmware verification failed"; exit 1; }
-          echo "Firmware verification passed"
-
+      # ---- Release ----
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -136,4 +205,4 @@ jobs:
           gh release create "${{ env.FIRMWARE_VERSION }}" \
             dist/*.bin \
             --title "${{ env.FIRMWARE_VERSION }}" \
-            --notes "Firmware build from commit $(git rev-parse --short HEAD)"
+            --notes "Commit: $(git rev-parse --short HEAD)"
