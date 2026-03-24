@@ -65,9 +65,9 @@ VERSION_FILE="$ROOTFS_DIR/etc/defconfig/cf-plery/version"
 BASE_VERSION="CF-PLERY-R626-eav93"
 
 if [ -z "$FIRMWARE_VERSION" ]; then
-    if [ -f "VERSION" ]; then
-        VER=$(tr -d '[:space:]' < VERSION)
-        FIRMWARE_VERSION="${BASE_VERSION}-V${VER}"
+    if command -v git >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1; then
+        COMMIT_SHORT=$(git rev-parse --short HEAD 2>/dev/null || echo "dev")
+        FIRMWARE_VERSION="${BASE_VERSION}-${COMMIT_SHORT}"
     else
         FIRMWARE_VERSION="${BASE_VERSION}-dev"
     fi
