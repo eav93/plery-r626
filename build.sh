@@ -61,7 +61,7 @@ fi
 
 # ---- Write firmware version ----
 VERSION_FILE="$ROOTFS_DIR/etc/defconfig/cf-plery/version"
-BASE_VERSION="CF-Plery-R626-eav93"
+BASE_VERSION="CF-PLERY-R626-eav93"
 
 if [ -z "$FIRMWARE_VERSION" ]; then
     if command -v git >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1; then
