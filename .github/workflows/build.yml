@@ -63,11 +63,13 @@ jobs:
 
       # ---- Build wbsrv ----
       - name: Build wbsrv (MIPS static)
+        env:
+          STAGING_DIR: ${{ github.workspace }}/${{ env.SDK_NAME }}/staging_dir
         run: |
           cd webserver
           make cross SDK_DIR=${{ github.workspace }}/${{ env.SDK_NAME }}
           cp wbsrv ../rootfs/usr/sbin/wbsrv
-          echo "wbsrv: $(file rootfs/usr/sbin/wbsrv)" || true
+          file ../rootfs/usr/sbin/wbsrv
 
       # ---- CSS minification ----
       - name: Setup Node.js
