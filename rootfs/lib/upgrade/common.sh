@@ -79,6 +79,9 @@ run_ramfs() { # <command> [...]
 
 	[ -L "/lib64" ] && ln -s /lib $RAM_ROOT/lib64
 
+	# Copy config tarball into ramdisk so it's accessible after pivot_root
+	[ -n "$CONF_TAR" ] && install_file "$CONF_TAR"
+
 	supivot $RAM_ROOT /mnt || {
 		echo "Failed to switch over to ramfs. Please reboot."
 		exit 1
