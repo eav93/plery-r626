@@ -316,6 +316,7 @@ ramips_board_detect() {
 
 	*"CF-PLERY")
 		name="cf-plery"
+		RAMIPS_MODEL="CF-PLERY-R626"
 		def_wan="switch4"
 		port_sum="3"
 		port_list="switch4,switch3,switch2,"
