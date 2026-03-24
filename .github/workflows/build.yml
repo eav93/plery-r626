@@ -30,14 +30,12 @@ jobs:
           du -sh rootfs/www-comfast
 
           # Minify CSS in-place
-          find rootfs/www-comfast/css -type f -name '*.css' -print0 | \
-            xargs -0 -n 1 -P 8 -I{} sh -c \
-            'npx -y -p csso-cli csso -i "$1" -o "$1"' _ {}
+          find rootfs/www-comfast/css -type f -name '*.css' \
+            -exec sh -c 'for f do npx -y -p csso-cli csso -i "$f" -o "$f"; done' sh {} +
 
           # Minify legacy JS in-place (SeaJS/common scripts included)
-          find rootfs/www-comfast -type f -name '*.js' ! -name '*.min.js' -print0 | \
-            xargs -0 -n 1 -P 8 -I{} sh -c \
-            'npx -y -p terser terser "$1" --compress --mangle --ecma 5 --comments false -o "$1"' _ {}
+          find rootfs/www-comfast -type f -name '*.js' ! -name '*.min.js' \
+            -exec sh -c 'for f do npx -y -p terser terser "$f" --compress --mangle --ecma 5 --comments false -o "$f"; done' sh {} +
           echo "Frontend size after minify:"
           du -sh rootfs/www-comfast
 
