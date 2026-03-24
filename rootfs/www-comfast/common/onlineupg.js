@@ -71,7 +71,7 @@ define(function (require, exports) {
     }
 
     function pollStatus() {
-        //if (ClearTime) clearTimeout(ClearTime);
+        if (ClearTime) clearTimeout(ClearTime);
         f.getMConfig('ota_status', '', function (data) {
             if (data && data.errCode == 0) {
                 show_note(data);
@@ -161,6 +161,9 @@ define(function (require, exports) {
             success: function (data) {
                 show_note(data);
                 pollStatus();
+            },
+            error: function () {
+                d('#UpgTip').html(SHpack.NetworkError[nowLang]);
             },
             type: "POST",
             cache: false,

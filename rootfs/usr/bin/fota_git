@@ -1,13 +1,22 @@
 #!/bin/sh
 #
 # fota_git - OTA update checker for Plery R626
-# Checks GitHub Releases for new firmware
+# Checks GitHub Releases for new firmware and matches the contract
+# expected by the vendor `webmgnt` CGI:
+#   - `fota_git -c` prints the latest version string (or a blank marker)
+#   - `fota_git -d` downloads the cached/latest firmware into /tmp/fota
+#   - `fota_git -w` is used by the auto-check daemon
 #
 
 REPO="eav93/plery-r626"
 FOTA_DIR="/tmp/fota"
 VERSION_FILE="/etc/defconfig/cf-plery/version"
 API_URL="https://api.github.com/repos/$REPO/releases/latest"
+DOWNLOAD_URL_FILE="$FOTA_DIR/download_url"
+FIRMWARE_FILE="$FOTA_DIR/firmware.bin"
+MD5_FILE="$FOTA_DIR/md5sum"
+TOTAL_LENGTH_FILE="$FOTA_DIR/total_length"
+VERSION_CACHE_FILE="$FOTA_DIR/version"
 
 mkdir -p "$FOTA_DIR"
 
@@ -60,69 +69,180 @@ https_download() {
 }
 
 json_get() {
-    echo "$1" | grep -o "\"$2\":\"[^\"]*\"" | head -1 | sed "s/\"$2\":\"//;s/\"$//"
+    printf '%s' "$1" | tr -d '\r\n' | sed -n "s/.*\"$2\"[[:space:]]*:[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p"
 }
 
 json_get_num() {
-    echo "$1" | grep -o "\"$2\":[0-9]*" | head -1 | sed "s/\"$2\"://"
+    printf '%s' "$1" | tr -d '\r\n' | sed -n "s/.*\"$2\"[[:space:]]*:[[:space:]]*\\([0-9][0-9]*\\).*/\\1/p"
 }
 
 get_current_version() {
     cat "$VERSION_FILE" 2>/dev/null || echo "unknown"
 }
 
-check_update() {
-    local current_version=$(get_current_version)
+model_prefix() {
+    local current_version="$1"
+    echo "${current_version%-*}"
+}
 
-    local release_json=$(https_get "$API_URL")
-    if [ -z "$release_json" ]; then
-        echo "5" > "$FOTA_DIR/fota_status"
-        return 1
+clear_cached_files() {
+    rm -f "$DOWNLOAD_URL_FILE" "$FIRMWARE_FILE" "$MD5_FILE" "$TOTAL_LENGTH_FILE"
+}
+
+cache_release() {
+    local tag="$1"
+    local asset_url="$2"
+    local asset_size="$3"
+    local old_tag
+
+    old_tag=$(cat "$VERSION_CACHE_FILE" 2>/dev/null)
+    if [ "$old_tag" != "$tag" ]; then
+        rm -f "$FIRMWARE_FILE" "$MD5_FILE"
     fi
 
-    local latest_tag=$(json_get "$release_json" "tag_name")
-    local asset_url=$(json_get "$release_json" "browser_download_url")
-    local asset_size=$(json_get_num "$release_json" "size")
+    printf '%s\n' "$tag" > "$VERSION_CACHE_FILE"
+    printf '%s\n' "${asset_size:-0}" > "$TOTAL_LENGTH_FILE"
+    printf '%s\n' "$asset_url" > "$DOWNLOAD_URL_FILE"
+}
 
-    if [ -z "$latest_tag" ] || [ -z "$asset_url" ]; then
-        echo "5" > "$FOTA_DIR/fota_status"
-        return 1
-    fi
+print_blank_result() {
+    # webmgnt copies stdout with strcpy(); ensure the command always produces
+    # a non-empty stream so CGI does not choke on a NULL result.
+    printf ' \n'
+}
 
-    if [ "$current_version" = "$latest_tag" ]; then
-        echo "$current_version" > "$FOTA_DIR/version"
-        echo "5" > "$FOTA_DIR/fota_status"
-        return 0
-    fi
+fetch_release_info() {
+    RELEASE_JSON=$(https_get "$API_URL")
+    [ -n "$RELEASE_JSON" ] || return 1
 
-    # New version available - download
-    echo "$latest_tag" > "$FOTA_DIR/version"
-    echo "${asset_size:-0}" > "$FOTA_DIR/total_length"
-    echo "3" > "$FOTA_DIR/fota_status"
+    RELEASE_TAG=$(json_get "$RELEASE_JSON" "tag_name")
+    RELEASE_URL=$(json_get "$RELEASE_JSON" "browser_download_url")
+    RELEASE_SIZE=$(json_get_num "$RELEASE_JSON" "size")
 
-    https_download "$asset_url" "$FOTA_DIR/firmware.bin"
-    local actual_size=$(ls -l "$FOTA_DIR/firmware.bin" 2>/dev/null | awk '{print $5}')
-    if [ -z "$actual_size" ] || [ "$actual_size" -lt 1000000 ]; then
-        echo "4" > "$FOTA_DIR/fota_status"
-        return 1
-    fi
-
-    md5sum "$FOTA_DIR/firmware.bin" | awk '{print $1}' > "$FOTA_DIR/md5sum"
-    echo "$actual_size" > "$FOTA_DIR/total_length"
-    echo "1" > "$FOTA_DIR/fota_status"
+    [ -n "$RELEASE_TAG" ] || return 1
+    [ -n "$RELEASE_URL" ] || return 1
     return 0
 }
 
+release_matches_device() {
+    local current_version="$1"
+    local prefix
+
+    prefix=$(model_prefix "$current_version")
+    case "$RELEASE_TAG" in
+        "$prefix"|"$prefix"-*)
+            return 0
+            ;;
+    esac
+    return 1
+}
+
+check_only() {
+    local current_version
+
+    current_version=$(get_current_version)
+
+    if ! fetch_release_info || ! release_matches_device "$current_version"; then
+        printf '%s\n' "$current_version" > "$VERSION_CACHE_FILE"
+        clear_cached_files
+        printf '%s\n' "$current_version" > "$VERSION_CACHE_FILE"
+        print_blank_result
+        return 1
+    fi
+
+    if [ "$RELEASE_TAG" = "$current_version" ]; then
+        printf '%s\n' "$current_version" > "$VERSION_CACHE_FILE"
+        clear_cached_files
+        printf '%s\n' "$current_version" > "$VERSION_CACHE_FILE"
+        print_blank_result
+        return 0
+    fi
+
+    cache_release "$RELEASE_TAG" "$RELEASE_URL" "$RELEASE_SIZE"
+    printf '%s\n' "$RELEASE_TAG"
+    return 0
+}
+
+download_release() {
+    local current_version
+    local cached_tag
+    local cached_url
+    local actual_size
+
+    current_version=$(get_current_version)
+    cached_tag=$(cat "$VERSION_CACHE_FILE" 2>/dev/null)
+    cached_url=$(cat "$DOWNLOAD_URL_FILE" 2>/dev/null)
+
+    if [ -n "$cached_tag" ] && [ -n "$cached_url" ] && [ "$cached_tag" != "$current_version" ]; then
+        RELEASE_TAG="$cached_tag"
+        RELEASE_URL="$cached_url"
+        RELEASE_SIZE=$(cat "$TOTAL_LENGTH_FILE" 2>/dev/null)
+    else
+        if ! fetch_release_info || ! release_matches_device "$current_version"; then
+            printf '%s\n' "ERROR" > "$TOTAL_LENGTH_FILE"
+            return 1
+        fi
+
+        if [ "$RELEASE_TAG" = "$current_version" ]; then
+            printf '%s\n' "$current_version" > "$VERSION_CACHE_FILE"
+            clear_cached_files
+            printf '%s\n' "$current_version" > "$VERSION_CACHE_FILE"
+            return 0
+        fi
+
+        cache_release "$RELEASE_TAG" "$RELEASE_URL" "$RELEASE_SIZE"
+    fi
+
+    rm -f "$MD5_FILE"
+    : > "$FIRMWARE_FILE"
+
+    https_download "$RELEASE_URL" "$FIRMWARE_FILE"
+    actual_size=$(ls -l "$FIRMWARE_FILE" 2>/dev/null | awk '{print $5}')
+    if [ -z "$actual_size" ] || [ "$actual_size" -lt 1000000 ]; then
+        printf '%s\n' "ERROR" > "$TOTAL_LENGTH_FILE"
+        rm -f "$MD5_FILE"
+        return 1
+    fi
+
+    md5sum "$FIRMWARE_FILE" | awk '{print $1}' > "$MD5_FILE"
+    printf '%s\n' "$actual_size" > "$TOTAL_LENGTH_FILE"
+    return 0
+}
+
+auto_check() {
+    local current_version
+
+    current_version=$(get_current_version)
+
+    if ! fetch_release_info || ! release_matches_device "$current_version"; then
+        printf '%s\n' "$current_version" > "$VERSION_CACHE_FILE"
+        return 1
+    fi
+
+    if [ "$RELEASE_TAG" = "$current_version" ]; then
+        printf '%s\n' "$current_version" > "$VERSION_CACHE_FILE"
+        clear_cached_files
+        printf '%s\n' "$current_version" > "$VERSION_CACHE_FILE"
+        return 0
+    fi
+
+    cache_release "$RELEASE_TAG" "$RELEASE_URL" "$RELEASE_SIZE"
+    if [ -s "$FIRMWARE_FILE" ] && [ -s "$MD5_FILE" ]; then
+        return 0
+    fi
+
+    download_release
+}
+
 case "$1" in
-    -c|-d)
-        # Background: webmgnt calls get_cmd_result (popen) which reads stdout until EOF.
-        # Redirect stdout/stderr to /dev/null so the background process does not
-        # inherit the pipe write-end — otherwise popen blocks until download finishes.
-        check_update >/dev/null 2>&1 &
+    -c)
+        check_only
+        ;;
+    -d)
+        download_release >/dev/null 2>&1
         ;;
     -w)
-        # Foreground: для init.d демона
-        check_update
+        auto_check
         ;;
     *)
         echo "Usage: fota_git -c"
