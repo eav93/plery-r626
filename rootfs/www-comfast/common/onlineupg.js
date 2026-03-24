@@ -6,7 +6,6 @@ define(function (require, exports) {
         nowLang,
         et = {};
 
-    require("checkbox")(d);
     require("upload")(d);
 
     var device, device_config, ClearTime = 0, installedVersion = '';
@@ -46,7 +45,6 @@ define(function (require, exports) {
         f.getMConfig('ota_status', '', function (data) {
             if (data && data.errCode == 0) {
                 initOtaShow(data);
-                d('.MCB').MCheckbox();
             }
         });
     }
@@ -57,12 +55,12 @@ define(function (require, exports) {
         if (!data.fota_status) data.fota_status = {};
         if (!data.upgrage_status) data.upgrage_status = {};
         if (data.upgrade.switch == "1") {//当在线升级为绿色ON时==1
-            d("#OnlineSwitch").attr("checked", true);
+            d("#auto_upgrade_switch").val("1");
             d("#ManualDown").hide();
             d("#ClearDown").hide();
             d("#Update").hide();
         } else {//当在线升级为绿色OFF时==0
-            d("#OnlineSwitch").attr("checked", false);
+            d("#auto_upgrade_switch").val("0");
             d("#ManualDown").show();
             d("#ClearDown").hide();
             d("#Update").hide();
@@ -133,15 +131,10 @@ define(function (require, exports) {
             d('#UpgTip').html(SHpack.DownloadNote1[nowLang] + data.upgrage_status.upgrage_status + SHpack.DownloadNote2[nowLang]);
         }
     }
-	//在线升级按钮OnlineSwitch
-    d('.OnlineSwitch').on('click', function () {
+	//在线升级按钮auto_upgrade_switch
+    et.auto_upgrade_switch = function () {
         var Param = {};
-        var SwitchStatus = d("#OnlineSwitch").attr("checked");
-        if (SwitchStatus == "checked") {
-            Param.auto_upgrade = "1";
-        } else {
-            Param.auto_upgrade = "0";
-        }
+        Param.auto_upgrade = d("#auto_upgrade_switch").val() == "1" ? "1" : "0";
 
         f.setMConfig('auto_upgrade_switch', Param, function (data) {
             if (data.errCode == 0) {
@@ -150,7 +143,7 @@ define(function (require, exports) {
             }
         });
 
-    });
+    };
 
 //检测更新按钮
     et.manual_check = function () {

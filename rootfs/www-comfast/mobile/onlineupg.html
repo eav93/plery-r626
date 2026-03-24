@@ -22,15 +22,16 @@
     <div class="shbox clearfix">
         <div class="shbox_border">
             <label class="title" sh_lang="SHpack.OnlineUpg"></label>
-            <ul class="clearfix shbox_cont">
+            <ul class="clearfix shbox_cont split-list split-30">
 
 
                 <li class="list clearfix">
-                    <label class="left" sh_lang="SHpack.OnlineUpg"></label>
+                    <label class="left" sh_lang="SHpack.AutoUpgSwitch"></label>
                     <div class="right">
-                        <div class="OnlineSwitch">
-                            <input type="checkbox" autocomplete="off" id="OnlineSwitch" class="MCB">
-                        </div>
+                        <select id="auto_upgrade_switch" class="text" et="change:auto_upgrade_switch">
+                            <option value="1" sh_lang="SHpack.enable"></option>
+                            <option value="0" sh_lang="SHpack.disable"></option>
+                        </select>
                     </div>
                 </li>
                 <li class="list clearfix">

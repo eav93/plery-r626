@@ -35,42 +35,54 @@
                 <div class="shbox clearfix">
                     <div class="shbox_border">
                         <label class="title" sh_lang="SHpack.OnlineUpg"></label>
-                        <ul class="clearfix system">
-                            <li class="list clearfix">
-                                <label class="left" sh_lang="SHpack.OnlineUpg"></label>
-                                <div class="right">
-                                    <span class="OnlineSwitch">
-                                        <input type="checkbox" autocomplete="off" id="OnlineSwitch" class="MCB">
-                                    </span>
-                                </div>
+                        <ul class="clearfix system split-form split-30">
+                            <li class="clearfix">
+                                <label class="row_name" sh_lang="SHpack.AutoUpgSwitch"></label>
+                                <span class="row_value">
+                                    <select id="auto_upgrade_switch" class="text" et="change:auto_upgrade_switch">
+                                        <option value="1" sh_lang="SHpack.enable"></option>
+                                        <option value="0" sh_lang="SHpack.disable"></option>
+                                    </select>
+                                </span>
                             </li>
-                            <li class="list clearfix">
-                                <label class="left" sh_lang="SHpack.current_ver"></label>
-                                <div class="right">
-                                    <label class="right" id="InstalledVersion"></label>
-                                </div>
+                            <li class="clearfix">
+                                <label class="row_name" sh_lang="SHpack.current_ver"></label>
+                                <span class="row_value">
+                                    <label id="InstalledVersion"></label>
+                                </span>
                             </li>
-                            <li class="list clearfix" id="NewVersionRow" style="display:none">
-                                <label class="left" sh_lang="SHpack.BestNewVersion"></label>
-                                <div class="right">
-                                    <label class="right" id="CurrentVersion"></label>
-                                </div>
+                            <li class="clearfix" id="NewVersionRow" style="display:none">
+                                <label class="row_name" sh_lang="SHpack.BestNewVersion"></label>
+                                <span class="row_value">
+                                    <label id="CurrentVersion"></label>
+                                </span>
                             </li>
-                            <li class="list clearfix" style="text-align: center;font-size: 12px">
-                                <label id="UpgTip"></label>
+                            <li class="clearfix">
+                                <label class="row_name"></label>
+                                <span class="row_value">
+                                    <label id="UpgTip" style="font-size: 12px;"></label>
+                                </span>
                             </li>
-
-                            <li class="list clearfix" style="text-align: center;display: none" id="ManualDown">
-                                <button class="btn btn-warning" et="click:manual_check" style="min-width: 120px"
-                                        sh_lang="SHpack.ManualCheck"></button>
+                            <li class="clearfix" style="display: none" id="ManualDown">
+                                <label class="row_name"></label>
+                                <span class="row_value">
+                                    <button class="btn btn-warning" et="click:manual_check" style="min-width: 120px"
+                                            sh_lang="SHpack.ManualCheck"></button>
+                                </span>
                             </li>
-                            <li class="list clearfix" style="text-align: center;display: none" id="ClearDown">
-                                <button class="btn btn-warning" et="click:cancel_down" style="min-width: 120px"
-                                        sh_lang="SHpack.CancelDown"></button>
+                            <li class="clearfix" style="display: none" id="ClearDown">
+                                <label class="row_name"></label>
+                                <span class="row_value">
+                                    <button class="btn btn-warning" et="click:cancel_down" style="min-width: 120px"
+                                            sh_lang="SHpack.CancelDown"></button>
+                                </span>
                             </li>
-                            <li class="list clearfix" style="text-align: center;display: none" id="Update">
-                                <button class="btn btn-warning" et="click:online_upgrade" style="min-width: 120px"
-                                        sh_lang="SHpack.OnlineUpg"></button>
+                            <li class="clearfix" style="display: none" id="Update">
+                                <label class="row_name"></label>
+                                <span class="row_value">
+                                    <button class="btn btn-warning" et="click:online_upgrade" style="min-width: 120px"
+                                            sh_lang="SHpack.OnlineUpg"></button>
+                                </span>
                             </li>
                         </ul>
                     </div>

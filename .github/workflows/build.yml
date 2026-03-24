@@ -19,6 +19,36 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y squashfs-tools
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build frontend payload (no package.json)
+        run: |
+          rm -rf dist/www-comfast
+          mkdir -p dist
+          cp -a rootfs/www-comfast dist/www-comfast
+          echo "Frontend size before minify:"
+          du -sh dist/www-comfast
+
+          # Minify CSS in copied frontend tree
+          find dist/www-comfast/css -type f -name '*.css' -print0 | \
+            xargs -0 -n 1 -P 8 -I{} sh -c \
+            'npx -y -p csso-cli csso -i "$1" -o "$1"' _ {}
+
+          # Minify legacy JS files in place (SeaJS/common scripts included)
+          find dist/www-comfast -type f -name '*.js' ! -name '*.min.js' -print0 | \
+            xargs -0 -n 1 -P 8 -I{} sh -c \
+            'npx -y -p terser terser "$1" --compress --mangle --ecma 5 --comments false -o "$1"' _ {}
+          echo "Frontend size after minify:"
+          du -sh dist/www-comfast
+
+      - name: Use built frontend in firmware rootfs
+        run: |
+          rm -rf rootfs/www-comfast
+          cp -a dist/www-comfast rootfs/www-comfast
+
       - name: Set firmware version
         run: |
           # compare_version in libshared.so zeroes any component >= 33.

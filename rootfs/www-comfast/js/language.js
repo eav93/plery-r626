@@ -1997,8 +1997,12 @@ var SHpack = {
             'ru': 'Сервер/IP'
         },        'OnlineUpg': {
             'cn': '在线升级',
-            'en': 'Install update',
-            'ru': 'Установить'
+            'en': 'Online update',
+            'ru': 'Онлайн-обновление'
+        },        'AutoUpgSwitch': {
+            'cn': '自动升级',
+            'en': 'Auto update',
+            'ru': 'Автообновление'
         },        'current_ver': {
             'cn': '当前版本',
             'en': 'Current version',

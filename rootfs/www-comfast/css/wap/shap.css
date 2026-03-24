@@ -531,6 +531,8 @@ body[module="upgrade"] .flex-container.form_split > li {
     display: flex;
     align-items: center;
     gap: 0;
+    line-height: 1.35;
+    padding: 4px 0;
 }
 
 body[module="upgrade"] .flex-container.form_split > li > .row_name {
@@ -551,10 +553,7 @@ body[module="upgrade"] .flex-container.form_split > li > .row_value {
     justify-content: flex-start;
     gap: 6px;
     overflow: hidden;
-}
-
-body[module="upgrade"] .flex-container.form_split > li:last-child > .row_value {
-    justify-content: center;
+    flex-wrap: nowrap;
 }
 
 body[module="upgrade"] #current_version,
@@ -565,9 +564,43 @@ body[module="upgrade"] #firmware_upg_text {
     word-break: break-word;
 }
 
+body[module="upgrade"] #firmware_upg_text {
+    display: inline-block;
+    flex: 1 1 auto;
+    white-space: normal;
+    line-height: 1.25;
+}
+
 .list .right .text {
     min-width: 0px;
     width: 100%;
+}
+
+/* onlineupg: split rows 30/70 with safe wrapping in right block */
+body[module="onlineupg"] .list {
+    display: flex;
+    align-items: center;
+    line-height: 1.35;
+    padding-top: 6px;
+}
+
+body[module="onlineupg"] .list .left {
+    flex: 0 0 30%;
+    max-width: 30%;
+    width: auto;
+    padding-right: 8px;
+    text-align: right;
+    white-space: normal;
+}
+
+body[module="onlineupg"] .list .right {
+    flex: 0 0 70%;
+    max-width: 70%;
+    width: auto;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .list .right .scan_ssid {
