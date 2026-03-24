@@ -33,9 +33,7 @@ jobs:
           find rootfs/www-comfast/css -type f -name '*.css' \
             -exec sh -c 'for f do npx -y -p csso-cli csso -i "$f" -o "$f"; done' sh {} +
 
-          # Minify legacy JS in-place (SeaJS/common scripts included)
-          find rootfs/www-comfast -type f -name '*.js' ! -name '*.min.js' \
-            -exec sh -c 'for f do npx -y -p terser terser "$f" --compress --mangle --ecma 5 --comments false -o "$f"; done' sh {} +
+          # Keep JS unminified: legacy SeaJS modules break under aggressive terser passes.
           echo "Frontend size after minify:"
           du -sh rootfs/www-comfast
 
