@@ -181,7 +181,8 @@ static int gbuf_append(gbuf_t *g, const void *src, size_t n)
 /* Main proxy function                                                 */
 /* ------------------------------------------------------------------ */
 void fcgi_proxy(int client_fd, const http_request_t *req,
-                const char *host, int port, int http_port)
+                const char *host, int port, int http_port,
+                const char *remote_addr)
 {
     /* --- Connect to FastCGI daemon --- */
     struct sockaddr_in addr;
@@ -274,6 +275,7 @@ void fcgi_proxy(int client_fd, const http_request_t *req,
     ADD_PARAM("SCRIPT_NAME",      req->path);
     ADD_PARAM("SCRIPT_FILENAME",  req->path);
     ADD_PARAM("QUERY_STRING",     req->query);
+    ADD_PARAM("REMOTE_ADDR",      remote_addr ? remote_addr : "127.0.0.1");
     ADD_PARAM("SERVER_NAME",      "localhost");
     ADD_PARAM("SERVER_PORT",      port_str);
     ADD_PARAM("SERVER_PROTOCOL",  req->version);
@@ -515,8 +517,9 @@ done_reading:
                     memcpy(hname, ln, namelen);
                     hname[namelen] = '\0';
                 }
-                /* Skip Status header — already used */
-                if (strcasecmp(hname, "Status") != 0) {
+                /* Skip Status and Content-Length — we set them ourselves */
+                if (strcasecmp(hname, "Status") != 0 &&
+                    strcasecmp(hname, "Content-Length") != 0) {
                     /* Write the line */
                     if (eol) {
                         write_all(client_fd, ln, (size_t)(eol - ln));

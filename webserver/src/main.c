@@ -3,6 +3,7 @@
 #include "http.h"
 #include "static.h"
 
+#include <arpa/inet.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <signal.h>
@@ -43,7 +44,8 @@ static void handle_connection(int client_fd,
                                const char *webroot,
                                const char *fcgi_host,
                                int         fcgi_port,
-                               int         listen_port)
+                               int         listen_port,
+                               const char *remote_addr)
 {
     http_request_t req;
 
@@ -78,7 +80,7 @@ static void handle_connection(int client_fd,
 
     /* 2. FastCGI proxy for /cgi-bin/ */
     if (strncmp(req.path, "/cgi-bin/", 9) == 0) {
-        fcgi_proxy(client_fd, &req, fcgi_host, fcgi_port, listen_port);
+        fcgi_proxy(client_fd, &req, fcgi_host, fcgi_port, listen_port, remote_addr);
         return;
     }
 
@@ -232,7 +234,11 @@ int main(int argc, char *argv[])
         if (pid == 0) {
             /* Child: close listening socket, handle connection, exit */
             close(listen_fd);
-            handle_connection(client_fd, webroot, fcgi_host, fcgi_port, listen_port);
+            char remote_addr[INET_ADDRSTRLEN] = "127.0.0.1";
+            inet_ntop(AF_INET, &client_addr.sin_addr,
+                      remote_addr, sizeof(remote_addr));
+            handle_connection(client_fd, webroot, fcgi_host, fcgi_port,
+                              listen_port, remote_addr);
             close(client_fd);
             _exit(0);
         }
