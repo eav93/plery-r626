@@ -1,11 +1,11 @@
 /www-comfast/common/lib/jquery.shpages.js
 /www-comfast/images/arrow.png
-/www-comfast/mobile/wireguade_client.html
+/www-comfast/mobile/wireguard_client.html
 /www-comfast/common/wan.js
 /www-comfast/computer/ddn_s.html
 /www-comfast/computer/led.html
-/www-comfast/computer/wireguade_client.html
-/www-comfast/common/wireguade_client.js
+/www-comfast/computer/wireguard_client.html
+/www-comfast/common/wireguard_client.js
 /www-comfast/common/ipfilter.js
 /www-comfast/common/4g_wan.js
 /www-comfast/computer/bridge.html

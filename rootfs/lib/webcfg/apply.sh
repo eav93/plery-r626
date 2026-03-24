@@ -346,8 +346,8 @@ for cfg in $CHANGED_CONFIGS ; do
 		safe_exit
 	}
 
-	[ $cfg = "vpn_wireguade" ] && {
-		logger -t webcfg "Restarting VPN server wiregurd services..."
+	[ $cfg = "vpn_wireguard" ] && {
+		logger -t webcfg "Restarting VPN server wireguard services..."
 		ifdown -a
 		sleep 3
 		ifup -a
