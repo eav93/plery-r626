@@ -43,11 +43,13 @@ define(function (require, exports) {
         if(martop >= 0) d('.set_seat').css({'top': martop + 'px'});
         
 
-        f.getMConfig('wireguard_config_get', '', function (data) {
-            if (data && !data.errCode) {
-                wireguard_info = { wireguard_local: data.wireguard_local, wireguard_peer: data.wireguard_peer }
-                refresh_wireguard();
-            }
+        f.getMConfig('wirguard_local_get', '', function (localData) {
+            f.getMConfig('wirguard_peer_get', '', function (peerData) {
+                if (localData && !localData.errCode && peerData && !peerData.errCode) {
+                    wireguard_info = { wireguard_local: localData.wireguard_local, wireguard_peer: peerData.wireguard_peer }
+                    refresh_wireguard();
+                }
+            });
         });
     }
 
@@ -196,14 +198,20 @@ define(function (require, exports) {
     }
 
     function wireguard_set(arg) {
-        f.setMConfig('wireguard_config_set', arg, function (data) {
+        f.setMConfig('wirguard_local_set', { wireguard_local: arg.wireguard_local }, function (data) {
             if (data.errCode != 0) {
                 g.shconfirm(nowLang, SHtips.set_err[nowLang], "error");
-            } else {
-                g.loading_box(SHpack['tip'][nowLang]);
-				g.animationWidth(30, gohref);
+                return;
             }
-        })
+            f.setMConfig('wirguard_peer_set', { wireguard_peer: arg.wireguard_peer }, function (data2) {
+                if (data2.errCode != 0) {
+                    g.shconfirm(nowLang, SHtips.set_err[nowLang], "error");
+                } else {
+                    g.loading_box(SHpack['tip'][nowLang]);
+                    g.animationWidth(30, gohref);
+                }
+            });
+        });
     }
     function gohref() {
         window.location.href = location.href;
