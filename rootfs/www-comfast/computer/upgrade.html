@@ -41,26 +41,34 @@
                 <div class="shbox clearfix">
                     <div class="shbox_border">
                         <label class="title" sh_lang="SHpack.upgrade"></label>
-                        <ul class="clearfix system">
+                        <ul class="clearfix system form_split flex-container">
                             <li class="clearfix">
                                 <label class="row_name" sh_lang="SHpack.system_version"></label>
-                                <label id="current_version"></label>
+                                <span class="row_value">
+                                    <label id="current_version"></label>
+                                </span>
                             </li>
                             <li class="clearfix">
                                 <label class="row_name" sh_lang="SHpack.upload_sys"></label>
-                                <label for="firmware_upg" class="clearfix btn btn-warning" sh_lang="SHpack.select_file"></label>
+                                <span class="row_value">
+                                    <label for="firmware_upg" class="clearfix btn btn-warning" sh_lang="SHpack.select_file"></label>
+                                    <span class="showFileName" id="firmware_upg_text"></span>
+                                </span>
                                 <input type="file" accept=".bin" name="firmware_upg" class="clearfix" id="firmware_upg"
                                        style="position: fixed;top: -999px;">
-                                <span class="showFileName" id="firmware_upg_text"></span>
                             </li>
                             <li class="clearfix">
                                 <label class="row_name"></label>
-                                <input type="checkbox" id="keep_settings" name="keep_settings">
-                                <label for="keep_settings" sh_lang="SHpack.keep_settings"></label>
+                                <span class="row_value">
+                                    <input type="checkbox" id="keep_settings" name="keep_settings">
+                                    <label for="keep_settings" sh_lang="SHpack.keep_settings"></label>
+                                </span>
                             </li>
                             <li class="clearfix">
                                 <label class="row_name"></label>
-                                <button class="btn btn-warning" et="click:system_uploadfile" sh_lang="SHpack.update"></button>
+                                <span class="row_value">
+                                    <button class="btn btn-warning" et="click:system_uploadfile" sh_lang="SHpack.update"></button>
+                                </span>
                             </li>
                         </ul>
                     </div>
