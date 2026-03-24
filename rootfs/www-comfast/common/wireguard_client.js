@@ -43,13 +43,11 @@ define(function (require, exports) {
         if(martop >= 0) d('.set_seat').css({'top': martop + 'px'});
         
 
-        f.getMConfig('wirguard_local_get', '', function (localData) {
-            f.getMConfig('wirguard_peer_get', '', function (peerData) {
-                if (localData && !localData.errCode && peerData && !peerData.errCode) {
-                    wireguard_info = { wireguard_local: localData.wireguard_local, wireguard_peer: peerData.wireguard_peer }
-                    refresh_wireguard();
-                }
-            });
+        f.getMConfig('wireguard_config_get', '', function (data) {
+            if (data && !data.errCode) {
+                wireguard_info = { wireguard_local: data.wireguard_local, wireguard_peer: data.wireguard_peer }
+                refresh_wireguard();
+            }
         });
     }
 
@@ -107,19 +105,19 @@ define(function (require, exports) {
         }
     }
     et.get_key = function () {
-        f.getMConfig('wireguade_server_key_generation', '', function (data) {
+        f.getMConfig('wireguard_server_key_generation', '', function (data) {
             if (data && !data.errCode) {
-                d("#wireguard_public_1").val(data.wireguade_ser_key['server-publickey'])
-                d("#wireguard_Private").val(data.wireguade_ser_key['server-privatekey'])
+                d("#wireguard_public_1").val(data.wireguard_ser_key['server-publickey'])
+                d("#wireguard_Private").val(data.wireguard_ser_key['server-privatekey'])
             }
         });
     }
     et.get_key_2 = function () {
-        f.getMConfig('wireguade_peer_key_generation', '', function (data) {
+        f.getMConfig('wireguard_peer_key_generation', '', function (data) {
             if (data && !data.errCode) {
-                d("#wireguard_public").val(data.wireguade_peer_key['client-publickey'])
-                d("#wireguard_Private_2").val(data.wireguade_peer_key['client-privatekey'])
-                d("#wireguard_shared").val(data.wireguade_peer_key['share-key'])
+                d("#wireguard_public").val(data.wireguard_peer_key['client-publickey'])
+                d("#wireguard_Private_2").val(data.wireguard_peer_key['client-privatekey'])
+                d("#wireguard_shared").val(data.wireguard_peer_key['share-key'])
             }
         });
     }
@@ -198,19 +196,13 @@ define(function (require, exports) {
     }
 
     function wireguard_set(arg) {
-        f.setMConfig('wirguard_local_set', { wireguard_local: arg.wireguard_local }, function (data) {
+        f.setMConfig('wireguard_config_set', arg, function (data) {
             if (data.errCode != 0) {
                 g.shconfirm(nowLang, SHtips.set_err[nowLang], "error");
-                return;
+            } else {
+                g.loading_box(SHpack['tip'][nowLang]);
+                g.animationWidth(30, gohref);
             }
-            f.setMConfig('wirguard_peer_set', { wireguard_peer: arg.wireguard_peer }, function (data2) {
-                if (data2.errCode != 0) {
-                    g.shconfirm(nowLang, SHtips.set_err[nowLang], "error");
-                } else {
-                    g.loading_box(SHpack['tip'][nowLang]);
-                    g.animationWidth(30, gohref);
-                }
-            });
         });
     }
     function gohref() {
