@@ -135,7 +135,7 @@ define(function(require, exports) {
 					if ((y.id == 'vlan' || y.id == 'ssidvlan') && (workmode != 'router' && workmode != 'wisp')) {
 						return;
 					}
-					if (y.id == 'band' && proto != 'qmi') {
+					if (y.id == 'band' && proto != 'qmi' && proto != 'dhcp_fibocom') {
 						return;
 					}
 
