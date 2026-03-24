@@ -12,8 +12,9 @@ typedef struct {
     handler_fn_t  fn;
 } handler_t;
 
-/* Call once at startup. */
-void handlers_init(void);
+/* Call once at startup, providing the FastCGI backend address so that
+ * handlers can validate sessions via webmgnt. */
+void handlers_init(const char *fcgi_host, int fcgi_port);
 
 /* Try each registered handler in order.
  * Returns 1 if a handler matched and sent a response, 0 otherwise. */

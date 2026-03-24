@@ -181,7 +181,7 @@ static int gbuf_append(gbuf_t *g, const void *src, size_t n)
 /* Main proxy function                                                 */
 /* ------------------------------------------------------------------ */
 void fcgi_proxy(int client_fd, const http_request_t *req,
-                const char *host, int port)
+                const char *host, int port, int http_port)
 {
     /* --- Connect to FastCGI daemon --- */
     struct sockaddr_in addr;
@@ -258,11 +258,19 @@ void fcgi_proxy(int client_fd, const http_request_t *req,
     char cl_str[32];
     snprintf(cl_str, sizeof(cl_str), "%zu", req->content_length);
 
-    /* Server port as string */
+    /* Server port as string (HTTP listen port, not FastCGI port) */
     char port_str[16];
-    snprintf(port_str, sizeof(port_str), "%d", port);
+    snprintf(port_str, sizeof(port_str), "%d", http_port);
+
+    /* REQUEST_URI = path [?query] */
+    char request_uri[MAX_PATH + MAX_QUERY + 2];
+    if (req->query[0])
+        snprintf(request_uri, sizeof(request_uri), "%s?%s", req->path, req->query);
+    else
+        snprintf(request_uri, sizeof(request_uri), "%s", req->path);
 
     ADD_PARAM("REQUEST_METHOD",   req->method);
+    ADD_PARAM("REQUEST_URI",      request_uri);
     ADD_PARAM("SCRIPT_NAME",      req->path);
     ADD_PARAM("SCRIPT_FILENAME",  req->path);
     ADD_PARAM("QUERY_STRING",     req->query);
@@ -535,4 +543,124 @@ done_reading:
         write_all(client_fd, body, body_len);
 
     free(stdout_buf.data);
+}
+
+/* ------------------------------------------------------------------ */
+/* Auth check                                                          */
+/* ------------------------------------------------------------------ */
+int fcgi_check_auth(const char *cookie, const char *host, int port)
+{
+    /* Connect */
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port   = htons((uint16_t)port);
+    if (inet_pton(AF_INET, host, &addr.sin_addr) != 1) {
+        struct hostent *he = gethostbyname(host);
+        if (!he) return 0;
+        memcpy(&addr.sin_addr, he->h_addr, (size_t)he->h_length);
+    }
+
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) return 0;
+    if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        close(sock);
+        return 0;
+    }
+
+    const uint16_t REQ_ID = 1;
+
+    /* BEGIN_REQUEST */
+    {
+        uint8_t brbody[8] = {0, FCGI_RESPONDER, 0, 0, 0, 0, 0, 0};
+        send_record(sock, FCGI_BEGIN_REQUEST, REQ_ID, brbody, 8);
+    }
+
+    /* PARAMS — minimal GET probe to a known lightweight endpoint */
+    uint8_t pbuf[2048];
+    size_t  plen = 0;
+
+#define AP(n, v) plen += append_nv(pbuf, sizeof(pbuf), plen, (n), (v))
+    AP("REQUEST_METHOD",    "GET");
+    AP("REQUEST_URI",       "/cgi-bin/system-status?method=GET&section=base_info");
+    AP("SCRIPT_NAME",       "/cgi-bin/system-status");
+    AP("SCRIPT_FILENAME",   "/cgi-bin/system-status");
+    AP("QUERY_STRING",      "method=GET&section=base_info");
+    AP("SERVER_NAME",       "localhost");
+    AP("SERVER_PORT",       "80");
+    AP("SERVER_PROTOCOL",   "HTTP/1.1");
+    AP("GATEWAY_INTERFACE", "CGI/1.1");
+    AP("CONTENT_LENGTH",    "0");
+    if (cookie && cookie[0])
+        AP("HTTP_COOKIE", cookie);
+#undef AP
+
+    send_params(sock, REQ_ID, pbuf, plen);
+    /* Empty STDIN */
+    send_record(sock, FCGI_STDIN, REQ_ID, NULL, 0);
+
+    /* Read FCGI_STDOUT records and collect the body */
+    char   resp[4096];
+    size_t resp_len = 0;
+    int    result   = 1; /* innocent until proven guilty */
+
+    for (;;) {
+        fcgi_header_t hdr;
+        size_t got = 0;
+        uint8_t *hp = (uint8_t *)&hdr;
+        while (got < sizeof(hdr)) {
+            ssize_t n;
+            do { n = read(sock, hp + got, sizeof(hdr) - got); }
+            while (n == -1 && errno == EINTR);
+            if (n <= 0) goto auth_done;
+            got += (size_t)n;
+        }
+
+        uint16_t clen  = (uint16_t)((hdr.content_len_hi << 8) | hdr.content_len_lo);
+        uint8_t  padln = hdr.padding_len;
+
+        if (clen > 0) {
+            uint8_t *cbuf = malloc(clen);
+            if (!cbuf) { result = 0; goto auth_done; }
+            got = 0;
+            while (got < clen) {
+                ssize_t n;
+                do { n = read(sock, cbuf + got, clen - got); }
+                while (n == -1 && errno == EINTR);
+                if (n <= 0) { free(cbuf); goto auth_done; }
+                got += (size_t)n;
+            }
+            if (hdr.type == FCGI_STDOUT && resp_len < sizeof(resp) - 1) {
+                size_t copy = clen < sizeof(resp) - resp_len - 1
+                              ? clen : sizeof(resp) - resp_len - 1;
+                memcpy(resp + resp_len, cbuf, copy);
+                resp_len += copy;
+                resp[resp_len] = '\0';
+            }
+            free(cbuf);
+        }
+
+        /* Drain padding */
+        if (padln > 0) {
+            uint8_t pad[256];
+            size_t  pdone = 0;
+            while (pdone < padln) {
+                ssize_t n;
+                do { n = read(sock, pad, padln - pdone); }
+                while (n == -1 && errno == EINTR);
+                if (n <= 0) goto auth_done;
+                pdone += (size_t)n;
+            }
+        }
+
+        if (hdr.type == FCGI_END_REQUEST) break;
+    }
+
+    /* webmgnt returns errCode -32002 for unauthenticated requests */
+    if (resp_len > 0 && strstr(resp, "-32002"))
+        result = 0;
+
+auth_done:
+    close(sock);
+    return result;
 }

@@ -42,7 +42,8 @@ static void sig_term(int sig)
 static void handle_connection(int client_fd,
                                const char *webroot,
                                const char *fcgi_host,
-                               int         fcgi_port)
+                               int         fcgi_port,
+                               int         listen_port)
 {
     http_request_t req;
 
@@ -53,13 +54,31 @@ static void handle_connection(int client_fd,
 
     dprintf(STDERR_FILENO, "wbsrv: %s %s\n", req.method, req.path);
 
+    /* Redirect bare / to the login page (mirrors nginx: index /cgi-bin/index) */
+    if (strcmp(req.path, "/") == 0) {
+        static const char redir[] =
+            "HTTP/1.1 302 Found\r\n"
+            "Location: /cgi-bin/index\r\n"
+            "Content-Length: 0\r\n"
+            "Connection: close\r\n"
+            "\r\n";
+        const char *p = redir;
+        size_t left = sizeof(redir) - 1;
+        while (left > 0) {
+            ssize_t n = write(client_fd, p, left);
+            if (n <= 0) break;
+            p += n; left -= (size_t)n;
+        }
+        return;
+    }
+
     /* 1. Custom handlers */
     if (handlers_dispatch(client_fd, &req))
         return;
 
     /* 2. FastCGI proxy for /cgi-bin/ */
     if (strncmp(req.path, "/cgi-bin/", 9) == 0) {
-        fcgi_proxy(client_fd, &req, fcgi_host, fcgi_port);
+        fcgi_proxy(client_fd, &req, fcgi_host, fcgi_port, listen_port);
         return;
     }
 
@@ -181,7 +200,7 @@ int main(int argc, char *argv[])
     }
 
     /* --- Init handlers --- */
-    handlers_init();
+    handlers_init(fcgi_host, fcgi_port);
 
     dprintf(STDERR_FILENO,
             "wbsrv: listening on port %d, webroot=%s, fcgi=%s:%d\n",
@@ -213,7 +232,7 @@ int main(int argc, char *argv[])
         if (pid == 0) {
             /* Child: close listening socket, handle connection, exit */
             close(listen_fd);
-            handle_connection(client_fd, webroot, fcgi_host, fcgi_port);
+            handle_connection(client_fd, webroot, fcgi_host, fcgi_port, listen_port);
             close(client_fd);
             _exit(0);
         }
