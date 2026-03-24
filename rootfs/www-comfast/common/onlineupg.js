@@ -9,7 +9,7 @@ define(function (require, exports) {
     require("checkbox")(d);
     require("upload")(d);
 
-    var device, device_config, ClearTime = 0;
+    var device, device_config, ClearTime = 0, installedVersion = '';
 
     exports.init = function () {
         e.plugInit(et, start_model);
@@ -38,7 +38,8 @@ define(function (require, exports) {
         // Load installed firmware version
         f.getFirmwareInfo(function (data) {
             if (data && data.errCode == 0 && data.firmware) {
-                d('#InstalledVersion').html(data.firmware.version || '-');
+                installedVersion = data.firmware.version || '';
+                d('#InstalledVersion').html(installedVersion || '-');
             }
         });
 
@@ -86,14 +87,16 @@ define(function (require, exports) {
         if (!data.upgrage_status) data.upgrage_status = {};
         var fota = data.fota_status;
         var ver = fota.fota_version || '';
-        // Show installed version (from hwrev/version file)
-        d('#InstalledVersion').html(data.firmware_version || ver || '-');
+        var currentInstalled = installedVersion || data.firmware_version || d.trim(d('#InstalledVersion').text()) || '';
+        d('#InstalledVersion').html(currentInstalled || '-');
         // New version - only show row when update available
         d('#CurrentVersion').html('');
         d('#NewVersionRow').hide();
         // 5=latest version, 4=network error, 3=new version found (not downloaded), 2=downloading, 1=downloaded ready, 0=idle
         if (fota.fota_status == 5 && ver) {
             d('#UpgTip').html(SHpack.AlreadyNewVersion[nowLang]);
+        } else if (fota.fota_status == 4) {
+            d('#UpgTip').html(SHpack.NetworkError[nowLang]);
         } else if (fota.fota_status == 2 || fota.fota_status == 3) {
             d('#UpgTip').html(SHpack.CheckNewVersion[nowLang]);
             if (ver) { d('#CurrentVersion').html(ver); d('#NewVersionRow').show(); }
@@ -107,7 +110,7 @@ define(function (require, exports) {
             d("#ClearDown").hide();
             d("#Update").show();
         } else {
-            d('#UpgTip').html('');
+            d('#UpgTip').html(ver && currentInstalled && ver == currentInstalled ? SHpack.AlreadyNewVersion[nowLang] : '');
             if (data.upgrade.switch != "1") {
                 d("#ManualDown").show();
             }
