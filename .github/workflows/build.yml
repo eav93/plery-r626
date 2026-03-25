@@ -62,22 +62,10 @@ jobs:
         run: tar xf ${{ env.SDK_NAME }}.tar.xz
 
       # ---- libuci (lede-17.01) ----
-      - name: Cache libuci
-        uses: actions/cache@v5
-        id: libuci-cache
-        with:
-          path: libuci
-          key: libuci-lede-17.01
-
       - name: Clone libuci
         run: |
-          if [ ! -f libuci/uci.c ]; then
-            rm -rf libuci
-            git clone -b lede-17.01 --depth=1 https://github.com/openwrt/uci libuci
-          fi
-
-      - name: Generate uci_config.h
-        run: |
+          rm -rf libuci
+          git clone -q -b lede-17.01 --depth=1 https://github.com/openwrt/uci libuci
           printf '#ifndef _UCI_CONFIG_H\n#define _UCI_CONFIG_H\n#define UCI_PREFIX "/usr"\n#endif\n' \
             > libuci/uci_config.h
 
