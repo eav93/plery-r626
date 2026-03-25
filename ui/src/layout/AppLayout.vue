@@ -16,7 +16,7 @@
             >
               <AppIcon :name="item.icon" :size="16" class="nav-item__icon" />
               <span class="nav-item__label">{{ t(item.labelKey) }}</span>
-              <AppIcon name="chevron_down" :size="12" class="nav-item__arrow" />
+              <svg class="nav-item__arrow" viewBox="0 0 10 10" fill="currentColor" width="10" height="10"><path d="M2 3 L5 7 L8 3z"/></svg>
             </div>
             <div v-show="openGroups.has(item.id)" class="nav-children">
               <RouterLink
@@ -44,7 +44,7 @@
       </nav>
       <div class="sidebar__footer">
         <button class="nav-item nav-item--logout" @click="logout">
-          <AppIcon name="logout" :size="16" class="nav-item__icon" />
+          <AppIcon name="tuichu" :size="16" class="nav-item__icon" />
           <span class="nav-item__label">{{ t('logout') }}</span>
         </button>
       </div>
@@ -55,10 +55,6 @@
       <!-- Desktop topbar -->
       <header v-if="!isMobile" class="topbar topbar--desktop">
         <span class="topbar__title">{{ t('global_title') }}</span>
-        <button class="topbar__logout" @click="logout">
-          <AppIcon name="logout" :size="16" />
-          <span>{{ t('logout') }}</span>
-        </button>
       </header>
 
       <!-- Mobile topbar with hamburger -->
@@ -91,7 +87,7 @@
                 >
                   <AppIcon :name="item.icon" :size="16" class="nav-item__icon" />
                   <span class="nav-item__label">{{ t(item.labelKey) }}</span>
-                  <AppIcon name="chevron_down" :size="12" class="nav-item__arrow" />
+                  <svg class="nav-item__arrow" viewBox="0 0 10 10" fill="currentColor" width="10" height="10"><path d="M2 3 L5 7 L8 3z"/></svg>
                 </div>
                 <div v-show="openGroups.has(item.id)" class="nav-children">
                   <RouterLink
@@ -121,7 +117,7 @@
           </nav>
           <div class="sidebar__footer">
             <button class="nav-item nav-item--logout" @click="logout">
-              <AppIcon name="logout" :size="16" class="nav-item__icon" />
+              <AppIcon name="tuichu" :size="16" class="nav-item__icon" />
               <span class="nav-item__label">{{ t('logout') }}</span>
             </button>
           </div>
@@ -137,7 +133,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useApi } from '@/composables/useApi'
-import AppIcon, { type IconName } from '@/components/AppIcon.vue'
+import AppIcon, { type AppIconName } from '@/components/AppIcon.vue'
 import logoUrl from '@/assets/logo.png'
 
 const { t } = useI18n()
@@ -152,24 +148,24 @@ onMounted(() => window.addEventListener('resize', onResize))
 onUnmounted(() => window.removeEventListener('resize', onResize))
 
 // ── Navigation ───────────────────────────────────────────────────────────────
-interface NavLeaf  { id: string; labelKey: string; icon: IconName; to: string; children?: undefined }
-interface NavGroup { id: string; labelKey: string; icon: IconName; to?: string; children: NavLeaf[] }
+interface NavLeaf  { id: string; labelKey: string; icon: AppIconName; to: string; children?: undefined }
+interface NavGroup { id: string; labelKey: string; icon: AppIconName; to?: string; children: NavLeaf[] }
 type NavItem = NavLeaf | NavGroup
 
 const navItems: NavItem[] = [
-  { id: 'dashboard', labelKey: 'home',    icon: 'dashboard',  to: '/dashboard' },
+  { id: 'dashboard', labelKey: 'home',    icon: 'hemo',    to: '/dashboard' },
   {
-    id: 'network', labelKey: 'network', icon: 'router',
+    id: 'network', labelKey: 'network', icon: 'network',
     children: [
-      { id: 'lan',  labelKey: 'lan',      icon: 'lan',    to: '/network/lan' },
-      { id: 'wan',  labelKey: 'wan',      icon: 'public', to: '/network/wan' },
-      { id: 'wifi', labelKey: 'wireless', icon: 'wifi',   to: '/network/wifi' },
+      { id: 'lan',  labelKey: 'lan',      icon: 'lan',     to: '/network/lan' },
+      { id: 'wan',  labelKey: 'wan',      icon: 'wan',     to: '/network/wan' },
+      { id: 'wifi', labelKey: 'wireless', icon: 'wifi',    to: '/network/wifi' },
     ],
   },
   {
-    id: 'system', labelKey: 'system', icon: 'settings',
+    id: 'system', labelKey: 'system', icon: 'system',
     children: [
-      { id: 'reboot', labelKey: 'reboot', icon: 'restart_alt', to: '/system/reboot' },
+      { id: 'reboot', labelKey: 'reboot', icon: 'system',  to: '/system/reboot' },
     ],
   },
 ]
@@ -276,20 +272,6 @@ async function logout() {
   color: #aaa;
   letter-spacing: .5px;
 }
-.topbar__logout {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--sidebar-text);
-  font-size: 14px;
-  cursor: pointer;
-  background: none;
-  border: none;
-  padding: 6px 10px;
-  border-radius: var(--radius);
-  transition: color .2s;
-}
-.topbar__logout:hover { color: #ff8c00; }
 
 /* ── Mobile topbar ───────────────────────────────────────────────────────── */
 .topbar--mobile {

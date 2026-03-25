@@ -10,12 +10,14 @@ interface SystemStats {
   rx_bytes: number
   tx_bytes: number
   uptime: number
+  conntrack: number
 }
 
 interface SystemVersion {
   version: string
   macaddr: string
   hostname: string
+  model: string
 }
 
 export const useSystemStore = defineStore('system', () => {

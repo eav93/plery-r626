@@ -723,11 +723,18 @@ static int handle_system_stats(int client_fd, const http_request_t *req)
         if (uf) { fscanf(uf, "%lu", &uptime_sec); fclose(uf); }
     }
 
-    char body[384];
+    /* TCP/UDP connection count from nf_conntrack */
+    unsigned long conntrack = 0;
+    {
+        FILE *cf = fopen("/proc/sys/net/netfilter/nf_conntrack_count", "r");
+        if (cf) { fscanf(cf, "%lu", &conntrack); fclose(cf); }
+    }
+
+    char body[512];
     int blen = snprintf(body, sizeof(body),
         "{\"cpu_pct\":%d,\"mem_pct\":%d,\"mem_total\":%lu,\"mem_avail\":%lu,"
-        "\"rx_bytes\":%llu,\"tx_bytes\":%llu,\"uptime\":%lu}",
-        cpu_pct, mem_pct, mem_total, mem_avail, rx, tx, uptime_sec);
+        "\"rx_bytes\":%llu,\"tx_bytes\":%llu,\"uptime\":%lu,\"conntrack\":%lu}",
+        cpu_pct, mem_pct, mem_total, mem_avail, rx, tx, uptime_sec, conntrack);
 
     http_send_response(client_fd, 200, "OK",
                        "application/json; charset=utf-8",
@@ -783,14 +790,62 @@ static int handle_system_version(int client_fd, const http_request_t *req)
         uci_free_context(ctx);
     }
 
-    char esc_ver[256], esc_mac[64];
-    json_escape(version, esc_ver, sizeof(esc_ver));
-    json_escape(macaddr, esc_mac, sizeof(esc_mac));
+    /* Model: read from /etc/defconfig/cf-plery/model, fall back to
+     * extracting from version string (part before first dash after prefix) */
+    char model[64] = "";
+    {
+        FILE *mf = fopen("/etc/defconfig/cf-plery/model", "r");
+        if (mf) {
+            if (fgets(model, sizeof(model), mf)) {
+                size_t n = strlen(model);
+                while (n > 0 && (model[n-1] == '\n' || model[n-1] == '\r'))
+                    model[--n] = '\0';
+            }
+            fclose(mf);
+        }
+        /* Fallback: extract "PLERY-R626" from "CF-PLERY-R626-..." */
+        if (!model[0]) {
+            const char *p = strstr(version, "PLERY-");
+            if (p) {
+                strncpy(model, p, sizeof(model) - 1);
+                /* Truncate at third dash */
+                char *d = model;
+                int dashes = 0;
+                while (*d) {
+                    if (*d == '-' && ++dashes == 2) { *d = '\0'; break; }
+                    d++;
+                }
+            }
+        }
+        if (!model[0]) strncpy(model, "PLERY", sizeof(model) - 1);
+    }
+
+    /* Hostname from UCI system.@system[0].hostname */
+    char hostname[64] = "";
+    {
+        struct uci_context *hctx = uci_alloc_context();
+        if (hctx) {
+            char key[] = "system.@system[0].hostname";
+            struct uci_ptr ptr;
+            if (uci_lookup_ptr(hctx, &ptr, key, true) == UCI_OK &&
+                (ptr.flags & UCI_LOOKUP_COMPLETE) && ptr.o &&
+                ptr.o->type == UCI_TYPE_STRING)
+                strncpy(hostname, ptr.o->v.string, sizeof(hostname) - 1);
+            uci_free_context(hctx);
+        }
+    }
+
+    char esc_ver[256], esc_mac[64], esc_model[64], esc_host[64];
+    json_escape(version,  esc_ver,   sizeof(esc_ver));
+    json_escape(macaddr,  esc_mac,   sizeof(esc_mac));
+    json_escape(model,    esc_model, sizeof(esc_model));
+    json_escape(hostname, esc_host,  sizeof(esc_host));
 
     char body[512];
     int blen = snprintf(body, sizeof(body),
-                        "{\"version\":\"%s\",\"macaddr\":\"%s\"}",
-                        esc_ver, esc_mac);
+                        "{\"version\":\"%s\",\"macaddr\":\"%s\","
+                        "\"model\":\"%s\",\"hostname\":\"%s\"}",
+                        esc_ver, esc_mac, esc_model, esc_host);
     http_send_response(client_fd, 200, "OK",
                        "application/json; charset=utf-8",
                        body, (size_t)blen);

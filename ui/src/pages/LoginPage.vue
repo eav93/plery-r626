@@ -91,6 +91,12 @@ async function doLogin() {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
+  box-sizing: border-box;
+}
+
+@media (max-width: 500px) {
+  .login-page { padding: 16px; align-items: flex-start; padding-top: 40px; }
+  .login-card { max-width: 100%; }
 }
 
 .login-brand {

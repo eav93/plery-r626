@@ -96,14 +96,14 @@
 
     </div>
 
-    <!-- Row 3: port status (compact) -->
+    <!-- Row 3: port status (half width, centered) -->
     <div v-if="portList.length" class="dash-row">
-      <div class="shbox col-full">
+      <div class="shbox col-half">
         <div class="section-title">{{ t('intertface') }}</div>
         <ul class="iface-list">
           <li v-for="(p, i) in portList" :key="i"
               :class="['iface-item', p.up ? (p.wan_enable ? 'iface-link-wan' : 'iface-link-lan') : 'iface-unlink']">
-            <i class="iconfont port-icon"></i>
+            <AppIcon name="wangkou" :size="32" />
             <p class="iface-label">{{ p.wan_enable ? 'WAN' : ('LAN' + (lanIdx(i) > 1 ? lanIdx(i) : '')) }}</p>
           </li>
         </ul>
@@ -161,6 +161,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSystemStore } from '@/stores/system'
 import { useApi } from '@/composables/useApi'
+import AppIcon from '@/components/AppIcon.vue'
 
 import imgRouter   from '@/assets/m_router.png'
 import imgAp       from '@/assets/m_ap.png'
@@ -379,27 +380,21 @@ onUnmounted(() => { clearInterval(timer); clearInterval(portsTimer) })
 /* ── Port status ─────────────────────────────────────────────────────────── */
 .iface-list {
   display: flex;
-  gap: 0;
-  padding: 6px 4px 2px;
+  justify-content: center;
+  gap: 24px;
+  padding: 6px 8px 4px;
 }
 .iface-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  margin-left: 20px;
+  gap: 3px;
 }
-.iface-item:first-child { margin-left: 0; }
-.port-icon {
-  font-size: 30px;
-  line-height: 1;
-}
-.port-icon::before { content: "\e62c"; }
 .iface-label { font-size: 11px; color: var(--color-text-muted); }
 /* WAN linked = blue, LAN linked = orange, unlinked = gray */
-.iface-link-wan .port-icon { color: #0068ff; }
-.iface-link-lan .port-icon { color: #ff6f08; }
-.iface-unlink   .port-icon { color: #adadad; }
+.iface-link-wan { color: #0068ff; }
+.iface-link-lan { color: #ff6f08; }
+.iface-unlink   { color: #adadad; }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 767px) {
