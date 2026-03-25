@@ -52,9 +52,13 @@
 
     <!-- Content area -->
     <div class="content">
-      <!-- Desktop topbar -->
+      <!-- Desktop topbar: logo left, logout right -->
       <header v-if="!isMobile" class="topbar topbar--desktop">
-        <span class="topbar__title">{{ t('global_title') }}</span>
+        <img :src="logoUrl" alt="Plery" class="topbar__logo" />
+        <button class="topbar__logout" @click="logout">
+          <AppIcon name="tuichu" :size="16" />
+          <span>{{ t('logout') }}</span>
+        </button>
       </header>
 
       <!-- Mobile topbar with hamburger -->
@@ -262,16 +266,27 @@ async function logout() {
   display: flex;
   align-items: center;
   padding: 0 20px;
-  gap: 16px;
   flex-shrink: 0;
   color: var(--sidebar-text);
 }
-.topbar__title {
+.topbar--desktop .topbar__logo {
+  height: 36px;
+  width: auto;
   flex: 1;
-  font-size: 14px;
-  color: #aaa;
-  letter-spacing: .5px;
 }
+.topbar__logout {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--sidebar-text);
+  font-size: 14px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 6px 0;
+  transition: color .2s;
+}
+.topbar__logout:hover { color: #ff8c00; }
 
 /* ── Mobile topbar ───────────────────────────────────────────────────────── */
 .topbar--mobile {
