@@ -111,11 +111,11 @@ echo "=== GET /api/uci ==="
 
 get "/api/uci?get=system.%40system%5B0%5D.hostname"
 assert_status "200" "GET /api/uci?get=hostname status"
-assert_key ".value" "GET /api/uci?get=hostname has value"
+assert_key ".hostname" "GET /api/uci?get=hostname returns {hostname:...}"
 
 get "/api/uci?get=system.language.language"
 assert_status "200" "GET /api/uci?get=language status"
-assert_key ".value" "GET /api/uci?get=language has value"
+assert_key ".language" "GET /api/uci?get=language returns {language:...}"
 
 # Section-level read (package.section — no option)
 get "/api/uci?get=network.lan"

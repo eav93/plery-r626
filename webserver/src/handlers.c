@@ -236,11 +236,14 @@ static int handle_uci_get(int client_fd, const http_request_t *req)
     }
 
     if (ptr.o) {
-        /* Full path package.section.option — return {"value":"..."} */
-        char esc[512];
+        /* Full path package.section.option — return {"optname":"value"}
+         * Same format as section response for consistency. */
+        char esc_key[128], esc_val[512];
+        json_escape(ptr.o->e.name, esc_key, sizeof(esc_key));
         if (ptr.o->type == UCI_TYPE_STRING) {
-            json_escape(ptr.o->v.string, esc, sizeof(esc));
-            off = (size_t)snprintf(body, cap, "{\"value\":\"%s\"}", esc);
+            json_escape(ptr.o->v.string, esc_val, sizeof(esc_val));
+            off = (size_t)snprintf(body, cap,
+                                   "{\"%s\":\"%s\"}", esc_key, esc_val);
         } else {
             /* List: join items with \n */
             char joined[512] = "";
@@ -256,8 +259,9 @@ static int handle_uci_get(int client_fd, const http_request_t *req)
                 joff += elen;
             }
             joined[joff] = '\0';
-            json_escape(joined, esc, sizeof(esc));
-            off = (size_t)snprintf(body, cap, "{\"value\":\"%s\"}", esc);
+            json_escape(joined, esc_val, sizeof(esc_val));
+            off = (size_t)snprintf(body, cap,
+                                   "{\"%s\":\"%s\"}", esc_key, esc_val);
         }
     } else if (ptr.s) {
         /* Section path package.section — return all options as flat object */
