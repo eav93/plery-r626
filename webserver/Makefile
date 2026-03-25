@@ -16,19 +16,15 @@ CFLAGS = -Os -Wall -Wextra -std=c99 -D_GNU_SOURCE -I$(LIBUCI_DIR)
 all:
 	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) -luci
 
-# Cross-compile static libuci.a from cloned source
-$(LIBUCI_A):
-	$(CC_CROSS) -Os -std=c99 -D_GNU_SOURCE -I$(LIBUCI_DIR) \
-		-c $(LIBUCI_DIR)/uci.c   -o $(LIBUCI_DIR)/uci.o
-	$(CC_CROSS) -Os -std=c99 -D_GNU_SOURCE -I$(LIBUCI_DIR) \
-		-c $(LIBUCI_DIR)/file.c  -o $(LIBUCI_DIR)/file.o
-	$(CC_CROSS) -Os -std=c99 -D_GNU_SOURCE -I$(LIBUCI_DIR) \
-		-c $(LIBUCI_DIR)/util.c  -o $(LIBUCI_DIR)/util.o
-	$(CC_CROSS) -Os -std=c99 -D_GNU_SOURCE -I$(LIBUCI_DIR) \
-		-c $(LIBUCI_DIR)/delta.c -o $(LIBUCI_DIR)/delta.o
-	$(AR_CROSS) rcs $(LIBUCI_A) \
-		$(LIBUCI_DIR)/uci.o $(LIBUCI_DIR)/file.o \
-		$(LIBUCI_DIR)/util.o $(LIBUCI_DIR)/delta.o
+# Cross-compile static libuci.a from cloned source (lede-17.01: libuci.c not uci.c)
+LIBUCI_SRCS = libuci.c file.c util.c delta.c blob.c list.c parse.c
+LIBUCI_OBJS = $(patsubst %.c,$(LIBUCI_DIR)/%.o,$(LIBUCI_SRCS))
+
+$(LIBUCI_DIR)/%.o: $(LIBUCI_DIR)/%.c
+	$(CC_CROSS) -Os -std=c99 -D_GNU_SOURCE -I$(LIBUCI_DIR) -c $< -o $@
+
+$(LIBUCI_A): $(LIBUCI_OBJS)
+	$(AR_CROSS) rcs $@ $^
 
 cross: $(LIBUCI_A)
 	$(CC_CROSS) $(CFLAGS) -s -o $(TARGET) $(SRCS) $(LIBUCI_A)
