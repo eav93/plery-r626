@@ -17,7 +17,7 @@ all:
 	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) -luci
 
 # Cross-compile static libuci.a from cloned source (lede-17.01: libuci.c not uci.c)
-LIBUCI_SRCS = libuci.c file.c util.c delta.c blob.c list.c parse.c
+LIBUCI_SRCS = libuci.c file.c util.c delta.c list.c parse.c
 LIBUCI_OBJS = $(patsubst %.c,$(LIBUCI_DIR)/%.o,$(LIBUCI_SRCS))
 
 $(LIBUCI_DIR)/%.o: $(LIBUCI_DIR)/%.c
