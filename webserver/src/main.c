@@ -56,11 +56,11 @@ static void handle_connection(int client_fd,
 
     dprintf(STDERR_FILENO, "wbsrv: %s %s\n", req.method, req.path);
 
-    /* Redirect bare / to the login page (mirrors nginx: index /cgi-bin/index) */
+    /* Redirect bare / to the new Vue SPA */
     if (strcmp(req.path, "/") == 0) {
         static const char redir[] =
             "HTTP/1.1 302 Found\r\n"
-            "Location: /cgi-bin/index\r\n"
+            "Location: /app/\r\n"
             "Content-Length: 0\r\n"
             "Connection: close\r\n"
             "\r\n";

@@ -5,6 +5,11 @@ const router = createRouter({
   routes: [
     { path: '/', redirect: '/dashboard' },
     {
+      path: '/login',
+      name: 'login',
+      component: () => import('@/pages/LoginPage.vue'),
+    },
+    {
       path: '/dashboard',
       name: 'dashboard',
       component: () => import('@/pages/DashboardPage.vue'),
@@ -28,11 +33,6 @@ const router = createRouter({
       path: '/system/reboot',
       name: 'reboot',
       component: () => import('@/pages/RebootPage.vue'),
-    },
-    {
-      path: '/login',
-      name: 'login',
-      component: () => import('@/pages/LoginPage.vue'),
     },
   ],
 })

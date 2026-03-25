@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -25,10 +26,123 @@ void handlers_init(const char *fcgi_host, int fcgi_port)
 }
 
 /* ------------------------------------------------------------------ */
+/* Native session store (independent of webmgnt / FastCGI)            */
+/* ------------------------------------------------------------------ */
+#define SESSION_MAX    8
+#define SESSION_TTL    3600  /* seconds */
+#define SESSION_TOKLEN 32
+
+typedef struct {
+    char    token[SESSION_TOKLEN + 1];
+    time_t  expires;
+} native_session_t;
+
+static native_session_t g_sessions[SESSION_MAX];
+
+/* Generate a 32-char hex token using /dev/urandom */
+static void gen_token(char *out, size_t len)
+{
+    FILE *f = fopen("/dev/urandom", "rb");
+    if (f) {
+        uint8_t buf[(len - 1) / 2 + 1];
+        size_t n = fread(buf, 1, sizeof(buf), f);
+        fclose(f);
+        for (size_t i = 0; i < n && i * 2 + 1 < len; i++)
+            snprintf(out + i * 2, 3, "%02x", buf[i]);
+        out[len - 1] = '\0';
+        return;
+    }
+    /* Fallback: time-based (weak, but better than nothing) */
+    snprintf(out, len, "%lx%lx", (unsigned long)time(NULL), (unsigned long)getpid());
+}
+
+/* Find a valid session slot by token.  Returns index or -1. */
+static int session_find(const char *token)
+{
+    time_t now = time(NULL);
+    for (int i = 0; i < SESSION_MAX; i++) {
+        if (g_sessions[i].token[0] &&
+            g_sessions[i].expires > now &&
+            strcmp(g_sessions[i].token, token) == 0)
+            return i;
+    }
+    return -1;
+}
+
+/* Create a new session and write the token into out[SESSION_TOKLEN+1] */
+static void session_create(char *out)
+{
+    gen_token(out, SESSION_TOKLEN + 1);
+    time_t now = time(NULL);
+    /* Find an empty or expired slot */
+    int slot = -1;
+    for (int i = 0; i < SESSION_MAX; i++) {
+        if (!g_sessions[i].token[0] || g_sessions[i].expires <= now) {
+            slot = i;
+            break;
+        }
+    }
+    if (slot < 0) slot = 0;  /* evict oldest */
+    strncpy(g_sessions[slot].token, out, SESSION_TOKLEN);
+    g_sessions[slot].token[SESSION_TOKLEN] = '\0';
+    g_sessions[slot].expires = now + SESSION_TTL;
+}
+
+/* Invalidate a session by token */
+static void session_destroy(const char *token)
+{
+    for (int i = 0; i < SESSION_MAX; i++) {
+        if (strcmp(g_sessions[i].token, token) == 0) {
+            g_sessions[i].token[0] = '\0';
+            g_sessions[i].expires  = 0;
+        }
+    }
+}
+
+/* Extract the value of cookie named `name` from a Cookie header string.
+ * Writes result into buf (max buflen bytes). Returns 1 on found, 0 otherwise. */
+static int cookie_get(const char *cookie_hdr, const char *name,
+                      char *buf, size_t buflen)
+{
+    if (!cookie_hdr) return 0;
+    size_t nlen = strlen(name);
+    const char *p = cookie_hdr;
+    while (*p) {
+        while (*p == ' ' || *p == '\t') p++;
+        if (strncmp(p, name, nlen) == 0 && p[nlen] == '=') {
+            p += nlen + 1;
+            size_t i = 0;
+            while (*p && *p != ';' && i + 1 < buflen)
+                buf[i++] = *p++;
+            buf[i] = '\0';
+            return 1;
+        }
+        while (*p && *p != ';') p++;
+        if (*p == ';') p++;
+    }
+    return 0;
+}
+
+/* Check native session from Cookie header.  Returns 1 if valid. */
+static int native_check_auth(const http_request_t *req)
+{
+    const char *cookie = http_get_header(req, "Cookie");
+    if (!cookie) return 0;
+    char token[SESSION_TOKLEN + 1] = {0};
+    if (!cookie_get(cookie, "slt", token, sizeof(token))) return 0;
+    return session_find(token) >= 0;
+}
+
+/* ------------------------------------------------------------------ */
 /* Auth helper                                                          */
 /* ------------------------------------------------------------------ */
 static int check_auth(int client_fd, const http_request_t *req)
 {
+    /* Accept native SPA session first (no FCGI round-trip needed) */
+    if (native_check_auth(req))
+        return 1;
+
+    /* Fall back to legacy webmgnt FastCGI session */
     const char *cookie = http_get_header(req, "Cookie");
     if (fcgi_check_auth(cookie ? cookie : "", g_fcgi_host, g_fcgi_port))
         return 1;
@@ -540,6 +654,7 @@ static int read_netdev(const char *iface,
     return -1;
 }
 
+
 static int handle_system_stats(int client_fd, const http_request_t *req)
 {
     if (strcmp(req->path, "/api/system/stats") != 0) return 0;
@@ -558,18 +673,28 @@ static int handle_system_stats(int client_fd, const http_request_t *req)
         cpu_pct = (int)(100ULL * (dtot - didle) / dtot);
     }
 
-    /* Memory */
+    /* Memory: use MemAvailable if present (Linux 3.14+),
+     * otherwise fall back to MemFree + Buffers + Cached */
     unsigned long mem_total = 0, mem_avail = 0;
-    FILE *fp = fopen("/proc/meminfo", "r");
-    if (fp) {
-        char line[128];
-        while (fgets(line, sizeof(line), fp)) {
-            unsigned long v;
-            if (sscanf(line, "MemTotal: %lu kB", &v) == 1)     mem_total = v;
-            if (sscanf(line, "MemAvailable: %lu kB", &v) == 1) mem_avail = v;
+    unsigned long mem_free = 0, mem_buffers = 0, mem_cached = 0;
+    int has_avail = 0;
+    {
+        FILE *fp = fopen("/proc/meminfo", "r");
+        if (fp) {
+            char line[128];
+            while (fgets(line, sizeof(line), fp)) {
+                unsigned long v;
+                if (sscanf(line, "MemTotal: %lu kB",     &v) == 1) mem_total   = v;
+                if (sscanf(line, "MemFree: %lu kB",      &v) == 1) mem_free    = v;
+                if (sscanf(line, "Buffers: %lu kB",      &v) == 1) mem_buffers = v;
+                if (sscanf(line, "Cached: %lu kB",       &v) == 1) mem_cached  = v;
+                if (sscanf(line, "MemAvailable: %lu kB", &v) == 1) { mem_avail = v; has_avail = 1; }
+            }
+            fclose(fp);
         }
-        fclose(fp);
     }
+    if (!has_avail)
+        mem_avail = mem_free + mem_buffers + mem_cached;
     int mem_pct = mem_total ? (int)(100UL * (mem_total - mem_avail) / mem_total) : 0;
 
     /* Network — get WAN ifname from UCI, fall back to eth1 */
@@ -591,11 +716,18 @@ static int handle_system_stats(int client_fd, const http_request_t *req)
     unsigned long long rx = 0, tx = 0;
     read_netdev(wan_iface, &rx, &tx);
 
-    char body[256];
+    /* Uptime from /proc/uptime */
+    unsigned long uptime_sec = 0;
+    {
+        FILE *uf = fopen("/proc/uptime", "r");
+        if (uf) { fscanf(uf, "%lu", &uptime_sec); fclose(uf); }
+    }
+
+    char body[384];
     int blen = snprintf(body, sizeof(body),
         "{\"cpu_pct\":%d,\"mem_pct\":%d,\"mem_total\":%lu,\"mem_avail\":%lu,"
-        "\"rx_bytes\":%llu,\"tx_bytes\":%llu}",
-        cpu_pct, mem_pct, mem_total, mem_avail, rx, tx);
+        "\"rx_bytes\":%llu,\"tx_bytes\":%llu,\"uptime\":%lu}",
+        cpu_pct, mem_pct, mem_total, mem_avail, rx, tx, uptime_sec);
 
     http_send_response(client_fd, 200, "OK",
                        "application/json; charset=utf-8",
@@ -953,14 +1085,173 @@ static int handle_action(int client_fd, const http_request_t *req)
 }
 
 /* ------------------------------------------------------------------ */
+/* Native auth endpoints (independent of webmgnt)                      */
+/* POST /api/auth/login   { "password": "..." }                        */
+/*   → 200 Set-Cookie:slt=<token>  {"errCode":0}                       */
+/*   → 401 {"errCode":-1,"errMsg":"Wrong password"}                    */
+/* POST /api/auth/logout  (no body needed)                             */
+/*   → 200 Set-Cookie:slt=; Max-Age=0  {"errCode":0}                   */
+/* GET  /api/auth/check                                                 */
+/*   → 200 {"authenticated": true/false}                               */
+/* ------------------------------------------------------------------ */
+static int handle_auth(int client_fd, const http_request_t *req)
+{
+    if (strncmp(req->path, "/api/auth/", 10) != 0) return 0;
+    const char *action = req->path + 10;  /* "login", "logout", "check" */
+
+    /* GET /api/auth/check — no auth required, just report status */
+    if (strcmp(action, "check") == 0) {
+        int ok = native_check_auth(req);
+        /* Also accept legacy session */
+        if (!ok) {
+            const char *cookie = http_get_header(req, "Cookie");
+            ok = fcgi_check_auth(cookie ? cookie : "", g_fcgi_host, g_fcgi_port);
+        }
+        char body[64];
+        int blen = snprintf(body, sizeof(body),
+                            "{\"authenticated\":%s}", ok ? "true" : "false");
+        http_send_response(client_fd, 200, "OK",
+                           "application/json; charset=utf-8",
+                           body, (size_t)blen);
+        return 1;
+    }
+
+    /* POST /api/auth/login */
+    if (strcmp(action, "login") == 0) {
+        char *body = read_body(client_fd, req);
+        char submitted[128] = {0};
+        if (body) {
+            json_get_str(body, "password", submitted, sizeof(submitted));
+            free(body);
+        }
+
+        /* Read stored password from UCI */
+        char stored[128] = {0};
+        struct uci_context *ctx = uci_alloc_context();
+        if (ctx) {
+            char key[] = "mbox.management.password";
+            struct uci_ptr ptr;
+            if (uci_lookup_ptr(ctx, &ptr, key, true) == UCI_OK &&
+                (ptr.flags & UCI_LOOKUP_COMPLETE) && ptr.o &&
+                ptr.o->type == UCI_TYPE_STRING)
+            {
+                strncpy(stored, ptr.o->v.string, sizeof(stored) - 1);
+            }
+            uci_free_context(ctx);
+        }
+
+        /* Default password if UCI key not set */
+        if (!stored[0]) strncpy(stored, "admin", sizeof(stored) - 1);
+
+        if (strcmp(submitted, stored) != 0) {
+            static const char bad[] =
+                "{\"errCode\":-1,\"errMsg\":\"Wrong password\"}";
+            http_send_response(client_fd, 401, "Unauthorized",
+                               "application/json; charset=utf-8",
+                               bad, sizeof(bad) - 1);
+            return 1;
+        }
+
+        char token[SESSION_TOKLEN + 1];
+        session_create(token);
+
+        /* Send Set-Cookie header with the session token */
+        char hdr[256];
+        snprintf(hdr, sizeof(hdr),
+                 "HTTP/1.1 200 OK\r\n"
+                 "Content-Type: application/json; charset=utf-8\r\n"
+                 "Set-Cookie: slt=%s; Path=/; HttpOnly; SameSite=Lax\r\n"
+                 "Cache-Control: no-store\r\n"
+                 "Content-Length: 15\r\n"
+                 "\r\n"
+                 "{\"errCode\":0}\r\n",
+                 token);
+        write(client_fd, hdr, strlen(hdr));
+        return 1;
+    }
+
+    /* POST /api/auth/logout */
+    if (strcmp(action, "logout") == 0) {
+        const char *cookie = http_get_header(req, "Cookie");
+        if (cookie) {
+            char token[SESSION_TOKLEN + 1] = {0};
+            if (cookie_get(cookie, "slt", token, sizeof(token)))
+                session_destroy(token);
+        }
+        static const char logout_resp[] =
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: application/json; charset=utf-8\r\n"
+            "Set-Cookie: slt=; Path=/; Max-Age=0; HttpOnly\r\n"
+            "Content-Length: 15\r\n"
+            "\r\n"
+            "{\"errCode\":0}\r\n";
+        write(client_fd, logout_resp, sizeof(logout_resp) - 1);
+        return 1;
+    }
+
+    return 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Port status                                                          */
+/* GET /api/system/ports  (auth required)                             */
+/* Response: {"port_list":[{"up":1,"wan_enable":1},{"up":0,...},...]} */
+/* Uses swconfig to read per-port link state, matching R626 port_list  */
+/* configuration from /lib/ramips.sh (switch4=WAN, switch3,2=LAN).    */
+/* ------------------------------------------------------------------ */
+static int handle_system_ports(int client_fd, const http_request_t *req)
+{
+    if (strcmp(req->path, "/api/system/ports") != 0) return 0;
+    if (!check_auth(client_fd, req)) return 1;
+
+    /* R626 default port map: switch4=WAN, switch3=LAN, switch2=LAN */
+    struct { int sw_port; int wan_enable; } ports[] = {
+        { 4, 1 },  /* WAN */
+        { 3, 0 },  /* LAN1 */
+        { 2, 0 },  /* LAN2 */
+    };
+    int nports = (int)(sizeof(ports) / sizeof(ports[0]));
+
+    char body[256];
+    int pos = 0;
+    pos += snprintf(body + pos, sizeof(body) - pos, "{\"errCode\":0,\"port_list\":[");
+
+    for (int i = 0; i < nports && pos < (int)sizeof(body) - 32; i++) {
+        char cmd[64];
+        snprintf(cmd, sizeof(cmd),
+                 "swconfig dev switch0 port %d get link 2>/dev/null",
+                 ports[i].sw_port);
+        int up = 0;
+        FILE *p = popen(cmd, "r");
+        if (p) {
+            char line[128] = {0};
+            if (fgets(line, sizeof(line), p))
+                up = (strstr(line, "link:up") != NULL) ? 1 : 0;
+            pclose(p);
+        }
+        if (i > 0) pos += snprintf(body + pos, sizeof(body) - pos, ",");
+        pos += snprintf(body + pos, sizeof(body) - pos,
+                        "{\"up\":%d,\"wan_enable\":%d}", up, ports[i].wan_enable);
+    }
+    pos += snprintf(body + pos, sizeof(body) - pos, "]}");
+
+    http_send_response(client_fd, 200, "OK",
+                       "application/json; charset=utf-8",
+                       body, (size_t)pos);
+    return 1;
+}
+
+/* ------------------------------------------------------------------ */
 /* Handler table                                                        */
 /* ------------------------------------------------------------------ */
 static handler_t handlers[] = {
     { "/api/ping",             handle_ping            },
+    { "/api/auth/",            handle_auth            },
     { "/api/sysinfo",          handle_sysinfo         },
     { "/api/uci/set",          handle_uci_set         },
     { "/api/uci",              handle_uci_get         },
     { "/api/system/stats",     handle_system_stats    },
+    { "/api/system/ports",     handle_system_ports    },
     { "/api/system/version",   handle_system_version  },
     { "/api/system/language",  handle_system_language },
     { "/api/dhcp/leases",      handle_dhcp_leases     },

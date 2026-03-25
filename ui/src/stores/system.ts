@@ -6,7 +6,7 @@ interface SystemStats {
   cpu_pct: number
   mem_pct: number
   mem_total: number
-  mem_free: number
+  mem_avail: number
   rx_bytes: number
   tx_bytes: number
   uptime: number

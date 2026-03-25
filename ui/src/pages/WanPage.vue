@@ -1,38 +1,35 @@
 <template>
   <div class="page-form">
     <div class="card">
-      <div class="section-title">WAN</div>
+      <div class="section-title">{{ t('wan_set') || 'WAN' }}</div>
 
-      <FormField :label="t('wan_type') || 'Connection Type'">
-        <div class="proto-tabs">
-          <button
-            v-for="p in protos" :key="p.value"
-            class="proto-tab"
-            :class="{ 'is-active': form.proto === p.value }"
-            @click="form.proto = p.value"
-          >{{ p.label }}</button>
+      <div class="form-row">
+        <label class="form-row__label">{{ t('wan_type') || 'Connection Type' }}</label>
+        <div class="form-row__value">
+          <ul class="htabs">
+            <li v-for="p in protos" :key="p.value"
+                :class="{ active: form.proto === p.value }"
+                @click="form.proto = p.value">{{ p.label }}</li>
+          </ul>
         </div>
-      </FormField>
+      </div>
 
-      <!-- DHCP — no extra fields -->
-      <p v-if="form.proto === 'dhcp'" style="font-size:13px;color:var(--color-text-muted)">
+      <p v-if="form.proto === 'dhcp'" class="form-row" style="color:var(--color-text-muted);font-size:13px;padding:8px 0 4px">
         {{ t('dhcp_auto') || 'IP address is obtained automatically from the provider.' }}
       </p>
 
-      <!-- PPPoE -->
       <template v-if="form.proto === 'pppoe'">
-        <FormField :label="t('username') || 'Username'">
+        <FormField :label="t('pppoe_name') || 'Username'">
           <input v-model="form.username" type="text" autocomplete="username" />
         </FormField>
-        <FormField :label="t('password') || 'Password'">
+        <FormField :label="t('pppoe_psd') || 'Password'">
           <input v-model="form.password" type="password" autocomplete="current-password" />
         </FormField>
         <FormField label="MTU">
-          <input v-model="form.mtu" type="number" min="576" max="1500" placeholder="1492" />
+          <input v-model="form.mtu" type="number" min="576" max="1500" />
         </FormField>
       </template>
 
-      <!-- Static -->
       <template v-if="form.proto === 'static'">
         <FormField :label="t('ip_addr') || 'IP Address'">
           <input v-model="form.ipaddr" type="text" placeholder="0.0.0.0" />
@@ -74,9 +71,9 @@ const { success, error } = useNotify()
 const saving = ref(false)
 
 const protos = [
-  { value: 'dhcp',   label: 'DHCP' },
+  { value: 'dhcp',   label: t('dyAddress') || 'DHCP' },
   { value: 'pppoe',  label: 'PPPoE' },
-  { value: 'static', label: t('static_ip') || 'Static' },
+  { value: 'static', label: t('staAddress') || 'Static' },
 ]
 
 const form = reactive({
@@ -126,13 +123,19 @@ async function save() {
 </script>
 
 <style scoped>
-.proto-tabs { display: flex; gap: 4px; }
-.proto-tab {
-  padding: 6px 14px; border-radius: var(--radius);
-  border: 1px solid var(--color-border); font-size: 13px; cursor: pointer;
-  background: var(--color-surface); transition: all .15s;
+.htabs { display: flex; list-style: none; margin: 0; padding: 0; }
+.htabs li {
+  cursor: pointer;
+  padding: 0 16px;
+  line-height: 32px;
+  color: #fff;
+  background: #ed994d;
+  border-right: 1px solid rgba(255,255,255,.3);
+  font-size: 13px;
+  user-select: none;
 }
-.proto-tab.is-active {
-  background: var(--color-primary); color: #fff; border-color: var(--color-primary);
-}
+.htabs li:first-child { border-radius: 2px 0 0 2px; }
+.htabs li:last-child  { border-radius: 0 2px 2px 0; border-right: none; }
+.htabs li.active      { background: #ed6c00; }
+.htabs li:hover:not(.active) { background: #e08540; }
 </style>

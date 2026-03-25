@@ -5,26 +5,31 @@
 }
 
 :root {
-  --color-bg:        #f5f5f5;
-  --color-surface:   #ffffff;
-  --color-border:    #e0e0e0;
-  --color-text:      #16191c;
-  --color-text-muted:#6b7280;
-  --color-primary:   #0078d4;
-  --color-primary-hover: #106ebe;
-  --color-danger:    #d13438;
-  --color-success:   #107c10;
-  --color-warning:   #c19c00;
-  --sidebar-width:   220px;
-  --header-height:   52px;
-  --nav-bottom-height: 56px;
-  --radius:          6px;
-  --shadow:          0 1px 4px rgba(0,0,0,.12);
+  --color-bg:           #f5f5f5;
+  --color-surface:      #ffffff;
+  --color-border:       #9eb9c2;
+  --color-text:         #16191c;
+  --color-text-muted:   #888;
+  --color-primary:      #1d1e1f;
+  --color-primary-hover:#333;
+  --color-accent:       #ffc510;
+  --color-danger:       #d9534f;
+  --color-success:      #2ecc71;
+  --color-warning:      #f1c40f;
+  --sidebar-bg:         #1d1e1f;
+  --sidebar-text:       #eaeefe;
+  --sidebar-active-bg:  #434348;
+  --sidebar-hover-bg:   rgba(67,67,72,.4);
+  --sidebar-width:      230px;
+  --header-height:      60px;
+  --radius:             4px;
+  --shadow:             0 1px 4px rgba(0,0,0,.12);
 }
 
 html, body, #app {
   height: 100%;
-  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: "Microsoft Yahei", Tahoma, Arial, Roboto, "Droid Sans", "Helvetica Neue",
+               "Droid Sans Fallback", "Heiti SC", "Hiragino Sans GB", Simsun, sans-serif;
   font-size: 14px;
   color: var(--color-text);
   background: var(--color-bg);
@@ -39,82 +44,146 @@ button {
   font: inherit;
 }
 
-/* Utility */
+/* ── Card = shbox_border ─────────────────────────────────────────────────── */
 .card {
-  background: var(--color-surface);
+  position: relative;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 16px 20px;
+  background: var(--color-surface);
+  margin: 16px 0;
+  padding: 20px 16px 12px;
 }
+
+/* Floating label on border — sits on top of the card border */
+.section-title {
+  position: absolute;
+  left: 8px;
+  top: -10px;
+  background: var(--color-bg);
+  padding: 0 6px;
+  color: var(--color-border);
+  font-size: 13px;
+  font-weight: normal;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: nowrap;
+}
+
+/* ── Page layout ─────────────────────────────────────────────────────────── */
+.page-form {
+  padding: 8px 16px 32px;
+  max-width: 700px;
+}
+
+/* ── Form rows (.list style) ─────────────────────────────────────────────── */
+.form-row {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 4px 0;
+}
+
+.form-row + .form-row {
+  border-top: 1px solid #f0f0f0;
+}
+
+.form-row__label {
+  width: 40%;
+  flex-shrink: 0;
+  text-align: right;
+  padding-right: 20px;
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.form-row__value {
+  width: 60%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 16px;
+  padding: 6px 16px;
   border-radius: var(--radius);
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: normal;
+  border: 1px solid transparent;
+  cursor: pointer;
   transition: background .15s;
+  line-height: 1.4;
+  white-space: nowrap;
+  user-select: none;
 }
+
 .btn-primary {
   background: var(--color-primary);
   color: #fff;
+  border-color: var(--color-primary);
 }
-.btn-primary:hover { background: var(--color-primary-hover); }
+.btn-primary:hover { background: var(--color-primary-hover); border-color: var(--color-primary-hover); }
+.btn-primary:disabled { background: #aaa; border-color: #aaa; cursor: not-allowed; }
+
 .btn-ghost {
   background: transparent;
   border: 1px solid var(--color-border);
   color: var(--color-text);
 }
-.btn-ghost:hover { background: var(--color-bg); }
+.btn-ghost:hover { background: #eee; }
 
-/* Form inputs */
-input[type="text"],
-input[type="password"],
-input[type="number"],
-select,
-textarea {
-  width: 100%;
-  padding: 7px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  font: inherit;
-  font-size: 13px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  transition: border-color .15s;
+.btn-danger {
+  background: var(--color-danger);
+  color: #fff;
+  border-color: var(--color-danger);
 }
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: var(--color-primary);
-}
-input:disabled, select:disabled {
-  background: var(--color-bg);
-  color: var(--color-text-muted);
-  cursor: not-allowed;
-}
+.btn-danger:hover { background: #c0392b; border-color: #c0392b; }
 
-/* Page form layout */
-.page-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  max-width: 560px;
-}
-.page-form .card {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
+/* ── Form actions row ────────────────────────────────────────────────────── */
 .form-actions {
   display: flex;
   gap: 8px;
-  margin-top: 4px;
+  padding: 12px 0 4px;
 }
 
-/* Toggle switch */
+/* ── Inputs ──────────────────────────────────────────────────────────────── */
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="email"],
+select,
+textarea {
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  height: 30px;
+  line-height: 28px;
+  padding: 0 8px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 13px;
+  transition: border-color .15s;
+  width: 100%;
+  max-width: 260px;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+input:disabled, select:disabled {
+  background: #eeeeee;
+  cursor: not-allowed;
+}
+textarea { height: auto; line-height: 1.4; padding: 6px 8px; }
+
+/* ── Toggle switch ───────────────────────────────────────────────────────── */
 .toggle {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
@@ -124,12 +193,12 @@ input:disabled, select:disabled {
 .toggle__track {
   width: 36px; height: 20px;
   border-radius: 10px;
-  background: var(--color-border);
+  background: #ccc;
   position: relative;
   transition: background .2s;
   flex-shrink: 0;
 }
-.toggle input:checked + .toggle__track { background: var(--color-primary); }
+.toggle input:checked + .toggle__track { background: var(--color-accent); }
 .toggle__thumb {
   position: absolute;
   width: 16px; height: 16px;
@@ -141,13 +210,9 @@ input:disabled, select:disabled {
 }
 .toggle input:checked ~ .toggle__track .toggle__thumb { left: 18px; }
 
-/* Section heading */
-.section-title {
+/* ── Hint text ───────────────────────────────────────────────────────────── */
+.field-hint {
   font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .5px;
   color: var(--color-text-muted);
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: 6px;
+  width: 100%;
 }

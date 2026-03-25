@@ -1,9 +1,6 @@
-import { useRouter } from 'vue-router'
-
 function authGuard(r: Response) {
   if (r.status === 401) {
-    // Redirect to login on session expiry
-    window.location.href = '/login.html'
+    window.location.hash = '#/login'
   }
   return r
 }
@@ -42,5 +39,20 @@ export function useApi() {
     return post<{ result: string }>(`/api/action/${action}`, data)
   }
 
-  return { get, post, uciGet, uciSet, apiAction }
+  /** POST /api/auth/login — native wbsrv auth, sets 'slt' cookie */
+  async function authLogin(password: string): Promise<{ errCode: number; errMsg?: string }> {
+    const r = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    })
+    return r.json()
+  }
+
+  /** POST /api/auth/logout — clears 'slt' cookie */
+  async function authLogout(): Promise<void> {
+    await fetch('/api/auth/logout', { method: 'POST' })
+  }
+
+  return { get, post, uciGet, uciSet, apiAction, authLogin, authLogout }
 }

@@ -10,6 +10,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "esModuleInterop": true,
     "jsx": "preserve",
     "strict": true,
     "paths": { "@/*": ["./src/*"] }

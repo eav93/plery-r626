@@ -14,8 +14,8 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['vue', 'vue-router', 'vue-i18n', 'pinia'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) return 'vendor'
         },
       },
     },

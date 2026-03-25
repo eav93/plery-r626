@@ -2,7 +2,7 @@
   <div class="page-form">
 
     <div class="card">
-      <div class="section-title">{{ t('lan') }}</div>
+      <div class="section-title">{{ t('lan_set') || 'LAN' }}</div>
 
       <FormField :label="t('ip_addr') || 'IP Address'">
         <input v-model="form.ipaddr" type="text" placeholder="192.168.0.1" />
@@ -10,11 +10,11 @@
 
       <FormField :label="t('subnet_mask') || 'Subnet Mask'">
         <select v-model="form.netmask">
-          <option value="255.255.255.0">/24 — 255.255.255.0</option>
-          <option value="255.255.0.0">/16 — 255.255.0.0</option>
-          <option value="255.0.0.0">/8 — 255.0.0.0</option>
-          <option value="255.255.255.128">/25 — 255.255.255.128</option>
-          <option value="255.255.255.192">/26 — 255.255.255.192</option>
+          <option value="255.255.255.0">255.255.255.0</option>
+          <option value="255.255.0.0">255.255.0.0</option>
+          <option value="255.0.0.0">255.0.0.0</option>
+          <option value="255.255.255.128">255.255.255.128</option>
+          <option value="255.255.255.192">255.255.255.192</option>
         </select>
       </FormField>
     </div>
@@ -31,7 +31,7 @@
       </FormField>
 
       <template v-if="dhcpEnabled">
-        <FormField :label="t('start_addr') || 'Start Address'">
+        <FormField :label="t('start_addr') || 'Start'">
           <input v-model="form.dhcpStart" type="number" min="1" max="254" />
         </FormField>
         <FormField :label="t('end_addr') || 'Max Leases'">

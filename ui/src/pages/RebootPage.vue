@@ -3,22 +3,23 @@
 
     <div class="card">
       <div class="section-title">{{ t('reboot') }}</div>
-      <p style="font-size:13px;color:var(--color-text-muted)">
-        {{ t('reboot_tip') || 'The device will restart. Connection will be lost for ~30 seconds.' }}
-      </p>
-      <div class="form-actions">
-        <button class="btn btn-primary" :disabled="rebooting" @click="doReboot">
-          <AppIcon name="restart_alt" :size="16" />
-          {{ rebooting ? (t('tip') || 'Rebooting…') : t('reboot') }}
-        </button>
+      <div class="form-row">
+        <label class="form-row__label"></label>
+        <div class="form-row__value" style="padding: 4px 0">
+          <p style="font-size:13px;color:var(--color-text-muted);margin-bottom:12px">
+            {{ t('reboot_tip') || 'The device will restart. Connection will be lost for ~30 seconds.' }}
+          </p>
+          <button class="btn btn-primary" :disabled="rebooting" @click="doReboot">
+            {{ rebooting ? (t('tip') || 'Rebooting…') : t('reboot') }}
+          </button>
+        </div>
       </div>
     </div>
 
     <Teleport to="body">
       <div v-if="countdown > 0" class="reboot-overlay">
         <div class="reboot-card">
-          <AppIcon name="restart_alt" :size="48" style="color:var(--color-primary)" />
-          <p>{{ t('tip') || 'Rebooting…' }}</p>
+          <p style="font-size:16px;font-weight:500">{{ t('tip') || 'Rebooting…' }}</p>
           <p class="countdown">{{ countdown }}s</p>
           <p style="font-size:12px;color:var(--color-text-muted)">Page will reload automatically</p>
         </div>
@@ -32,7 +33,6 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useApi } from '@/composables/useApi'
-import AppIcon from '@/components/AppIcon.vue'
 
 const { t } = useI18n()
 const { apiAction } = useApi()
@@ -57,9 +57,12 @@ async function doReboot() {
   display: flex; align-items: center; justify-content: center; z-index: 1000;
 }
 .reboot-card {
-  background: var(--color-surface); border-radius: 12px; padding: 40px 48px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 40px 56px;
   display: flex; flex-direction: column; align-items: center; gap: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,.2); font-size: 15px; font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,.2);
 }
-.countdown { font-size: 48px; font-weight: 700; color: var(--color-primary); line-height: 1; }
+.countdown { font-size: 52px; font-weight: 700; color: #ed6c00; line-height: 1; }
 </style>
