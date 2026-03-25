@@ -52,6 +52,15 @@
 
     <!-- Content area -->
     <div class="content">
+      <!-- Desktop topbar -->
+      <header v-if="!isMobile" class="topbar topbar--desktop">
+        <span class="topbar__title">{{ t('global_title') }}</span>
+        <button class="topbar__logout" @click="logout">
+          <AppIcon name="logout" :size="16" />
+          <span>{{ t('logout') }}</span>
+        </button>
+      </header>
+
       <!-- Mobile topbar with hamburger -->
       <header v-if="isMobile" class="topbar topbar--mobile">
         <button class="hamburger" @click="mobileMenuOpen = !mobileMenuOpen">
@@ -249,6 +258,38 @@ async function logout() {
 /* ── Content ─────────────────────────────────────────────────────────────── */
 .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 .main { flex: 1; overflow-y: auto; background: var(--color-bg); }
+
+/* ── Desktop topbar ──────────────────────────────────────────────────────── */
+.topbar--desktop {
+  height: var(--header-height);
+  background: var(--sidebar-bg);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+  flex-shrink: 0;
+  color: var(--sidebar-text);
+}
+.topbar__title {
+  flex: 1;
+  font-size: 14px;
+  color: #aaa;
+  letter-spacing: .5px;
+}
+.topbar__logout {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--sidebar-text);
+  font-size: 14px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  transition: color .2s;
+}
+.topbar__logout:hover { color: #ff8c00; }
 
 /* ── Mobile topbar ───────────────────────────────────────────────────────── */
 .topbar--mobile {

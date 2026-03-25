@@ -17,17 +17,17 @@ tar xzf hurl-*.tar.gz && sudo mv hurl /usr/local/bin/
 
 ```sh
 # Against the router (default 192.168.0.1 / password admin)
-hurl --variables-file tests/hurl/hurl.env --test tests/hurl/*.hurl
+hurl --variables-file tests/hurl.env --test tests/*.hurl
 
 # Override host / password
 hurl --variable host=192.168.1.1 --variable password=mypassword \
-     --test tests/hurl/*.hurl
+     --test tests/*.hurl
 
 # Single file
-hurl --variables-file tests/hurl/hurl.env --test tests/hurl/04-system.hurl
+hurl --variables-file tests/hurl.env --test tests/04-system.hurl
 
 # Verbose output (shows request/response details)
-hurl --variables-file tests/hurl/hurl.env --test --very-verbose tests/hurl/*.hurl
+hurl --variables-file tests/hurl.env --test --very-verbose tests/*.hurl
 ```
 
 ## Files

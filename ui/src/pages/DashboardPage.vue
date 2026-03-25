@@ -6,7 +6,7 @@
 
       <!-- Mode picture -->
       <div class="shbox col-half">
-        <div class="section-title">{{ t('current_state') || 'Status' }}</div>
+        <div class="section-title">{{ t('current_state') }}</div>
         <div class="mode-box">
           <img :src="modeImg" class="mode-pic" />
           <p class="mode-text">{{ modeName }}</p>
@@ -17,31 +17,31 @@
       <div class="col-half">
         <div class="stats-grid">
           <div class="shbox stat-box">
-            <div class="section-title">{{ t('totalup') || 'Upload' }}</div>
+            <div class="section-title">{{ t('totalup') }}</div>
             <div class="stat-inner">
               <span class="stat-icon bg-up"><svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M4 14l8-8 8 8H4z"/></svg></span>
               <span class="stat-num f-up">{{ txStr }}</span>
             </div>
           </div>
           <div class="shbox stat-box">
-            <div class="section-title">{{ t('totaldown') || 'Download' }}</div>
+            <div class="section-title">{{ t('totaldown') }}</div>
             <div class="stat-inner">
               <span class="stat-icon bg-down"><svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M4 10l8 8 8-8H4z"/></svg></span>
               <span class="stat-num f-down">{{ rxStr }}</span>
             </div>
           </div>
           <div class="shbox stat-box">
-            <div class="section-title">{{ t('uptime') || 'Uptime' }}</div>
+            <div class="section-title">{{ t('uptime') }}</div>
             <div class="stat-inner">
               <span class="stat-icon bg-link"><svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm1 14.93V17h-2v-.07A8 8 0 0 1 4 9h2a6 6 0 0 0 6 5.93zM12 13a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm1-4h-2V7h2v2z"/></svg></span>
               <span class="stat-num f-link">{{ uptimeStr }}</span>
             </div>
           </div>
           <div class="shbox stat-box">
-            <div class="section-title">WAN IP</div>
+            <div class="section-title">{{ t('totallink') }}</div>
             <div class="stat-inner">
-              <span class="stat-icon bg-user"><svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg></span>
-              <span class="stat-num f-user">{{ wanIp || '—' }}</span>
+              <span class="stat-icon bg-conn"><svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg></span>
+              <span class="stat-num f-conn">{{ conntrack }}</span>
             </div>
           </div>
         </div>
@@ -52,29 +52,25 @@
     <div class="dash-row">
 
       <div class="shbox col-half">
-        <div class="section-title">{{ t('waninfo') || 'WAN' }}</div>
+        <div class="section-title">{{ t('waninfo') }}</div>
         <ul class="info-list">
           <li class="list-row">
-            <label>{{ t('access') || 'Mode' }}</label>
+            <label>{{ t('access') }}</label>
             <span>{{ wanProtoName }}</span>
           </li>
           <li class="list-row">
-            <label>{{ t('ip_addr') || 'IP' }}</label>
+            <label>{{ t('ip_addr') }}</label>
             <span>{{ wanIp || '—' }}</span>
           </li>
           <li class="list-row">
             <label>LAN IP</label>
             <span>{{ lanIp || '—' }}</span>
           </li>
-          <li v-if="wifiSsid" class="list-row">
-            <label>SSID</label>
-            <span>{{ wifiSsid }}</span>
-          </li>
         </ul>
       </div>
 
       <div class="shbox col-quarter">
-        <div class="section-title">{{ t('cpu_usage') || 'CPU' }}</div>
+        <div class="section-title">{{ t('cpu_usage') }}</div>
         <div class="gauge-wrap">
           <svg viewBox="0 0 36 36" class="gauge-svg">
             <path class="gauge-bg"  d="M18 2 a16 16 0 0 1 0 32 a16 16 0 0 1 0-32" />
@@ -86,7 +82,7 @@
       </div>
 
       <div class="shbox col-quarter">
-        <div class="section-title">{{ t('memory_usage') || 'Memory' }}</div>
+        <div class="section-title">{{ t('memory_usage') }}</div>
         <div class="gauge-wrap">
           <svg viewBox="0 0 36 36" class="gauge-svg">
             <path class="gauge-bg"  d="M18 2 a16 16 0 0 1 0 32 a16 16 0 0 1 0-32" />
@@ -100,41 +96,58 @@
 
     </div>
 
-    <!-- Row 3: port status -->
+    <!-- Row 3: port status (compact) -->
     <div v-if="portList.length" class="dash-row">
       <div class="shbox col-full">
-        <div class="section-title">{{ t('intertface') || 'Port Status' }}</div>
+        <div class="section-title">{{ t('intertface') }}</div>
         <ul class="iface-list">
           <li v-for="(p, i) in portList" :key="i"
               :class="['iface-item', p.up ? (p.wan_enable ? 'iface-link-wan' : 'iface-link-lan') : 'iface-unlink']">
-            <svg class="iface-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path v-if="p.wan_enable"
-                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7l5-8v4h4l-5 8z"/>
-              <path v-else
-                d="M1 9l2 2c2.88-2.88 6.79-4.08 10.54-3.63l1.96-1.96C10.73 4.46 5.61 5.97 1 9zm8 8l3 3 3-3c-1.65-1.64-3.92-2.02-6 0zm-4-4l2 2c1.96-1.96 4.97-2.68 7.82-2.01l2-2C13.78 9.86 9.41 10.18 5 13zm14-4l-2 2c.62.62.93 1.42 1 2.21L20 11c-.4-.37-.88-.7-1-.7z"/>
-            </svg>
+            <i class="iconfont port-icon"></i>
             <p class="iface-label">{{ p.wan_enable ? 'WAN' : ('LAN' + (lanIdx(i) > 1 ? lanIdx(i) : '')) }}</p>
           </li>
         </ul>
       </div>
     </div>
 
-    <!-- Row 4: device info -->
+    <!-- Row 4: device info + WiFi info -->
     <div class="dash-row">
       <div class="shbox col-half">
-        <div class="section-title">{{ t('deviceinfo') || 'Device' }}</div>
+        <div class="section-title">{{ t('deviceinfo') }}</div>
         <ul class="info-list">
-          <li class="list-row">
-            <label>{{ t('hostname') || 'Hostname' }}</label>
-            <span>{{ version?.hostname ?? '—' }}</span>
-          </li>
-          <li class="list-row">
-            <label>{{ t('version') || 'Firmware' }}</label>
-            <span>{{ version?.version ?? '—' }}</span>
-          </li>
           <li class="list-row">
             <label>MAC</label>
             <span class="mono">{{ version?.macaddr ?? '—' }}</span>
+          </li>
+          <li v-if="version?.model" class="list-row">
+            <label>{{ t('unit_type') }}</label>
+            <span>{{ version.model }}</span>
+          </li>
+          <li class="list-row">
+            <label>{{ t('version') }}</label>
+            <span>{{ version?.version ?? '—' }}</span>
+          </li>
+          <li class="list-row">
+            <label>{{ t('hostname') }}</label>
+            <span>{{ version?.hostname ?? '—' }}</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="shbox col-half">
+        <div class="section-title">{{ t('wifiinfo') }}</div>
+        <ul class="info-list">
+          <li v-if="wifiSsid" class="list-row">
+            <label>{{ t('ssid_name_24g') }}</label>
+            <span>{{ wifiSsid }}</span>
+          </li>
+          <li v-if="wifi5gSsid" class="list-row">
+            <label>{{ t('ssid_name_58g') }}</label>
+            <span>{{ wifi5gSsid }}</span>
+          </li>
+          <li v-if="!wifiSsid && !wifi5gSsid" class="list-row">
+            <label>SSID</label>
+            <span>—</span>
           </li>
         </ul>
       </div>
@@ -164,6 +177,7 @@ const stats      = computed(() => store.stats)
 const cpuPct     = computed(() => stats.value?.cpu_pct ?? 0)
 const memPct     = computed(() => stats.value?.mem_pct ?? 0)
 const memTotalMB = computed(() => stats.value ? Math.round(stats.value.mem_total / 1024) : 0)
+const conntrack  = computed(() => stats.value?.conntrack ?? 0)
 
 const uptimeStr = computed(() => {
   const s = stats.value?.uptime ?? 0
@@ -188,6 +202,7 @@ const wanProto  = ref('dhcp')
 const wanIp     = ref('')
 const lanIp     = ref('')
 const wifiSsid  = ref('')
+const wifi5gSsid = ref('')
 
 const modeImgMap: Record<string, string> = {
   router: imgRouter, ap: imgAp, wisp: imgRepeater,
@@ -213,12 +228,14 @@ async function loadUci() {
       'network.wan.proto', 'network.wan.ipaddr',
       'network.lan.ipaddr',
       'wireless.mbox.ssid',
+      'wireless.mbox5g.ssid',
     ])
-    workmode.value = d['mbox.workmode.workmode'] || 'router'
-    wanProto.value = d['network.wan.proto']      || 'dhcp'
-    wanIp.value    = d['network.wan.ipaddr']     || ''
-    lanIp.value    = d['network.lan.ipaddr']     || ''
-    wifiSsid.value = d['wireless.mbox.ssid']     || ''
+    workmode.value  = d['mbox.workmode.workmode']  || 'router'
+    wanProto.value  = d['network.wan.proto']       || 'dhcp'
+    wanIp.value     = d['network.wan.ipaddr']      || ''
+    lanIp.value     = d['network.lan.ipaddr']      || ''
+    wifiSsid.value  = d['wireless.mbox.ssid']      || ''
+    wifi5gSsid.value = d['wireless.mbox5g.ssid']   || ''
   } catch { /* ignore */ }
 }
 
@@ -229,10 +246,9 @@ async function loadPorts() {
   try {
     const d = await get<{ errCode: number; port_list: PortEntry[] }>('/api/system/ports')
     if (d.errCode === 0) portList.value = d.port_list
-  } catch { /* ignore — swconfig may not exist in dev env */ }
+  } catch { /* ignore */ }
 }
 
-// Returns count of LAN ports seen so far (for label LAN / LAN2 / LAN3)
 function lanIdx(portIndex: number) {
   let cnt = 0
   for (let i = 0; i <= portIndex; i++) {
@@ -310,13 +326,13 @@ onUnmounted(() => { clearInterval(timer); clearInterval(portsTimer) })
 .bg-up   { background: #9b59b6; }
 .bg-down { background: #2ecc71; }
 .bg-link { background: #f1c40f; }
-.bg-user { background: #e74c3c; }
+.bg-conn { background: #e74c3c; }
 
 .stat-num { font-size: 18px; font-weight: 600; line-height: 1.2; }
 .f-up   { color: #9b59b6; }
 .f-down { color: #2ecc71; }
 .f-link { color: #f1c40f; }
-.f-user { color: #e74c3c; font-size: 13px; }
+.f-conn { color: #e74c3c; }
 
 /* ── Info list ───────────────────────────────────────────────────────────── */
 .info-list { margin: 4px 0; }
@@ -364,32 +380,38 @@ onUnmounted(() => { clearInterval(timer); clearInterval(portsTimer) })
 .iface-list {
   display: flex;
   gap: 0;
-  padding: 8px 4px 4px;
-  flex-wrap: wrap;
+  padding: 6px 4px 2px;
 }
 .iface-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   margin-left: 20px;
 }
 .iface-item:first-child { margin-left: 0; }
-.iface-icon { width: 36px; height: 36px; }
-.iface-label { font-size: 12px; color: var(--color-text-muted); }
+.port-icon {
+  font-size: 30px;
+  line-height: 1;
+}
+.port-icon::before { content: "\e62c"; }
+.iface-label { font-size: 11px; color: var(--color-text-muted); }
 /* WAN linked = blue, LAN linked = orange, unlinked = gray */
-.iface-link-wan .iface-icon  { color: #0068ff; }
-.iface-link-lan .iface-icon  { color: #ff6f08; }
-.iface-unlink .iface-icon    { color: #adadad; }
+.iface-link-wan .port-icon { color: #0068ff; }
+.iface-link-lan .port-icon { color: #ff6f08; }
+.iface-unlink   .port-icon { color: #adadad; }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 767px) {
   .dash-row { flex-direction: column; }
   .col-half, .col-quarter, .col-full { flex: 0 0 100%; max-width: 100%; }
-  .stats-grid { grid-template-columns: 1fr 1fr; }
-  .stats-grid .shbox { margin: 12px 0 0 0; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 0; }
+  .stats-grid .shbox { margin: 8px 0 0 8px; }
+  .stats-grid .shbox:nth-child(odd) { margin-left: 0; }
   .shbox { margin-right: 0 !important; }
   .gauge-wrap { width: 80px; height: 80px; }
   .gauge-num { font-size: 18px; }
+  .stat-icon { width: 36px; height: 36px; }
+  .stat-num { font-size: 15px; }
 }
 </style>

@@ -25,6 +25,8 @@ jsonpath "$.rx_bytes"  isInteger
 jsonpath "$.tx_bytes"  isInteger
 jsonpath "$.uptime"    isInteger
 jsonpath "$.uptime"    >= 0
+jsonpath "$.conntrack" isInteger
+jsonpath "$.conntrack" >= 0
 
 
 # Version

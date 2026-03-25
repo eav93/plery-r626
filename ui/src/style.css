@@ -210,6 +210,21 @@ textarea { height: auto; line-height: 1.4; padding: 6px 8px; }
 }
 .toggle input:checked ~ .toggle__track .toggle__thumb { left: 18px; }
 
+/* ── Iconfont (original firmware) ───────────────────────────────────────── */
+@font-face {
+  font-family: "iconfont";
+  src: url('./assets/fonts/iconfont.eot');
+  src: url('./assets/fonts/iconfont.eot?#iefix') format('embedded-opentype'),
+       url('./assets/fonts/iconfont.woff') format('woff'),
+       url('./assets/fonts/iconfont.ttf') format('truetype');
+}
+.iconfont {
+  font-family: "iconfont" !important;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 /* ── Hint text ───────────────────────────────────────────────────────────── */
 .field-hint {
   font-size: 12px;
