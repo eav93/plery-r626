@@ -222,44 +222,97 @@ static int handle_uci_get(int client_fd, const http_request_t *req)
     strncpy(key_buf, key, sizeof(key_buf) - 1);
     key_buf[sizeof(key_buf) - 1] = '\0';
 
-    char body[1024];
-    int blen;
+    /* Use a heap buffer — section responses can be large */
+    size_t cap = 4096;
+    char *body = malloc(cap);
+    if (!body) { uci_free_context(ctx); http_send_error(client_fd, 500, "Internal Server Error"); return 1; }
+
+    size_t off = 0;
     struct uci_ptr ptr;
 
-    if (uci_lookup_ptr(ctx, &ptr, key_buf, true) == UCI_OK &&
-        (ptr.flags & UCI_LOOKUP_COMPLETE) && ptr.o)
-    {
+    if (uci_lookup_ptr(ctx, &ptr, key_buf, true) != UCI_OK) {
+        off = (size_t)snprintf(body, cap, "{\"errCode\":-2,\"errMsg\":\"Not found\"}");
+        goto done;
+    }
+
+    if (ptr.o) {
+        /* Full path package.section.option — return {"value":"..."} */
         char esc[512];
         if (ptr.o->type == UCI_TYPE_STRING) {
             json_escape(ptr.o->v.string, esc, sizeof(esc));
-            blen = snprintf(body, sizeof(body), "{\"value\":\"%s\"}", esc);
+            off = (size_t)snprintf(body, cap, "{\"value\":\"%s\"}", esc);
         } else {
-            /* List: join with \n */
+            /* List: join items with \n */
             char joined[512] = "";
-            size_t off = 0;
+            size_t joff = 0;
             struct uci_element *e;
             uci_foreach_element(&ptr.o->v.list, e) {
-                if (off > 0 && off < sizeof(joined) - 1)
-                    joined[off++] = '\n';
-                size_t rem  = sizeof(joined) - off - 1;
+                if (joff > 0 && joff < sizeof(joined) - 1)
+                    joined[joff++] = '\n';
+                size_t rem  = sizeof(joined) - joff - 1;
                 size_t elen = strlen(e->name);
                 if (elen > rem) elen = rem;
-                memcpy(joined + off, e->name, elen);
-                off += elen;
+                memcpy(joined + joff, e->name, elen);
+                joff += elen;
             }
-            joined[off] = '\0';
+            joined[joff] = '\0';
             json_escape(joined, esc, sizeof(esc));
-            blen = snprintf(body, sizeof(body), "{\"value\":\"%s\"}", esc);
+            off = (size_t)snprintf(body, cap, "{\"value\":\"%s\"}", esc);
         }
+    } else if (ptr.s) {
+        /* Section path package.section — return all options as flat object */
+        off = (size_t)snprintf(body, cap, "{");
+        int first = 1;
+        struct uci_element *e;
+        uci_foreach_element(&ptr.s->options, e) {
+            struct uci_option *o = uci_to_option(e);
+            char esc_key[128], esc_val[512];
+            json_escape(e->name, esc_key, sizeof(esc_key));
+
+            /* Grow buffer if needed */
+            if (off + 768 > cap) {
+                cap *= 2;
+                char *tmp = realloc(body, cap);
+                if (!tmp) break;
+                body = tmp;
+            }
+
+            if (o->type == UCI_TYPE_STRING) {
+                json_escape(o->v.string, esc_val, sizeof(esc_val));
+                off += (size_t)snprintf(body + off, cap - off,
+                    "%s\"%s\":\"%s\"", first ? "" : ",", esc_key, esc_val);
+            } else {
+                /* List: join with \n */
+                char joined[512] = "";
+                size_t joff = 0;
+                struct uci_element *le;
+                uci_foreach_element(&o->v.list, le) {
+                    if (joff > 0 && joff < sizeof(joined) - 1)
+                        joined[joff++] = '\n';
+                    size_t rem  = sizeof(joined) - joff - 1;
+                    size_t elen = strlen(le->name);
+                    if (elen > rem) elen = rem;
+                    memcpy(joined + joff, le->name, elen);
+                    joff += elen;
+                }
+                joined[joff] = '\0';
+                json_escape(joined, esc_val, sizeof(esc_val));
+                off += (size_t)snprintf(body + off, cap - off,
+                    "%s\"%s\":\"%s\"", first ? "" : ",", esc_key, esc_val);
+            }
+            first = 0;
+        }
+        if (off + 2 < cap) body[off++] = '}';
     } else {
-        blen = snprintf(body, sizeof(body),
-                        "{\"errCode\":-2,\"errMsg\":\"Not found\"}");
+        off = (size_t)snprintf(body, cap, "{\"errCode\":-2,\"errMsg\":\"Not found\"}");
     }
 
+done:
     uci_free_context(ctx);
     http_send_response(client_fd, 200, "OK",
                        "application/json; charset=utf-8",
-                       body, (size_t)blen);
+                       body, off);
+    free(body);
     return 1;
 }
 

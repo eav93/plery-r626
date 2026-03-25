@@ -117,6 +117,15 @@ get "/api/uci?get=system.language.language"
 assert_status "200" "GET /api/uci?get=language status"
 assert_key ".value" "GET /api/uci?get=language has value"
 
+# Section-level read (package.section — no option)
+get "/api/uci?get=network.lan"
+assert_status "200" "GET /api/uci?get=network.lan (section) status"
+assert_key ".ipaddr" "GET /api/uci?get=network.lan has ipaddr"
+
+get "/api/uci?get=network.wan"
+assert_status "200" "GET /api/uci?get=network.wan (section) status"
+assert_key ".proto" "GET /api/uci?get=network.wan has proto"
+
 # Invalid key → 400
 get "/api/uci?get=../../etc/passwd"
 assert_status "400" "GET /api/uci invalid key → 400"
