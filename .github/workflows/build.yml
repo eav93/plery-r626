@@ -62,12 +62,42 @@ jobs:
         run: tar xf ${{ env.SDK_NAME }}.tar.xz
 
       # ---- libuci (lede-17.01) ----
-      - name: Clone libuci
+      - name: Clone and build libuci (MIPS)
+        env:
+          STAGING_DIR: ${{ github.workspace }}/${{ env.SDK_NAME }}/staging_dir
         run: |
+          set -euo pipefail
+          TOOLCHAIN="${{ github.workspace }}/${{ env.SDK_NAME }}/staging_dir/toolchain-mipsel_24kc_gcc-5.4.0_musl-1.1.16"
+          CC="$TOOLCHAIN/bin/mipsel-openwrt-linux-musl-gcc"
+          AR="$TOOLCHAIN/bin/mipsel-openwrt-linux-musl-ar"
+
           rm -rf libuci
           git clone -q -b lede-17.01 --depth=1 https://github.com/openwrt/uci libuci
+
+          # Locate uci.c — may be at root or in a subdirectory
+          UCI_C=$(find libuci -name "uci.c" | head -1)
+          if [ -z "$UCI_C" ]; then
+            echo "uci.c not found — repo layout:"
+            find libuci -type f | head -40
+            exit 1
+          fi
+          SRC_DIR=$(dirname "$UCI_C")
+          echo "libuci sources: $SRC_DIR"
+
+          # Cross-compile libuci.a
+          for src in uci file util delta; do
+            "$CC" -Os -std=c99 -D_GNU_SOURCE -I"$SRC_DIR" \
+              -c "$SRC_DIR/${src}.c" -o "libuci/${src}.o"
+          done
+          "$AR" rcs libuci/libuci.a \
+            libuci/uci.o libuci/file.o libuci/util.o libuci/delta.o
+
+          # Ensure uci.h and uci_config.h are at LIBUCI_DIR root
+          [ "$SRC_DIR" != "libuci" ] && cp "$SRC_DIR/uci.h" libuci/
           printf '#ifndef _UCI_CONFIG_H\n#define _UCI_CONFIG_H\n#define UCI_PREFIX "/usr"\n#endif\n' \
             > libuci/uci_config.h
+
+          echo "Built: $(ls -lh libuci/libuci.a)"
 
       # ---- Build wbsrv ----
       - name: Build wbsrv (MIPS)
