@@ -186,11 +186,113 @@ static int handle_sysinfo(int client_fd, const http_request_t *req)
 }
 
 /* ------------------------------------------------------------------ */
-/* GET /api/uci?get=<path>  (auth required)                            */
-/*                                                                      */
-/* Returns the value of a single UCI option.                            */
-/* Example: GET /api/uci?get=system.@system[0].hostname                 */
-/* Response: {"value":"PLERY"}                                          */
+/* UCI helpers shared by GET and SET handlers                          */
+/* ------------------------------------------------------------------ */
+
+/* URL-decode src into dst (in-place safe: dst may equal src). */
+static void url_decode(const char *src, char *dst, size_t dstsz)
+{
+    size_t i = 0;
+    while (*src && i + 1 < dstsz) {
+        if (*src == '%' && isxdigit((unsigned char)src[1]) &&
+                           isxdigit((unsigned char)src[2])) {
+            char hex[3] = { src[1], src[2], '\0' };
+            dst[i++] = (char)(unsigned char)strtol(hex, NULL, 16);
+            src += 3;
+        } else {
+            dst[i++] = *src++;
+        }
+    }
+    dst[i] = '\0';
+}
+
+/* Encode a UCI option value into the output buffer (list → \n-joined). */
+static void append_uci_val(struct uci_option *o, char *esc, size_t escsz)
+{
+    if (o->type == UCI_TYPE_STRING) {
+        json_escape(o->v.string, esc, escsz);
+    } else {
+        char joined[512] = "";
+        size_t joff = 0;
+        struct uci_element *le;
+        uci_foreach_element(&o->v.list, le) {
+            if (joff > 0 && joff < sizeof(joined) - 1) joined[joff++] = '\n';
+            size_t elen = strlen(le->name);
+            size_t rem  = sizeof(joined) - joff - 1;
+            if (elen > rem) elen = rem;
+            memcpy(joined + joff, le->name, elen);
+            joff += elen;
+        }
+        joined[joff] = '\0';
+        json_escape(joined, esc, escsz);
+    }
+}
+
+/* Append one UCI key (option or section) to a heap buffer.
+ * key_path is the decoded UCI path used as JSON key prefix.
+ * buf, off, cap, first are in/out parameters. */
+static void uci_append_key(struct uci_context *ctx, const char *key_path,
+                            char **buf, size_t *off, size_t *cap, int *first)
+{
+    char key_buf[256];
+    strncpy(key_buf, key_path, sizeof(key_buf) - 1);
+    key_buf[sizeof(key_buf) - 1] = '\0';
+
+    struct uci_ptr ptr;
+    if (uci_lookup_ptr(ctx, &ptr, key_buf, true) != UCI_OK) return;
+
+    if (ptr.o) {
+        /* Single option: {"package.section.option":"value"} */
+        char esc_key[384], esc_val[512];
+        json_escape(key_path, esc_key, sizeof(esc_key));
+        append_uci_val(ptr.o, esc_val, sizeof(esc_val));
+
+        if (*off + 900 > *cap) {
+            *cap *= 2;
+            *buf = realloc(*buf, *cap);
+            if (!*buf) return;
+        }
+        *off += (size_t)snprintf(*buf + *off, *cap - *off,
+            "%s\"%s\":\"%s\"", *first ? "" : ",", esc_key, esc_val);
+        *first = 0;
+
+    } else if (ptr.s) {
+        /* Section: emit every option with full path as key */
+        struct uci_element *e;
+        uci_foreach_element(&ptr.s->options, e) {
+            struct uci_option *o = uci_to_option(e);
+
+            char full_path[384], esc_key[384], esc_val[512];
+            snprintf(full_path, sizeof(full_path), "%s.%s", key_path, e->name);
+            json_escape(full_path, esc_key, sizeof(esc_key));
+            append_uci_val(o, esc_val, sizeof(esc_val));
+
+            if (*off + 900 > *cap) {
+                *cap *= 2;
+                *buf = realloc(*buf, *cap);
+                if (!*buf) return;
+            }
+            *off += (size_t)snprintf(*buf + *off, *cap - *off,
+                "%s\"%s\":\"%s\"", *first ? "" : ",", esc_key, esc_val);
+            *first = 0;
+        }
+    }
+    /* package-level (ptr.p only) — not supported */
+}
+
+/* ------------------------------------------------------------------ */
+/* GET /api/uci?get=<path>[,<path>...]  (auth required)               */
+/*                                                                     */
+/* Comma-separated paths, each may be option or section level.        */
+/* Keys are always full UCI paths. URL-encoding is decoded.           */
+/*                                                                     */
+/* Examples:                                                           */
+/*   ?get=network.wan.proto                                           */
+/*      → {"network.wan.proto":"dhcp"}                                */
+/*   ?get=network.wan                                                  */
+/*      → {"network.wan.proto":"dhcp","network.wan.ipaddr":"..."}     */
+/*   ?get=network.wan,system.@system[0].hostname                      */
+/*      → {"network.wan.proto":"dhcp",...,"system.@system[0].hostname":"PLERY"} */
 /* ------------------------------------------------------------------ */
 static int handle_uci_get(int client_fd, const http_request_t *req)
 {
@@ -198,126 +300,71 @@ static int handle_uci_get(int client_fd, const http_request_t *req)
     if (strcmp(req->method, "GET")    != 0) return 0;
     if (!check_auth(client_fd, req))        return 1;
 
-    /* Extract ?get=<key> from query string */
-    const char *key = NULL;
+    /* Extract ?get= value from query string */
+    const char *raw = NULL;
     if (strncmp(req->query, "get=", 4) == 0) {
-        key = req->query + 4;
+        raw = req->query + 4;
     } else {
         const char *p = strstr(req->query, "&get=");
-        if (p) key = p + 5;
+        if (p) raw = p + 5;
     }
 
-    if (!is_safe_uci_key(key)) {
+    if (!raw || !raw[0]) {
         static const char err[] =
-            "{\"errCode\":-1,\"errMsg\":\"Missing or invalid 'get' parameter\"}";
+            "{\"errCode\":-1,\"errMsg\":\"Missing 'get' parameter\"}";
         http_send_response(client_fd, 400, "Bad Request",
                            "application/json", err, sizeof(err) - 1);
         return 1;
     }
 
+    /* URL-decode the full value (handles %40 → @, %5B → [, %2C → ,) */
+    char decoded[1024];
+    url_decode(raw, decoded, sizeof(decoded));
+
     struct uci_context *ctx = uci_alloc_context();
     if (!ctx) { http_send_error(client_fd, 500, "Internal Server Error"); return 1; }
 
-    char key_buf[256];
-    strncpy(key_buf, key, sizeof(key_buf) - 1);
-    key_buf[sizeof(key_buf) - 1] = '\0';
-
-    /* Use a heap buffer — section responses can be large */
     size_t cap = 4096;
     char *body = malloc(cap);
     if (!body) { uci_free_context(ctx); http_send_error(client_fd, 500, "Internal Server Error"); return 1; }
 
-    size_t off = 0;
-    struct uci_ptr ptr;
+    body[0] = '{';
+    size_t off = 1;
+    int first = 1;
 
-    if (uci_lookup_ptr(ctx, &ptr, key_buf, true) != UCI_OK) {
-        off = (size_t)snprintf(body, cap, "{\"errCode\":-2,\"errMsg\":\"Not found\"}");
-        goto done;
+    /* Validate all keys before touching UCI (reject on any bad key) */
+    {
+        char tmp[sizeof(decoded)];
+        memcpy(tmp, decoded, sizeof(decoded));
+        char *t = tmp;
+        while (t && *t) {
+            char *comma = strchr(t, ',');
+            if (comma) *comma = '\0';
+            if (!is_safe_uci_key(t)) {
+                free(body);
+                uci_free_context(ctx);
+                static const char bad[] =
+                    "{\"errCode\":-1,\"errMsg\":\"Invalid UCI key\"}";
+                http_send_response(client_fd, 400, "Bad Request",
+                                   "application/json", bad, sizeof(bad) - 1);
+                return 1;
+            }
+            t = comma ? comma + 1 : NULL;
+        }
     }
 
-    if (ptr.o) {
-        /* Full path package.section.option
-         * Return {"package.section.option":"value"} — full path as key. */
-        char esc_key[256], esc_val[512];
-        json_escape(key, esc_key, sizeof(esc_key)); /* key = original query param */
-        if (ptr.o->type == UCI_TYPE_STRING) {
-            json_escape(ptr.o->v.string, esc_val, sizeof(esc_val));
-            off = (size_t)snprintf(body, cap,
-                                   "{\"%s\":\"%s\"}", esc_key, esc_val);
-        } else {
-            /* List: join items with \n */
-            char joined[512] = "";
-            size_t joff = 0;
-            struct uci_element *e;
-            uci_foreach_element(&ptr.o->v.list, e) {
-                if (joff > 0 && joff < sizeof(joined) - 1)
-                    joined[joff++] = '\n';
-                size_t rem  = sizeof(joined) - joff - 1;
-                size_t elen = strlen(e->name);
-                if (elen > rem) elen = rem;
-                memcpy(joined + joff, e->name, elen);
-                joff += elen;
-            }
-            joined[joff] = '\0';
-            json_escape(joined, esc_val, sizeof(esc_val));
-            off = (size_t)snprintf(body, cap,
-                                   "{\"%s\":\"%s\"}", esc_key, esc_val);
-        }
-    } else if (ptr.s) {
-        /* Section path package.section
-         * Return {"package.section.opt1":"v1","package.section.opt2":"v2",...} */
-        off = (size_t)snprintf(body, cap, "{");
-        int first = 1;
-        struct uci_element *e;
-        uci_foreach_element(&ptr.s->options, e) {
-            struct uci_option *o = uci_to_option(e);
-
-            /* Build full path: key + "." + option_name */
-            char full_path[384];
-            snprintf(full_path, sizeof(full_path), "%s.%s", key, e->name);
-            char esc_key[384], esc_val[512];
-            json_escape(full_path, esc_key, sizeof(esc_key));
-
-            /* Grow buffer if needed */
-            if (off + 900 > cap) {
-                cap *= 2;
-                char *tmp = realloc(body, cap);
-                if (!tmp) break;
-                body = tmp;
-            }
-
-            if (o->type == UCI_TYPE_STRING) {
-                json_escape(o->v.string, esc_val, sizeof(esc_val));
-                off += (size_t)snprintf(body + off, cap - off,
-                    "%s\"%s\":\"%s\"", first ? "" : ",", esc_key, esc_val);
-            } else {
-                /* List: join with \n */
-                char joined[512] = "";
-                size_t joff = 0;
-                struct uci_element *le;
-                uci_foreach_element(&o->v.list, le) {
-                    if (joff > 0 && joff < sizeof(joined) - 1)
-                        joined[joff++] = '\n';
-                    size_t rem  = sizeof(joined) - joff - 1;
-                    size_t elen = strlen(le->name);
-                    if (elen > rem) elen = rem;
-                    memcpy(joined + joff, le->name, elen);
-                    joff += elen;
-                }
-                joined[joff] = '\0';
-                json_escape(joined, esc_val, sizeof(esc_val));
-                off += (size_t)snprintf(body + off, cap - off,
-                    "%s\"%s\":\"%s\"", first ? "" : ",", esc_key, esc_val);
-            }
-            first = 0;
-        }
-        if (off + 2 < cap) body[off++] = '}';
-    } else {
-        off = (size_t)snprintf(body, cap, "{\"errCode\":-2,\"errMsg\":\"Not found\"}");
+    /* Split decoded value by comma, look up each key */
+    char *tok = decoded;
+    while (tok && *tok) {
+        char *comma = strchr(tok, ',');
+        if (comma) *comma = '\0';
+        uci_append_key(ctx, tok, &body, &off, &cap, &first);
+        tok = comma ? comma + 1 : NULL;
     }
 
-done:
     uci_free_context(ctx);
+
+    if (off + 2 < cap) body[off++] = '}';
     http_send_response(client_fd, 200, "OK",
                        "application/json; charset=utf-8",
                        body, off);
@@ -328,10 +375,95 @@ done:
 /* ------------------------------------------------------------------ */
 /* POST /api/uci/set  (auth required)                                  */
 /*                                                                      */
-/* Sets a single UCI option and commits.                                */
-/* Body: {"key":"system.@system[0].hostname","value":"NewName"}         */
-/* Response: {"result":"ok"} or {"errCode":-1,"errMsg":"..."}           */
+/* Body is a flat JSON object: {"uci.path.key":"value", ...}           */
+/* All pairs are set and committed in one request.                     */
+/* Response: {"result":"ok"} or {"errCode":-1,"errMsg":"..."}          */
 /* ------------------------------------------------------------------ */
+
+/* Iterate over all string key-value pairs in a flat JSON object.
+ * cb(key, value, ctx) — return < 0 to stop. */
+static int json_obj_each(const char *json,
+                          int (*cb)(const char *, const char *, void *),
+                          void *ctx)
+{
+    const char *p = strchr(json, '{');
+    if (!p) return 0;
+    p++;
+    char key[256], val[512];
+    int count = 0;
+    while (*p) {
+        while (*p == ' ' || *p == '\t' || *p == '\n' || *p == ',') p++;
+        if (*p == '}' || *p == '\0') break;
+        if (*p != '"') { p++; continue; }
+        p++;
+        size_t i = 0;
+        while (*p && *p != '"' && i + 1 < sizeof(key)) {
+            if (*p == '\\') { p++; if (*p) key[i++] = *p++; }
+            else key[i++] = *p++;
+        }
+        key[i] = '\0';
+        if (*p == '"') p++;
+        while (*p == ' ' || *p == '\t' || *p == ':') p++;
+        if (*p != '"') {
+            /* skip non-string values */
+            while (*p && *p != ',' && *p != '}') p++;
+            continue;
+        }
+        p++;
+        i = 0;
+        while (*p && *p != '"' && i + 1 < sizeof(val)) {
+            if (*p == '\\') { p++; if (*p) val[i++] = *p++; }
+            else val[i++] = *p++;
+        }
+        val[i] = '\0';
+        if (*p == '"') p++;
+        if (cb(key, val, ctx) < 0) break;
+        count++;
+    }
+    return count;
+}
+
+typedef struct {
+    struct uci_context *ctx;
+    const char *errmsg;
+    int bad_key;
+} set_ctx_t;
+
+static int set_one_cb(const char *key, const char *val, void *vctx)
+{
+    set_ctx_t *s = (set_ctx_t *)vctx;
+    if (!is_safe_uci_key(key)) {
+        s->errmsg = "Invalid UCI key";
+        s->bad_key = 1;
+        return -1;
+    }
+
+    char key_buf[256];
+    strncpy(key_buf, key, sizeof(key_buf) - 1);
+    key_buf[sizeof(key_buf) - 1] = '\0';
+
+    /* val may be up to 512 bytes; uci_set needs a mutable string */
+    char val_buf[512];
+    strncpy(val_buf, val, sizeof(val_buf) - 1);
+    val_buf[sizeof(val_buf) - 1] = '\0';
+
+    struct uci_ptr ptr;
+    if (uci_lookup_ptr(s->ctx, &ptr, key_buf, true) != UCI_OK) {
+        s->errmsg = "Lookup failed";
+        return -1;
+    }
+    ptr.value = val_buf;
+    if (uci_set(s->ctx, &ptr) != UCI_OK) {
+        s->errmsg = "Set failed";
+        return -1;
+    }
+    if (uci_commit(s->ctx, &ptr.p, false) != UCI_OK) {
+        s->errmsg = "Commit failed";
+        return -1;
+    }
+    return 0;
+}
+
 static int handle_uci_set(int client_fd, const http_request_t *req)
 {
     if (strcmp(req->path, "/api/uci/set") != 0) return 0;
@@ -339,171 +471,29 @@ static int handle_uci_set(int client_fd, const http_request_t *req)
     if (!check_auth(client_fd, req))             return 1;
 
     char *body = read_body(client_fd, req);
-    if (!body) {
-        http_send_error(client_fd, 400, "Bad Request");
-        return 1;
-    }
-
-    char uci_key[256] = {0};
-    char uci_val[512] = {0};
-    json_get_str(body, "key",   uci_key, sizeof(uci_key));
-    json_get_str(body, "value", uci_val, sizeof(uci_val));
-    free(body);
-
-    if (!is_safe_uci_key(uci_key)) {
-        static const char err[] = "{\"errCode\":-1,\"errMsg\":\"Invalid UCI key\"}";
-        http_send_response(client_fd, 400, "Bad Request",
-                           "application/json", err, sizeof(err) - 1);
-        return 1;
-    }
+    if (!body) { http_send_error(client_fd, 400, "Bad Request"); return 1; }
 
     struct uci_context *ctx = uci_alloc_context();
-    if (!ctx) { http_send_error(client_fd, 500, "Internal Server Error"); return 1; }
+    if (!ctx) { free(body); http_send_error(client_fd, 500, "Internal Server Error"); return 1; }
 
-    char key_buf[256];
-    strncpy(key_buf, uci_key, sizeof(key_buf) - 1);
-    key_buf[sizeof(key_buf) - 1] = '\0';
-
-    struct uci_ptr ptr;
-    const char *errmsg = NULL;
-
-    if (uci_lookup_ptr(ctx, &ptr, key_buf, true) != UCI_OK) {
-        errmsg = "Lookup failed";
-    } else {
-        ptr.value = uci_val;
-        if (uci_set(ctx, &ptr) != UCI_OK)
-            errmsg = "Set failed";
-        else if (uci_commit(ctx, &ptr.p, false) != UCI_OK)
-            errmsg = "Commit failed";
-    }
-
+    set_ctx_t s = { ctx, NULL, 0 };
+    json_obj_each(body, set_one_cb, &s);
+    free(body);
     uci_free_context(ctx);
 
-    if (errmsg) {
+    if (s.errmsg) {
+        int code = s.bad_key ? 400 : 500;
+        const char *status = s.bad_key ? "Bad Request" : "Internal Server Error";
         char resp[128];
         int rlen = snprintf(resp, sizeof(resp),
-                            "{\"errCode\":-1,\"errMsg\":\"%s\"}", errmsg);
-        http_send_response(client_fd, 500, "Internal Server Error",
+                            "{\"errCode\":-1,\"errMsg\":\"%s\"}", s.errmsg);
+        http_send_response(client_fd, code, status,
                            "application/json", resp, (size_t)rlen);
     } else {
         static const char ok[] = "{\"result\":\"ok\"}";
         http_send_response(client_fd, 200, "OK",
                            "application/json", ok, sizeof(ok) - 1);
     }
-    return 1;
-}
-
-/* ------------------------------------------------------------------ */
-/* UCI batch                                                            */
-/* POST /api/uci/batch                                                  */
-/* Body: {"paths":["a.b.c","x.y.z"]}                                  */
-/* Response: {"values":{"a.b.c":"val1","x.y.z":"not_found"}}          */
-/* ------------------------------------------------------------------ */
-
-/* Iterate over JSON string array for the given field.
- * Calls cb(element, ctx) for each string; stops if cb returns < 0. */
-static int json_array_each(const char *json, const char *field,
-                            int (*cb)(const char *, void *), void *ctx)
-{
-    char search[64];
-    snprintf(search, sizeof(search), "\"%s\"", field);
-    const char *p = strstr(json, search);
-    if (!p) return 0;
-    p += strlen(search);
-    while (*p == ' ' || *p == '\t' || *p == ':') p++;
-    if (*p != '[') return 0;
-    p++;
-    char buf[256];
-    int count = 0;
-    while (*p) {
-        while (*p == ' ' || *p == '\t' || *p == '\n' || *p == ',') p++;
-        if (*p == ']' || *p == '\0') break;
-        if (*p != '"') { p++; continue; }
-        p++;
-        size_t i = 0;
-        while (*p && *p != '"' && i + 1 < sizeof(buf)) {
-            if (*p == '\\') { p++; if (*p) buf[i++] = *p++; }
-            else buf[i++] = *p++;
-        }
-        buf[i] = '\0';
-        if (*p == '"') p++;
-        if (cb(buf, ctx) < 0) break;
-        count++;
-    }
-    return count;
-}
-
-typedef struct { struct uci_context *ctx; char *out; size_t off; size_t cap; int first; } batch_ctx_t;
-
-static int batch_cb(const char *path, void *vctx)
-{
-    batch_ctx_t *b = (batch_ctx_t *)vctx;
-    if (!is_safe_uci_key(path)) return 0; /* skip invalid */
-
-    char key_buf[256];
-    strncpy(key_buf, path, sizeof(key_buf) - 1);
-    key_buf[sizeof(key_buf) - 1] = '\0';
-
-    char esc_key[512], esc_val[512];
-    json_escape(path, esc_key, sizeof(esc_key));
-
-    struct uci_ptr ptr;
-    const char *val = NULL;
-    if (uci_lookup_ptr(b->ctx, &ptr, key_buf, true) == UCI_OK &&
-        (ptr.flags & UCI_LOOKUP_COMPLETE) && ptr.o &&
-        ptr.o->type == UCI_TYPE_STRING)
-    {
-        val = ptr.o->v.string;
-    }
-
-    char entry[1024];
-    int n;
-    if (val) {
-        json_escape(val, esc_val, sizeof(esc_val));
-        n = snprintf(entry, sizeof(entry), "%s\"%s\":\"%s\"",
-                     b->first ? "" : ",", esc_key, esc_val);
-    } else {
-        n = snprintf(entry, sizeof(entry), "%s\"%s\":null",
-                     b->first ? "" : ",", esc_key);
-    }
-    b->first = 0;
-
-    if (b->off + (size_t)n + 8 < b->cap) {
-        memcpy(b->out + b->off, entry, (size_t)n);
-        b->off += (size_t)n;
-    }
-    return 0;
-}
-
-static int handle_uci_batch(int client_fd, const http_request_t *req)
-{
-    if (strcmp(req->path, "/api/uci/batch") != 0) return 0;
-    if (strcmp(req->method, "POST")          != 0) return 0;
-    if (!check_auth(client_fd, req))               return 1;
-
-    char *body = read_body(client_fd, req);
-    if (!body) { http_send_error(client_fd, 400, "Bad Request"); return 1; }
-
-    struct uci_context *ctx = uci_alloc_context();
-    if (!ctx) { free(body); http_send_error(client_fd, 500, "Internal Server Error"); return 1; }
-
-    static char out[8192];
-    batch_ctx_t b = { ctx, out, 0, sizeof(out), 1 };
-
-    size_t hdr_len = (size_t)snprintf(out, sizeof(out), "{\"values\":{");
-    b.out = out; b.off = hdr_len;
-
-    json_array_each(body, "paths", batch_cb, &b);
-    free(body);
-    uci_free_context(ctx);
-
-    if (b.off + 4 < sizeof(out)) {
-        out[b.off++] = '}';
-        out[b.off++] = '}';
-    }
-    http_send_response(client_fd, 200, "OK",
-                       "application/json; charset=utf-8",
-                       out, b.off);
     return 1;
 }
 
@@ -968,7 +958,6 @@ static int handle_action(int client_fd, const http_request_t *req)
 static handler_t handlers[] = {
     { "/api/ping",             handle_ping            },
     { "/api/sysinfo",          handle_sysinfo         },
-    { "/api/uci/batch",        handle_uci_batch       },
     { "/api/uci/set",          handle_uci_set         },
     { "/api/uci",              handle_uci_get         },
     { "/api/system/stats",     handle_system_stats    },

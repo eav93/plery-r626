@@ -319,24 +319,21 @@ define(function (require, exports) {
         _post("/cgi-bin/mbox-config?method=SET&section=pptpd_user", data, callback);
     };
 
-    /* GET /api/uci?get=<path>
-     * Response always uses full UCI path as key:
-     *   uciGet('network.wan.proto', d => d['network.wan.proto'])  — single option
-     *   uciGet('network.wan',       d => d['network.wan.proto'])  — whole section
-     * For convenience, uciVal(data, path) extracts the value from either response. */
+    /* GET /api/uci?get=<path>[,<path>...]
+     * Response is a flat object with full UCI paths as keys:
+     *   uciGet('network.wan.proto', d => d['network.wan.proto'])
+     *   uciGet('network.wan',       d => d['network.wan.proto'])
+     *   uciGet('network.wan,system.@system[0].hostname', d => {...})
+     */
     exports.uciGet = function (path, callback) {
         _get("/api/uci?get=" + encodeURIComponent(path), callback);
     };
 
-    /* Extract a value from a uciGet response regardless of whether a single
-     * option or a whole section was requested.
-     *   var data = await uciGet('network.wan');
-     *   uciVal(data, 'network.wan.proto')  // → "dhcp" */
-    exports.uciVal = function (data, path) {
-        return data[path];
-    };
-
-    exports.uciSet = function (key, value, callback) {
-        _post("/api/uci/set", {key: key, value: value}, callback);
+    /* POST /api/uci/set
+     * Accepts a flat object of UCI path → value pairs:
+     *   uciSet({'network.wan.proto': 'dhcp', 'network.wan.ipaddr': '...'}, cb)
+     */
+    exports.uciSet = function (obj, callback) {
+        _post("/api/uci/set", obj, callback);
     };
 });

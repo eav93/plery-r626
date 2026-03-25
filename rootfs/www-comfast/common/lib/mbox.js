@@ -1,6 +1,5 @@
 define(function (require, exports) {
-    var d = require("jquery"),
-        e = require("util"),
+    var e = require("util"),
         m = require("external"),
         g = "mbox_container";
 
@@ -13,67 +12,69 @@ define(function (require, exports) {
     };
 
     exports.replacetext = function (data) {
-        d("[sh_lang]").each(function (index, obj) {
-            var langID = d(obj).attr('sh_lang');
+        document.querySelectorAll('[sh_lang]').forEach(function (obj) {
+            var langID = obj.getAttribute('sh_lang');
             var txt = eval('(' + langID + ')');
             var ntxt;
-            if (d(obj).attr('type') == 'text' || d(obj).attr('type') == 'password') {
-                d(obj).attr('placeholder', txt[data]).addClass('placeholder');
+            if (obj.getAttribute('type') === 'text' || obj.getAttribute('type') === 'password') {
+                obj.placeholder = txt[data];
+                obj.classList.add('placeholder');
                 return;
-            } else if (d(obj).html() != '' && typeof(d(obj).attr('insert')) != 'undefined') {
-                ntxt = txt[data] + d(obj).html();
-                d(obj).empty().html(ntxt);
+            } else if (obj.innerHTML !== '' && obj.getAttribute('insert') !== null) {
+                ntxt = txt[data] + obj.innerHTML;
+                obj.innerHTML = ntxt;
                 return;
             } else {
-                d(obj).html(txt[data]);
+                obj.innerHTML = txt[data];
             }
         });
-        d("[sh_title]").each(function (index, obj) {
-            var langID = d(obj).attr('sh_title');
+        document.querySelectorAll('[sh_title]').forEach(function (obj) {
+            var langID = obj.getAttribute('sh_title');
             var txt = eval('(' + langID + ')');
-            d(obj).attr('title', txt[data]);
+            obj.setAttribute('title', txt[data]);
         });
         reqtip();
     };
 
     function k(a) {
-        if (!a) {
-            a = {}
-        }
-        d("#" + g).on("click change tap", n(a));
+        if (!a) { a = {}; }
+        var container = document.getElementById(g);
+        if (!container) return;
+        var handler = n(a);
+        container.addEventListener('click', handler);
+        container.addEventListener('change', handler);
     }
 
     function n(a) {
-        function b(a) {
-            if (a) {
-                return d(a).attr("id") === g
-            }
-            return false
+        function isContainer(element) {
+            return element ? element.id === g : false;
         }
-
         return function (c) {
-            var e = d(c.target),
-                f,
-                tagNameTest = e[0].tagName.toLowerCase();
-            if (e && ((tagNameTest === "p") || (tagNameTest === "a") || (tagNameTest === "i") || (tagNameTest === "img") || (tagNameTest === "span") || (tagNameTest === "label") || (tagNameTest === "input") || (tagNameTest === "div") || (tagNameTest === "td"))) {
-                f = e.attr("et");
+            var el = c.target;
+            var tagName = el.tagName.toLowerCase();
+            var f;
+            if (tagName === 'p' || tagName === 'a' || tagName === 'i' || tagName === 'img' ||
+                tagName === 'span' || tagName === 'label' || tagName === 'input' ||
+                tagName === 'div' || tagName === 'td') {
+                f = el.getAttribute('et');
                 if (f && f.indexOf(c.type) === 0) {
-                    a[f.split(":")[1]](e)
+                    a[f.split(':')[1]](el);
                 }
             } else {
                 c.preventDefault();
-                f = e.attr("et");
+                f = el.getAttribute('et');
                 if (!f) {
-                    while (!f && !b(e)) {
-                        e = e.parent();
-                        f = e.attr("et")
+                    while (!f && !isContainer(el)) {
+                        el = el.parentElement;
+                        if (!el) break;
+                        f = el ? el.getAttribute('et') : null;
                     }
                 }
                 if (f && f.indexOf(c.type) === 0) {
-                    a[f.split(":")[1]](e)
+                    a[f.split(':')[1]](el);
                 }
             }
-        }
+        };
     }
 
     function readylanguage(callback) {
@@ -91,33 +92,47 @@ define(function (require, exports) {
             }
             packsrc = '/js/language.js';
             export_script(callback);
-        })
+        });
     }
 
     function export_script(callback) {
-        d.getScript(packsrc, function (data) {
+        var script = document.createElement('script');
+        script.src = packsrc;
+        script.onload = function () {
             exports.replacetext(devinfo.language.language);
             if (callback) callback(devinfo);
-        })
+        };
+        document.head.appendChild(script);
     }
 
     function reqtip() {
-        d('.place').each(function () {
-            if (d(this).val() != '') {
-                d(this).siblings('.tip').addClass('hide');
+        document.querySelectorAll('.place').forEach(function (el) {
+            if (el.value != '') {
+                if (el.parentElement) {
+                    el.parentElement.querySelectorAll('.tip').forEach(function (tip) {
+                        tip.classList.add('hide');
+                    });
+                }
             }
         });
-        d('.place .tip').on('click', function () {
-            d(this).addClass('hide');
-            d(this).siblings('input').focus();
+        document.querySelectorAll('.place .tip').forEach(function (tip) {
+            tip.addEventListener('click', function () {
+                tip.classList.add('hide');
+                var input = tip.parentElement.querySelector('input');
+                if (input) input.focus();
+            });
         });
-        d('.place input').focus(function () {
-            d(this).siblings('.tip').addClass('hide');
+        document.querySelectorAll('.place input').forEach(function (input) {
+            input.addEventListener('focus', function () {
+                var tip = input.parentElement.querySelector('.tip');
+                if (tip) tip.classList.add('hide');
+            });
+            input.addEventListener('blur', function () {
+                if (input.value === '') {
+                    var tip = input.parentElement.querySelector('.tip');
+                    if (tip) tip.classList.remove('hide');
+                }
+            });
         });
-        d('.place input').blur(function () {
-            if (d(this).val() == '') {
-                d(this).siblings('.tip').removeClass('hide');
-            }
-        })
     }
 });

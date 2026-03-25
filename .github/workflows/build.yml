@@ -70,9 +70,11 @@ jobs:
           key: libuci-lede-17.01
 
       - name: Clone libuci
-        if: steps.libuci-cache.outputs.cache-hit != 'true'
         run: |
-          git clone -b lede-17.01 --depth=1 https://github.com/openwrt/uci libuci
+          if [ ! -f libuci/uci.c ]; then
+            rm -rf libuci
+            git clone -b lede-17.01 --depth=1 https://github.com/openwrt/uci libuci
+          fi
 
       - name: Generate uci_config.h
         run: |

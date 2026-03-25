@@ -127,6 +127,13 @@ get "/api/uci?get=network.wan"
 assert_status "200" "GET /api/uci?get=network.wan (section) status"
 assert_key '.["network.wan.proto"]' "section response has network.wan.proto key"
 
+# Multi-key (comma-separated) — merged flat object
+# Encoded: system.@system[0].hostname%2Cnetwork.lan.ipaddr
+get "/api/uci?get=system.%40system%5B0%5D.hostname%2Cnetwork.lan.ipaddr"
+assert_status "200" "GET /api/uci multi-key status"
+assert_key '.["system.@system[0].hostname"]' "multi-key has hostname"
+assert_key '.["network.lan.ipaddr"]'         "multi-key has lan.ipaddr"
+
 # Invalid key → 400
 get "/api/uci?get=../../etc/passwd"
 assert_status "400" "GET /api/uci invalid key → 400"
@@ -135,27 +142,26 @@ assert_status "400" "GET /api/uci invalid key → 400"
 echo ""
 echo "=== POST /api/uci/set ==="
 
-# Read current hostname first
+# Read current hostname first, then write it back as flat object
 get "/api/uci?get=system.%40system%5B0%5D.hostname"
-CURRENT_HOSTNAME=$(echo "$BODY" | jq -r '.value')
+CURRENT_HOSTNAME=$(echo "$BODY" | jq -r '."system.@system[0].hostname"')
 
-post "/api/uci/set" "{\"key\":\"system.@system[0].hostname\",\"value\":\"$CURRENT_HOSTNAME\"}"
+post "/api/uci/set" "{\"system.@system[0].hostname\":\"$CURRENT_HOSTNAME\"}"
 assert_status "200" "POST /api/uci/set (noop write) status"
 assert_key_eq ".result" "ok" "POST /api/uci/set result=ok"
 
+# Multi-key set (noop: write lan + hostname back)
+get "/api/uci?get=network.lan.ipaddr%2Csystem.%40system%5B0%5D.hostname"
+LAN_IP=$(echo "$BODY" | jq -r '."network.lan.ipaddr"')
+HOSTNAME=$(echo "$BODY" | jq -r '."system.@system[0].hostname"')
+post "/api/uci/set" \
+    "{\"network.lan.ipaddr\":\"$LAN_IP\",\"system.@system[0].hostname\":\"$HOSTNAME\"}"
+assert_status "200" "POST /api/uci/set multi-key status"
+assert_key_eq ".result" "ok" "POST /api/uci/set multi-key result=ok"
+
 # Invalid key → 400
-post "/api/uci/set" "{\"key\":\"../bad\",\"value\":\"x\"}"
+post "/api/uci/set" '{"../bad":"x"}'
 assert_status "400" "POST /api/uci/set invalid key → 400"
-
-# ---- UCI batch -----------------------------------------------------------
-echo ""
-echo "=== POST /api/uci/batch ==="
-
-post "/api/uci/batch" \
-    '{"paths":["system.@system[0].hostname","system.language.language","network.lan.ipaddr"]}'
-assert_status "200" "POST /api/uci/batch status"
-assert_key ".values" "POST /api/uci/batch has values"
-assert_key '.values["system.@system[0].hostname"]' "POST /api/uci/batch hostname key"
 
 # ---- System stats --------------------------------------------------------
 echo ""
