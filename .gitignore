@@ -1,4 +1,5 @@
 dist/
+webserver/src/uci.h
 fwtool/
 *.squashfs
 .DS_Store
