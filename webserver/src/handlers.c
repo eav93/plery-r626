@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 /* ------------------------------------------------------------------ */
 /* FastCGI backend address (set once at startup)                       */
@@ -330,13 +332,589 @@ static int handle_uci_set(int client_fd, const http_request_t *req)
 }
 
 /* ------------------------------------------------------------------ */
+/* UCI batch                                                            */
+/* POST /api/uci/batch                                                  */
+/* Body: {"paths":["a.b.c","x.y.z"]}                                  */
+/* Response: {"values":{"a.b.c":"val1","x.y.z":"not_found"}}          */
+/* ------------------------------------------------------------------ */
+
+/* Iterate over JSON string array for the given field.
+ * Calls cb(element, ctx) for each string; stops if cb returns < 0. */
+static int json_array_each(const char *json, const char *field,
+                            int (*cb)(const char *, void *), void *ctx)
+{
+    char search[64];
+    snprintf(search, sizeof(search), "\"%s\"", field);
+    const char *p = strstr(json, search);
+    if (!p) return 0;
+    p += strlen(search);
+    while (*p == ' ' || *p == '\t' || *p == ':') p++;
+    if (*p != '[') return 0;
+    p++;
+    char buf[256];
+    int count = 0;
+    while (*p) {
+        while (*p == ' ' || *p == '\t' || *p == '\n' || *p == ',') p++;
+        if (*p == ']' || *p == '\0') break;
+        if (*p != '"') { p++; continue; }
+        p++;
+        size_t i = 0;
+        while (*p && *p != '"' && i + 1 < sizeof(buf)) {
+            if (*p == '\\') { p++; if (*p) buf[i++] = *p++; }
+            else buf[i++] = *p++;
+        }
+        buf[i] = '\0';
+        if (*p == '"') p++;
+        if (cb(buf, ctx) < 0) break;
+        count++;
+    }
+    return count;
+}
+
+typedef struct { struct uci_context *ctx; char *out; size_t off; size_t cap; int first; } batch_ctx_t;
+
+static int batch_cb(const char *path, void *vctx)
+{
+    batch_ctx_t *b = (batch_ctx_t *)vctx;
+    if (!is_safe_uci_key(path)) return 0; /* skip invalid */
+
+    char key_buf[256];
+    strncpy(key_buf, path, sizeof(key_buf) - 1);
+    key_buf[sizeof(key_buf) - 1] = '\0';
+
+    char esc_key[512], esc_val[512];
+    json_escape(path, esc_key, sizeof(esc_key));
+
+    struct uci_ptr ptr;
+    const char *val = NULL;
+    if (uci_lookup_ptr(b->ctx, &ptr, key_buf, true) == UCI_OK &&
+        (ptr.flags & UCI_LOOKUP_COMPLETE) && ptr.o &&
+        ptr.o->type == UCI_TYPE_STRING)
+    {
+        val = ptr.o->v.string;
+    }
+
+    char entry[1024];
+    int n;
+    if (val) {
+        json_escape(val, esc_val, sizeof(esc_val));
+        n = snprintf(entry, sizeof(entry), "%s\"%s\":\"%s\"",
+                     b->first ? "" : ",", esc_key, esc_val);
+    } else {
+        n = snprintf(entry, sizeof(entry), "%s\"%s\":null",
+                     b->first ? "" : ",", esc_key);
+    }
+    b->first = 0;
+
+    if (b->off + (size_t)n + 8 < b->cap) {
+        memcpy(b->out + b->off, entry, (size_t)n);
+        b->off += (size_t)n;
+    }
+    return 0;
+}
+
+static int handle_uci_batch(int client_fd, const http_request_t *req)
+{
+    if (strcmp(req->path, "/api/uci/batch") != 0) return 0;
+    if (strcmp(req->method, "POST")          != 0) return 0;
+    if (!check_auth(client_fd, req))               return 1;
+
+    char *body = read_body(client_fd, req);
+    if (!body) { http_send_error(client_fd, 400, "Bad Request"); return 1; }
+
+    struct uci_context *ctx = uci_alloc_context();
+    if (!ctx) { free(body); http_send_error(client_fd, 500, "Internal Server Error"); return 1; }
+
+    static char out[8192];
+    batch_ctx_t b = { ctx, out, 0, sizeof(out), 1 };
+
+    size_t hdr_len = (size_t)snprintf(out, sizeof(out), "{\"values\":{");
+    b.out = out; b.off = hdr_len;
+
+    json_array_each(body, "paths", batch_cb, &b);
+    free(body);
+    uci_free_context(ctx);
+
+    if (b.off + 4 < sizeof(out)) {
+        out[b.off++] = '}';
+        out[b.off++] = '}';
+    }
+    http_send_response(client_fd, 200, "OK",
+                       "application/json; charset=utf-8",
+                       out, b.off);
+    return 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* System stats                                                         */
+/* GET /api/system/stats  (auth required)                             */
+/* Response: {"cpu_pct":25,"mem_total":65536,"mem_avail":40000,       */
+/*            "rx_bytes":12345,"tx_bytes":6789}                       */
+/* ------------------------------------------------------------------ */
+static int read_cpu_stat(unsigned long long *total, unsigned long long *idle)
+{
+    FILE *fp = fopen("/proc/stat", "r");
+    if (!fp) return -1;
+    unsigned long long user, nice, sys, id, iowait, irq, softirq;
+    int r = fscanf(fp, "cpu  %llu %llu %llu %llu %llu %llu %llu",
+                   &user, &nice, &sys, &id, &iowait, &irq, &softirq);
+    fclose(fp);
+    if (r < 7) return -1;
+    *idle  = id + iowait;
+    *total = user + nice + sys + id + iowait + irq + softirq;
+    return 0;
+}
+
+static int read_netdev(const char *iface,
+                        unsigned long long *rx, unsigned long long *tx)
+{
+    FILE *fp = fopen("/proc/net/dev", "r");
+    if (!fp) return -1;
+    char line[256];
+    *rx = *tx = 0;
+    while (fgets(line, sizeof(line), fp)) {
+        char name[32] = "";
+        unsigned long long rb = 0, tb = 0;
+        if (sscanf(line, " %31[^:]: %llu %*u %*u %*u %*u %*u %*u %*u %llu",
+                   name, &rb, &tb) >= 3 &&
+            strcmp(name, iface) == 0)
+        {
+            *rx = rb; *tx = tb;
+            fclose(fp);
+            return 0;
+        }
+    }
+    fclose(fp);
+    return -1;
+}
+
+static int handle_system_stats(int client_fd, const http_request_t *req)
+{
+    if (strcmp(req->path, "/api/system/stats") != 0) return 0;
+    if (!check_auth(client_fd, req)) return 1;
+
+    /* CPU: 200 ms sample */
+    unsigned long long tot1 = 0, idl1 = 0, tot2 = 0, idl2 = 0;
+    read_cpu_stat(&tot1, &idl1);
+    usleep(200000);
+    read_cpu_stat(&tot2, &idl2);
+
+    int cpu_pct = 0;
+    if (tot2 > tot1) {
+        unsigned long long dtot  = tot2 - tot1;
+        unsigned long long didle = (idl2 > idl1) ? idl2 - idl1 : 0;
+        cpu_pct = (int)(100ULL * (dtot - didle) / dtot);
+    }
+
+    /* Memory */
+    unsigned long mem_total = 0, mem_avail = 0;
+    FILE *fp = fopen("/proc/meminfo", "r");
+    if (fp) {
+        char line[128];
+        while (fgets(line, sizeof(line), fp)) {
+            unsigned long v;
+            if (sscanf(line, "MemTotal: %lu kB", &v) == 1)     mem_total = v;
+            if (sscanf(line, "MemAvailable: %lu kB", &v) == 1) mem_avail = v;
+        }
+        fclose(fp);
+    }
+    int mem_pct = mem_total ? (int)(100UL * (mem_total - mem_avail) / mem_total) : 0;
+
+    /* Network — get WAN ifname from UCI, fall back to eth1 */
+    char wan_iface[32] = "eth1";
+    struct uci_context *ctx = uci_alloc_context();
+    if (ctx) {
+        char key[] = "network.wan.ifname";
+        struct uci_ptr ptr;
+        if (uci_lookup_ptr(ctx, &ptr, key, true) == UCI_OK &&
+            (ptr.flags & UCI_LOOKUP_COMPLETE) && ptr.o &&
+            ptr.o->type == UCI_TYPE_STRING)
+        {
+            strncpy(wan_iface, ptr.o->v.string, sizeof(wan_iface) - 1);
+            wan_iface[sizeof(wan_iface) - 1] = '\0';
+        }
+        uci_free_context(ctx);
+    }
+
+    unsigned long long rx = 0, tx = 0;
+    read_netdev(wan_iface, &rx, &tx);
+
+    char body[256];
+    int blen = snprintf(body, sizeof(body),
+        "{\"cpu_pct\":%d,\"mem_pct\":%d,\"mem_total\":%lu,\"mem_avail\":%lu,"
+        "\"rx_bytes\":%llu,\"tx_bytes\":%llu}",
+        cpu_pct, mem_pct, mem_total, mem_avail, rx, tx);
+
+    http_send_response(client_fd, 200, "OK",
+                       "application/json; charset=utf-8",
+                       body, (size_t)blen);
+    return 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* System version                                                       */
+/* GET /api/system/version  (auth required)                           */
+/* Response: {"version":"CF-PLERY-...","macaddr":"AA:BB:CC:DD:EE:FF"} */
+/* ------------------------------------------------------------------ */
+static int handle_system_version(int client_fd, const http_request_t *req)
+{
+    if (strcmp(req->path, "/api/system/version") != 0) return 0;
+    if (!check_auth(client_fd, req)) return 1;
+
+    char version[128] = "unknown";
+    FILE *fp = fopen("/etc/defconfig/cf-plery/version", "r");
+    if (fp) {
+        if (fgets(version, sizeof(version), fp)) {
+            size_t n = strlen(version);
+            while (n > 0 && (version[n-1] == '\n' || version[n-1] == '\r'))
+                version[--n] = '\0';
+        }
+        fclose(fp);
+    }
+
+    char macaddr[32] = "00:00:00:00:00:00";
+    struct uci_context *ctx = uci_alloc_context();
+    if (ctx) {
+        /* Try def_wan_macaddr first, then wan.macaddr */
+        static const char *mac_keys[] = {
+            "network.def_wan_macaddr",
+            "network.wan.macaddr",
+            NULL
+        };
+        for (int i = 0; mac_keys[i]; i++) {
+            char key_buf[64];
+            strncpy(key_buf, mac_keys[i], sizeof(key_buf) - 1);
+            key_buf[sizeof(key_buf) - 1] = '\0';
+            struct uci_ptr ptr;
+            if (uci_lookup_ptr(ctx, &ptr, key_buf, true) == UCI_OK &&
+                (ptr.flags & UCI_LOOKUP_COMPLETE) && ptr.o &&
+                ptr.o->type == UCI_TYPE_STRING &&
+                ptr.o->v.string[0] != '\0')
+            {
+                strncpy(macaddr, ptr.o->v.string, sizeof(macaddr) - 1);
+                macaddr[sizeof(macaddr) - 1] = '\0';
+                break;
+            }
+        }
+        uci_free_context(ctx);
+    }
+
+    char esc_ver[256], esc_mac[64];
+    json_escape(version, esc_ver, sizeof(esc_ver));
+    json_escape(macaddr, esc_mac, sizeof(esc_mac));
+
+    char body[512];
+    int blen = snprintf(body, sizeof(body),
+                        "{\"version\":\"%s\",\"macaddr\":\"%s\"}",
+                        esc_ver, esc_mac);
+    http_send_response(client_fd, 200, "OK",
+                       "application/json; charset=utf-8",
+                       body, (size_t)blen);
+    return 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* System language                                                      */
+/* GET  /api/system/language  — returns {"language":"ru","changed":1} */
+/* POST /api/system/language  — body {"language":"ru"} sets + commits */
+/* ------------------------------------------------------------------ */
+static int handle_system_language(int client_fd, const http_request_t *req)
+{
+    if (strcmp(req->path, "/api/system/language") != 0) return 0;
+    if (!check_auth(client_fd, req)) return 1;
+
+    if (strcmp(req->method, "GET") == 0) {
+        char lang[16] = "en";
+        int  changed  = 0;
+        struct uci_context *ctx = uci_alloc_context();
+        if (ctx) {
+            char k1[] = "system.language.language";
+            char k2[] = "system.language.changed";
+            struct uci_ptr ptr;
+            if (uci_lookup_ptr(ctx, &ptr, k1, true) == UCI_OK &&
+                (ptr.flags & UCI_LOOKUP_COMPLETE) && ptr.o &&
+                ptr.o->type == UCI_TYPE_STRING)
+            {
+                strncpy(lang, ptr.o->v.string, sizeof(lang) - 1);
+                lang[sizeof(lang) - 1] = '\0';
+            }
+            if (uci_lookup_ptr(ctx, &ptr, k2, true) == UCI_OK &&
+                (ptr.flags & UCI_LOOKUP_COMPLETE) && ptr.o &&
+                ptr.o->type == UCI_TYPE_STRING)
+            {
+                changed = atoi(ptr.o->v.string);
+            }
+            uci_free_context(ctx);
+        }
+        char esc[32];
+        json_escape(lang, esc, sizeof(esc));
+        char body[128];
+        int blen = snprintf(body, sizeof(body),
+                            "{\"language\":\"%s\",\"changed\":%d}",
+                            esc, changed);
+        http_send_response(client_fd, 200, "OK",
+                           "application/json; charset=utf-8",
+                           body, (size_t)blen);
+        return 1;
+    }
+
+    if (strcmp(req->method, "POST") == 0) {
+        char *body = read_body(client_fd, req);
+        if (!body) { http_send_error(client_fd, 400, "Bad Request"); return 1; }
+        char lang[16] = {0};
+        json_get_str(body, "language", lang, sizeof(lang));
+        free(body);
+
+        /* Whitelist languages */
+        if (strcmp(lang, "en") != 0 && strcmp(lang, "ru") != 0 &&
+            strcmp(lang, "cn") != 0)
+        {
+            static const char err[] = "{\"errCode\":-1,\"errMsg\":\"Invalid language\"}";
+            http_send_response(client_fd, 400, "Bad Request",
+                               "application/json", err, sizeof(err) - 1);
+            return 1;
+        }
+
+        struct uci_context *ctx = uci_alloc_context();
+        if (!ctx) { http_send_error(client_fd, 500, "Internal Server Error"); return 1; }
+
+        const char *errmsg = NULL;
+        char key_buf[] = "system.language.language";
+        struct uci_ptr ptr;
+        if (uci_lookup_ptr(ctx, &ptr, key_buf, true) != UCI_OK) {
+            errmsg = "Lookup failed";
+        } else {
+            ptr.value = lang;
+            if (uci_set(ctx, &ptr) != UCI_OK)
+                errmsg = "Set failed";
+            else if (uci_commit(ctx, &ptr.p, false) != UCI_OK)
+                errmsg = "Commit failed";
+        }
+        uci_free_context(ctx);
+
+        if (errmsg) {
+            char resp[128];
+            int rlen = snprintf(resp, sizeof(resp),
+                                "{\"errCode\":-1,\"errMsg\":\"%s\"}", errmsg);
+            http_send_response(client_fd, 500, "Internal Server Error",
+                               "application/json", resp, (size_t)rlen);
+        } else {
+            static const char ok[] = "{\"result\":\"ok\"}";
+            http_send_response(client_fd, 200, "OK",
+                               "application/json", ok, sizeof(ok) - 1);
+        }
+        return 1;
+    }
+
+    return 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* DHCP leases                                                          */
+/* GET /api/dhcp/leases  (auth required)                              */
+/* Response: {"leases":[{"mac":"..","ip":"..","hostname":"..","expires":N}]} */
+/* ------------------------------------------------------------------ */
+static int handle_dhcp_leases(int client_fd, const http_request_t *req)
+{
+    if (strcmp(req->path, "/api/dhcp/leases") != 0) return 0;
+    if (!check_auth(client_fd, req)) return 1;
+
+    /* Build JSON into a heap buffer (leases file can be large) */
+    size_t cap = 4096;
+    char *out = malloc(cap);
+    if (!out) { http_send_error(client_fd, 500, "Internal Server Error"); return 1; }
+
+    size_t off = 0;
+    off += (size_t)snprintf(out + off, cap - off, "{\"leases\":[");
+
+    FILE *fp = fopen("/tmp/dhcp.leases", "r");
+    if (fp) {
+        char line[256];
+        int first = 1;
+        while (fgets(line, sizeof(line), fp)) {
+            long long expires = 0;
+            char mac[32] = "", ip[32] = "", host[64] = "";
+            if (sscanf(line, "%lld %31s %31s %63s", &expires, mac, ip, host) < 3)
+                continue;
+            if (strcmp(host, "*") == 0) host[0] = '\0';
+
+            char esc_mac[64], esc_ip[64], esc_host[128];
+            json_escape(mac,  esc_mac,  sizeof(esc_mac));
+            json_escape(ip,   esc_ip,   sizeof(esc_ip));
+            json_escape(host, esc_host, sizeof(esc_host));
+
+            /* Grow buffer if needed */
+            size_t needed = off + 256;
+            if (needed > cap) {
+                cap *= 2;
+                char *tmp = realloc(out, cap);
+                if (!tmp) break;
+                out = tmp;
+            }
+
+            off += (size_t)snprintf(out + off, cap - off,
+                "%s{\"mac\":\"%s\",\"ip\":\"%s\",\"hostname\":\"%s\",\"expires\":%lld}",
+                first ? "" : ",", esc_mac, esc_ip, esc_host, expires);
+            first = 0;
+        }
+        fclose(fp);
+    }
+
+    if (off + 4 < cap) {
+        out[off++] = ']';
+        out[off++] = '}';
+    }
+
+    http_send_response(client_fd, 200, "OK",
+                       "application/json; charset=utf-8",
+                       out, off);
+    free(out);
+    return 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* ARP table                                                            */
+/* GET /api/arp  (auth required)                                      */
+/* Response: {"entries":[{"ip":"..","mac":"..","iface":".."}]}        */
+/* ------------------------------------------------------------------ */
+static int handle_arp(int client_fd, const http_request_t *req)
+{
+    if (strcmp(req->path, "/api/arp") != 0) return 0;
+    if (!check_auth(client_fd, req)) return 1;
+
+    char out[4096];
+    size_t off = (size_t)snprintf(out, sizeof(out), "{\"entries\":[");
+    int first = 1;
+
+    FILE *fp = fopen("/proc/net/arp", "r");
+    if (fp) {
+        char line[256];
+        fgets(line, sizeof(line), fp); /* skip header */
+        while (fgets(line, sizeof(line), fp)) {
+            char ip[32] = "", hwtype[16] = "", flags[16] = "";
+            char mac[32] = "", mask[16] = "", iface[32] = "";
+            if (sscanf(line, "%31s %15s %15s %31s %15s %31s",
+                       ip, hwtype, flags, mac, mask, iface) < 6) continue;
+            if (strcmp(mac, "00:00:00:00:00:00") == 0) continue;
+
+            char esc_ip[64], esc_mac[64], esc_iface[64];
+            json_escape(ip,    esc_ip,    sizeof(esc_ip));
+            json_escape(mac,   esc_mac,   sizeof(esc_mac));
+            json_escape(iface, esc_iface, sizeof(esc_iface));
+
+            size_t n = (size_t)snprintf(out + off, sizeof(out) - off,
+                "%s{\"ip\":\"%s\",\"mac\":\"%s\",\"iface\":\"%s\"}",
+                first ? "" : ",", esc_ip, esc_mac, esc_iface);
+            if (off + n + 4 >= sizeof(out)) break;
+            off += n;
+            first = 0;
+        }
+        fclose(fp);
+    }
+
+    if (off + 4 < sizeof(out)) {
+        out[off++] = ']';
+        out[off++] = '}';
+    }
+    http_send_response(client_fd, 200, "OK",
+                       "application/json; charset=utf-8",
+                       out, off);
+    return 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* Actions: POST /api/action/reboot                                    */
+/*          POST /api/action/reset                                     */
+/*          POST /api/action/apply  body: {"service":"network"}       */
+/* ------------------------------------------------------------------ */
+static void run_delayed(const char *cmd)
+{
+    pid_t pid = fork();
+    if (pid == 0) {
+        /* Detach from parent process group */
+        setsid();
+        sleep(1);
+        execl("/bin/sh", "sh", "-c", cmd, NULL);
+        _exit(1);
+    }
+    /* Parent does not wait — child is daemonised */
+}
+
+static int handle_action(int client_fd, const http_request_t *req)
+{
+    if (strncmp(req->path, "/api/action/", 12) != 0) return 0;
+    if (strcmp(req->method, "POST") != 0)             return 0;
+    if (!check_auth(client_fd, req))                  return 1;
+
+    const char *action = req->path + 12; /* "reboot", "reset", "apply" */
+
+    static const char ok[] = "{\"result\":\"ok\"}";
+    static const char err[] = "{\"errCode\":-1,\"errMsg\":\"Unknown action\"}";
+
+    if (strcmp(action, "reboot") == 0) {
+        http_send_response(client_fd, 200, "OK",
+                           "application/json", ok, sizeof(ok) - 1);
+        run_delayed("reboot");
+        return 1;
+    }
+
+    if (strcmp(action, "reset") == 0) {
+        http_send_response(client_fd, 200, "OK",
+                           "application/json", ok, sizeof(ok) - 1);
+        run_delayed("firstboot -y && reboot");
+        return 1;
+    }
+
+    if (strcmp(action, "apply") == 0) {
+        char *body = read_body(client_fd, req);
+        char service[32] = {0};
+        if (body) {
+            json_get_str(body, "service", service, sizeof(service));
+            free(body);
+        }
+        /* Whitelist service names to prevent injection */
+        static const char *allowed[] = {
+            "network", "wireless", "system", "firewall", "dnsmasq", NULL
+        };
+        int ok_svc = 0;
+        for (int i = 0; allowed[i]; i++) {
+            if (strcmp(service, allowed[i]) == 0) { ok_svc = 1; break; }
+        }
+        if (!ok_svc) {
+            static const char bad[] =
+                "{\"errCode\":-1,\"errMsg\":\"Invalid service\"}";
+            http_send_response(client_fd, 400, "Bad Request",
+                               "application/json", bad, sizeof(bad) - 1);
+            return 1;
+        }
+        http_send_response(client_fd, 200, "OK",
+                           "application/json", ok, sizeof(ok) - 1);
+        char cmd[128];
+        snprintf(cmd, sizeof(cmd), "/etc/init.d/%s reload", service);
+        run_delayed(cmd);
+        return 1;
+    }
+
+    http_send_response(client_fd, 400, "Bad Request",
+                       "application/json", err, sizeof(err) - 1);
+    return 1;
+}
+
+/* ------------------------------------------------------------------ */
 /* Handler table                                                        */
 /* ------------------------------------------------------------------ */
 static handler_t handlers[] = {
-    { "/api/ping",    handle_ping    },
-    { "/api/sysinfo", handle_sysinfo },
-    { "/api/uci",     handle_uci_get },
-    { "/api/uci/set", handle_uci_set },
+    { "/api/ping",             handle_ping            },
+    { "/api/sysinfo",          handle_sysinfo         },
+    { "/api/uci/batch",        handle_uci_batch       },
+    { "/api/uci/set",          handle_uci_set         },
+    { "/api/uci",              handle_uci_get         },
+    { "/api/system/stats",     handle_system_stats    },
+    { "/api/system/version",   handle_system_version  },
+    { "/api/system/language",  handle_system_language },
+    { "/api/dhcp/leases",      handle_dhcp_leases     },
+    { "/api/arp",              handle_arp             },
+    { "/api/action/",          handle_action          },
 };
 
 static const int num_handlers = (int)(sizeof(handlers) / sizeof(handlers[0]));
