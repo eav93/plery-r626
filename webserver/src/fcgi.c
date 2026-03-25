@@ -272,18 +272,23 @@ void fcgi_proxy(int client_fd, const http_request_t *req,
 
     ADD_PARAM("REQUEST_METHOD",   req->method);
     ADD_PARAM("REQUEST_URI",      request_uri);
+    ADD_PARAM("DOCUMENT_URI",     req->path);
+    ADD_PARAM("DOCUMENT_ROOT",    "/www-comfast");
     ADD_PARAM("SCRIPT_NAME",      req->path);
     ADD_PARAM("SCRIPT_FILENAME",  req->path);
     ADD_PARAM("QUERY_STRING",     req->query);
+    ADD_PARAM("REDIRECT_STATUS",  "200");
     ADD_PARAM("REMOTE_ADDR",      remote_addr ? remote_addr : "127.0.0.1");
     ADD_PARAM("SERVER_NAME",      "localhost");
     ADD_PARAM("SERVER_PORT",      port_str);
     ADD_PARAM("SERVER_PROTOCOL",  req->version);
+    ADD_PARAM("REQUEST_SCHEME",   "http");
     ADD_PARAM("GATEWAY_INTERFACE","CGI/1.1");
 
     const char *ct = http_get_header(req, "Content-Type");
     if (ct) ADD_PARAM("CONTENT_TYPE", ct);
-    if (req->content_length > 0) ADD_PARAM("CONTENT_LENGTH", cl_str);
+    /* Always send CONTENT_LENGTH (mirrors nginx behaviour) */
+    ADD_PARAM("CONTENT_LENGTH", cl_str);
 
     /* HTTP_* headers */
     for (int i = 0; i < req->header_count; i++) {
