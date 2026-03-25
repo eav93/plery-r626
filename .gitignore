@@ -9,3 +9,5 @@ node_modules/
 package-lock.json
 npm-debug.log*
 .vite/
+ui/node_modules/
+rootfs/www-comfast/app/

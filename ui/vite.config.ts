@@ -5,7 +5,6 @@ import { resolve } from 'path'
 const routerTarget = process.env.ROUTER_URL || 'http://192.168.0.1'
 
 export default defineConfig({
-  root: 'src',
   plugins: [vue()],
   resolve: {
     alias: { '@': resolve(__dirname, 'src') },
@@ -25,7 +24,7 @@ export default defineConfig({
     strictPort: true,
     open: '/',
     proxy: {
-      '/api': { target: routerTarget, changeOrigin: true, secure: false },
+      '/api':     { target: routerTarget, changeOrigin: true, secure: false },
       '/cgi-bin': { target: routerTarget, changeOrigin: true, secure: false },
     },
   },

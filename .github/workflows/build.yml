@@ -81,12 +81,25 @@ jobs:
           cp wbsrv ../rootfs/usr/sbin/wbsrv
           file ../rootfs/usr/sbin/wbsrv
 
-      # ---- CSS minification ----
+      # ---- Node.js (shared for CSS minification + Vue build) ----
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 20
 
+      - name: Cache node_modules
+        uses: actions/cache@v5
+        with:
+          path: ui/node_modules
+          key: ui-node-${{ hashFiles('ui/package.json') }}
+
+      - name: Build Vue UI
+        run: |
+          cd ui
+          npm install --prefer-offline
+          npm run build
+
+      # ---- CSS minification ----
       - name: Minify CSS
         run: |
           find rootfs/www-comfast/css -type f -name '*.css' \
