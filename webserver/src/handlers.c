@@ -236,10 +236,10 @@ static int handle_uci_get(int client_fd, const http_request_t *req)
     }
 
     if (ptr.o) {
-        /* Full path package.section.option — return {"optname":"value"}
-         * Same format as section response for consistency. */
-        char esc_key[128], esc_val[512];
-        json_escape(ptr.o->e.name, esc_key, sizeof(esc_key));
+        /* Full path package.section.option
+         * Return {"package.section.option":"value"} — full path as key. */
+        char esc_key[256], esc_val[512];
+        json_escape(key, esc_key, sizeof(esc_key)); /* key = original query param */
         if (ptr.o->type == UCI_TYPE_STRING) {
             json_escape(ptr.o->v.string, esc_val, sizeof(esc_val));
             off = (size_t)snprintf(body, cap,
@@ -264,17 +264,22 @@ static int handle_uci_get(int client_fd, const http_request_t *req)
                                    "{\"%s\":\"%s\"}", esc_key, esc_val);
         }
     } else if (ptr.s) {
-        /* Section path package.section — return all options as flat object */
+        /* Section path package.section
+         * Return {"package.section.opt1":"v1","package.section.opt2":"v2",...} */
         off = (size_t)snprintf(body, cap, "{");
         int first = 1;
         struct uci_element *e;
         uci_foreach_element(&ptr.s->options, e) {
             struct uci_option *o = uci_to_option(e);
-            char esc_key[128], esc_val[512];
-            json_escape(e->name, esc_key, sizeof(esc_key));
+
+            /* Build full path: key + "." + option_name */
+            char full_path[384];
+            snprintf(full_path, sizeof(full_path), "%s.%s", key, e->name);
+            char esc_key[384], esc_val[512];
+            json_escape(full_path, esc_key, sizeof(esc_key));
 
             /* Grow buffer if needed */
-            if (off + 768 > cap) {
+            if (off + 900 > cap) {
                 cap *= 2;
                 char *tmp = realloc(body, cap);
                 if (!tmp) break;

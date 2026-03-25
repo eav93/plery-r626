@@ -109,22 +109,23 @@ assert_key ".uptime"   "GET /api/sysinfo has uptime"
 echo ""
 echo "=== GET /api/uci ==="
 
+# Single option — full path as key
 get "/api/uci?get=system.%40system%5B0%5D.hostname"
 assert_status "200" "GET /api/uci?get=hostname status"
-assert_key ".hostname" "GET /api/uci?get=hostname returns {hostname:...}"
+assert_key '.["system.@system[0].hostname"]' "single option returns full-path key"
 
 get "/api/uci?get=system.language.language"
 assert_status "200" "GET /api/uci?get=language status"
-assert_key ".language" "GET /api/uci?get=language returns {language:...}"
+assert_key '.["system.language.language"]' "single option returns full-path key"
 
-# Section-level read (package.section — no option)
+# Section-level read — all options with full paths as keys
 get "/api/uci?get=network.lan"
 assert_status "200" "GET /api/uci?get=network.lan (section) status"
-assert_key ".ipaddr" "GET /api/uci?get=network.lan has ipaddr"
+assert_key '.["network.lan.ipaddr"]' "section response has network.lan.ipaddr key"
 
 get "/api/uci?get=network.wan"
 assert_status "200" "GET /api/uci?get=network.wan (section) status"
-assert_key ".proto" "GET /api/uci?get=network.wan has proto"
+assert_key '.["network.wan.proto"]' "section response has network.wan.proto key"
 
 # Invalid key → 400
 get "/api/uci?get=../../etc/passwd"

@@ -319,8 +319,21 @@ define(function (require, exports) {
         _post("/cgi-bin/mbox-config?method=SET&section=pptpd_user", data, callback);
     };
 
+    /* GET /api/uci?get=<path>
+     * Response always uses full UCI path as key:
+     *   uciGet('network.wan.proto', d => d['network.wan.proto'])  — single option
+     *   uciGet('network.wan',       d => d['network.wan.proto'])  — whole section
+     * For convenience, uciVal(data, path) extracts the value from either response. */
     exports.uciGet = function (path, callback) {
         _get("/api/uci?get=" + encodeURIComponent(path), callback);
+    };
+
+    /* Extract a value from a uciGet response regardless of whether a single
+     * option or a whole section was requested.
+     *   var data = await uciGet('network.wan');
+     *   uciVal(data, 'network.wan.proto')  // → "dhcp" */
+    exports.uciVal = function (data, path) {
+        return data[path];
     };
 
     exports.uciSet = function (key, value, callback) {
