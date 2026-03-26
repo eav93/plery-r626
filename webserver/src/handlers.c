@@ -1098,14 +1098,19 @@ static int handle_arp(int client_fd, const http_request_t *req)
 }
 
 /* ------------------------------------------------------------------ */
-/* GET  /api/wifi  — read SSID from Mediatek DAT files +              */
-/*                   encryption/key/hidden from UCI                   */
-/* POST /api/wifi  — write SSID to DAT files + UCI fields             */
+/* GET  /api/wifi  — read WiFi config from UCI                        */
+/* POST /api/wifi  — write WiFi config to UCI                         */
+/*                                                                    */
+/* SSID is stored in the primary wifi-iface section (ifname=ra0 for  */
+/* 2.4G, rai0 for 5G). When apply wireless runs, uci2dat syncs UCI   */
+/* to DAT files automatically. Encryption/key/hidden go to the named */
+/* mbox / mbox5g sections (managed by webmgnt).                      */
 /* ------------------------------------------------------------------ */
 
-/* Read a single key=value line from a DAT file.
- * Returns 1 on success, 0 if not found.
- * value buf is NUL-terminated and trimmed. */
+/* Fallback: read SSID from DAT file if UCI section has no ssid yet. */
+#define DAT_24G "/etc/wireless/mt7628/mt7628.dat"
+#define DAT_5G  "/etc/wireless/mt7663e/mt7663e.2.dat"
+
 static int dat_read(const char *path, const char *key,
                     char *val, size_t val_sz)
 {
@@ -1115,7 +1120,6 @@ static int dat_read(const char *path, const char *key,
     size_t klen = strlen(key);
     int found = 0;
     while (fgets(line, sizeof(line), f)) {
-        /* strip trailing newline */
         size_t len = strlen(line);
         while (len > 0 && (line[len-1] == '\n' || line[len-1] == '\r'))
             line[--len] = '\0';
@@ -1129,65 +1133,28 @@ static int dat_read(const char *path, const char *key,
     return found;
 }
 
-/* Write (replace) a key=value line in a DAT file in-place.
+/* Find the wifi-iface UCI section whose ifname matches.
+ * pkg must be already loaded. Fills out[] with the section name
+ * component only, e.g. "@wifi-iface[0]" or "mbox".
  * Returns 1 on success. */
-static int dat_write(const char *path, const char *key, const char *val)
+static int uci_wifi_find_section(struct uci_context *ctx,
+                                  struct uci_package *pkg,
+                                  const char *ifname,
+                                  char *out, size_t out_sz)
 {
-    FILE *f = fopen(path, "r");
-    if (!f) return 0;
-
-    /* Read whole file into buffer */
-    fseek(f, 0, SEEK_END);
-    long fsz = ftell(f);
-    rewind(f);
-    char *buf = malloc(fsz + 1);
-    if (!buf) { fclose(f); return 0; }
-    fread(buf, 1, fsz, f);
-    buf[fsz] = '\0';
-    fclose(f);
-
-    size_t klen = strlen(key);
-    size_t vlen = strlen(val);
-    /* Find the line */
-    char *p = buf;
-    char *found_start = NULL, *found_end = NULL;
-    while (*p) {
-        if (strncmp(p, key, klen) == 0 && p[klen] == '=') {
-            found_start = p;
-            found_end = p;
-            while (*found_end && *found_end != '\n') found_end++;
-            if (*found_end == '\n') found_end++;
-            break;
+    if (!pkg) return 0;
+    struct uci_element *e;
+    uci_foreach_element(&pkg->sections, e) {
+        struct uci_section *s = uci_to_section(e);
+        if (strcmp(s->type, "wifi-iface") != 0) continue;
+        const char *ifn = uci_lookup_option_string(ctx, s, "ifname");
+        if (ifn && strcmp(ifn, ifname) == 0) {
+            snprintf(out, out_sz, "%s", s->e.name);
+            return 1;
         }
-        while (*p && *p != '\n') p++;
-        if (*p == '\n') p++;
     }
-
-    if (!found_start) { free(buf); return 0; } /* key not found */
-
-    /* Build new file content */
-    size_t prefix_len = found_start - buf;
-    size_t suffix_len = strlen(found_end);
-    size_t new_line_len = klen + 1 + vlen + 1; /* key=val\n */
-    size_t new_sz = prefix_len + new_line_len + suffix_len;
-    char *out = malloc(new_sz + 1);
-    if (!out) { free(buf); return 0; }
-    memcpy(out, buf, prefix_len);
-    snprintf(out + prefix_len, new_line_len + 1, "%s=%s\n", key, val);
-    memcpy(out + prefix_len + new_line_len, found_end, suffix_len);
-    out[new_sz] = '\0';
-    free(buf);
-
-    f = fopen(path, "w");
-    if (!f) { free(out); return 0; }
-    fwrite(out, 1, new_sz, f);
-    fclose(f);
-    free(out);
-    return 1;
+    return 0;
 }
-
-#define DAT_24G "/etc/wireless/mt7628/mt7628.dat"
-#define DAT_5G  "/etc/wireless/mt7663e/mt7663e.2.dat"
 
 static int handle_wifi(int client_fd, const http_request_t *req)
 {
@@ -1196,34 +1163,46 @@ static int handle_wifi(int client_fd, const http_request_t *req)
 
     if (strcmp(req->method, "GET") == 0) {
         char ssid24[128] = {0}, ssid5g[128] = {0};
-        char hide24[32] = "0", hide5g[32] = "0";
-        dat_read(DAT_24G, "SSID1",    ssid24, sizeof(ssid24));
-        dat_read(DAT_5G,  "SSID1",    ssid5g, sizeof(ssid5g));
-        dat_read(DAT_24G, "HideSSID", hide24, sizeof(hide24));
-        dat_read(DAT_5G,  "HideSSID", hide5g, sizeof(hide5g));
-
-        /* HideSSID may be "0;0;0;..." — take first value */
-        char h24 = hide24[0], h5 = hide5g[0];
+        char enc24[64]="psk2", key24[128]="";
+        char enc5g[64]="psk2", key5g[128]="";
+        char hide24[4]="0", hide5g[4]="0";
 
         struct uci_context *ctx = uci_alloc_context();
-        char enc24[64]="psk2", key24[128]="", enc5g[64]="psk2", key5g[128]="";
         if (ctx) {
-            char tmp[128];
+            struct uci_package *pkg = NULL;
+            uci_load(ctx, "wireless", &pkg);
+
+            /* Find primary wifi-iface sections by ifname */
+            char sec24[64]={0}, sec5g[64]={0};
+            uci_wifi_find_section(ctx, pkg, "ra0",  sec24, sizeof(sec24));
+            uci_wifi_find_section(ctx, pkg, "rai0", sec5g, sizeof(sec5g));
+
+            char tmp[192];
             struct uci_ptr ptr;
-            strncpy(tmp, "wireless.mbox.encryption", sizeof(tmp)-1);
-            if (uci_lookup_ptr(ctx, &ptr, tmp, true) == UCI_OK && ptr.o)
-                snprintf(enc24, sizeof(enc24), "%s", ptr.o->v.string);
-            strncpy(tmp, "wireless.mbox.key", sizeof(tmp)-1);
-            if (uci_lookup_ptr(ctx, &ptr, tmp, true) == UCI_OK && ptr.o)
-                snprintf(key24, sizeof(key24), "%s", ptr.o->v.string);
-            strncpy(tmp, "wireless.mbox5g.encryption", sizeof(tmp)-1);
-            if (uci_lookup_ptr(ctx, &ptr, tmp, true) == UCI_OK && ptr.o)
-                snprintf(enc5g, sizeof(enc5g), "%s", ptr.o->v.string);
-            strncpy(tmp, "wireless.mbox5g.key", sizeof(tmp)-1);
-            if (uci_lookup_ptr(ctx, &ptr, tmp, true) == UCI_OK && ptr.o)
-                snprintf(key5g, sizeof(key5g), "%s", ptr.o->v.string);
+
+            /* Read SSID from primary sections (ra0 / rai0) */
+#define UCI_GET(section, option, dst, dst_sz) do { \
+    snprintf(tmp, sizeof(tmp), "wireless.%s.%s", (section), (option)); \
+    if (uci_lookup_ptr(ctx, &ptr, tmp, true) == UCI_OK && ptr.o) \
+        snprintf((dst), (dst_sz), "%s", ptr.o->v.string); \
+} while(0)
+            if (sec24[0]) UCI_GET(sec24, "ssid", ssid24, sizeof(ssid24));
+            if (sec5g[0]) UCI_GET(sec5g, "ssid", ssid5g, sizeof(ssid5g));
+
+            /* Read encryption/key/hidden from mbox sections */
+            UCI_GET("mbox",   "encryption", enc24,  sizeof(enc24));
+            UCI_GET("mbox",   "key",        key24,  sizeof(key24));
+            UCI_GET("mbox",   "hidden",     hide24, sizeof(hide24));
+            UCI_GET("mbox5g", "encryption", enc5g,  sizeof(enc5g));
+            UCI_GET("mbox5g", "key",        key5g,  sizeof(key5g));
+            UCI_GET("mbox5g", "hidden",     hide5g, sizeof(hide5g));
+#undef UCI_GET
             uci_free_context(ctx);
         }
+
+        /* Fallback: read SSID from DAT if UCI section has no ssid yet */
+        if (!ssid24[0]) dat_read(DAT_24G, "SSID1", ssid24, sizeof(ssid24));
+        if (!ssid5g[0]) dat_read(DAT_5G,  "SSID1", ssid5g, sizeof(ssid5g));
 
         char esc_ssid24[256], esc_ssid5g[256];
         char esc_key24[256], esc_key5g[256];
@@ -1240,8 +1219,8 @@ static int handle_wifi(int client_fd, const http_request_t *req)
             "\"radio1\":{\"ssid\":\"%s\",\"encryption\":\"%s\","
                         "\"key\":\"%s\",\"hidden\":%s}"
             "}",
-            esc_ssid24, enc24, esc_key24, (h24 == '1') ? "true" : "false",
-            esc_ssid5g, enc5g, esc_key5g, (h5  == '1') ? "true" : "false");
+            esc_ssid24, enc24, esc_key24, (hide24[0]=='1') ? "true" : "false",
+            esc_ssid5g, enc5g, esc_key5g, (hide5g[0]=='1') ? "true" : "false");
 
         http_send_response(client_fd, 200, "OK",
                            "application/json", out, len);
@@ -1261,9 +1240,6 @@ static int handle_wifi(int client_fd, const http_request_t *req)
         char enc24[64]="", key24[128]="", hide24[4]="0";
         char enc5g[64]="", key5g[128]="", hide5g[4]="0";
 
-        /* Parse nested JSON: radio0.ssid, radio0.encryption, etc.
-         * Simple approach: extract flat keys using json_get_str on substrings */
-        /* Find radio0 object */
         const char *r0 = strstr(body, "\"radio0\"");
         const char *r1 = strstr(body, "\"radio1\"");
         if (r0) {
@@ -1286,34 +1262,38 @@ static int handle_wifi(int client_fd, const http_request_t *req)
         }
         free(body);
 
-        /* Write SSID to DAT files */
-        if (ssid24[0]) dat_write(DAT_24G, "SSID1",    ssid24);
-        if (hide24[0]) dat_write(DAT_24G, "HideSSID", hide24);
-        if (ssid5g[0]) dat_write(DAT_5G,  "SSID1",    ssid5g);
-        if (hide5g[0]) dat_write(DAT_5G,  "HideSSID", hide5g);
-
-        /* Write encryption/key/hidden to UCI */
         struct uci_context *ctx = uci_alloc_context();
         if (ctx) {
+            struct uci_package *pkg = NULL;
+            uci_load(ctx, "wireless", &pkg);
+
+            /* Find primary wifi-iface sections by ifname */
+            char sec24[64]={0}, sec5g[64]={0};
+            uci_wifi_find_section(ctx, pkg, "ra0",  sec24, sizeof(sec24));
+            uci_wifi_find_section(ctx, pkg, "rai0", sec5g, sizeof(sec5g));
+
             char tmp[256];
             struct uci_ptr ptr;
-#define UCI_SET_STR(path, val) do { \
+#define UCI_SET(section, option, val) do { \
     if ((val)[0]) { \
-        snprintf(tmp, sizeof(tmp), "%s=%s", (path), (val)); \
+        snprintf(tmp, sizeof(tmp), "wireless.%s.%s=%s", \
+                 (section), (option), (val)); \
         if (uci_lookup_ptr(ctx, &ptr, tmp, true) == UCI_OK) \
             uci_set(ctx, &ptr); \
     } \
 } while(0)
-            UCI_SET_STR("wireless.mbox.encryption",  enc24);
-            UCI_SET_STR("wireless.mbox.key",         key24);
-            UCI_SET_STR("wireless.mbox.hidden",      hide24);
-            UCI_SET_STR("wireless.mbox5g.encryption",enc5g);
-            UCI_SET_STR("wireless.mbox5g.key",       key5g);
-            UCI_SET_STR("wireless.mbox5g.hidden",    hide5g);
-#undef UCI_SET_STR
-            struct uci_package *pkg = NULL;
-            strncpy(tmp, "wireless", sizeof(tmp)-1);
-            uci_load(ctx, "wireless", &pkg);
+            /* Write SSID+hidden to primary sections (uci2dat uses these) */
+            if (sec24[0]) { UCI_SET(sec24, "ssid",   ssid24); UCI_SET(sec24, "hidden", hide24); }
+            if (sec5g[0]) { UCI_SET(sec5g, "ssid",   ssid5g); UCI_SET(sec5g, "hidden", hide5g); }
+
+            /* Write encryption/key/hidden to mbox sections */
+            UCI_SET("mbox",   "encryption", enc24);
+            UCI_SET("mbox",   "key",        key24);
+            UCI_SET("mbox",   "hidden",     hide24);
+            UCI_SET("mbox5g", "encryption", enc5g);
+            UCI_SET("mbox5g", "key",        key5g);
+            UCI_SET("mbox5g", "hidden",     hide5g);
+#undef UCI_SET
             if (pkg) uci_commit(ctx, &pkg, false);
             uci_free_context(ctx);
         }
