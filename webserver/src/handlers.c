@@ -4,6 +4,7 @@
 #include "uci.h"
 
 #include <ctype.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
@@ -11,6 +12,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <sys/mman.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -22,11 +24,38 @@
 static char g_fcgi_host[64] = "127.0.0.1";
 static int  g_fcgi_port     = 9002;
 
+/* ------------------------------------------------------------------ */
+/* Firmware update shared state (mmap'd — visible to all fork'd children) */
+/* ------------------------------------------------------------------ */
+typedef enum {
+    FS_IDLE = 0,
+    FS_CHECKING,
+    FS_CHECKED,
+    FS_DOWNLOADING,
+    FS_ERROR,
+    FS_APPLYING,
+} fw_state_t;
+
+typedef struct {
+    fw_state_t state;
+    pid_t      task_pid;
+    int        keep;
+    char       new_version[64];
+    char       dl_url[512];
+} fw_shared_t;
+
+static fw_shared_t *g_fw = NULL;
+
 void handlers_init(const char *fcgi_host, int fcgi_port)
 {
     strncpy(g_fcgi_host, fcgi_host, sizeof(g_fcgi_host) - 1);
     g_fcgi_host[sizeof(g_fcgi_host) - 1] = '\0';
     g_fcgi_port = fcgi_port;
+
+    g_fw = mmap(NULL, sizeof(fw_shared_t), PROT_READ | PROT_WRITE,
+                MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    if (g_fw == MAP_FAILED) g_fw = NULL;
+    else memset(g_fw, 0, sizeof(fw_shared_t));
 }
 
 /* ------------------------------------------------------------------ */
@@ -1395,26 +1424,9 @@ static int handle_system_ports(int client_fd, const http_request_t *req)
 /* Image validated with: sysupgrade -T <file>                         */
 /* ------------------------------------------------------------------ */
 
-#define FOTA_DIR        "/tmp/fota"
-#define FOTA_BIN        FOTA_DIR "/firmware.bin"
-#define FOTA_VERSION    FOTA_DIR "/version"
-#define FOTA_URL_FILE   FOTA_DIR "/download_url"
-#define FOTA_APPLYING   FOTA_DIR "/applying"
+#define FOTA_BIN        "/tmp/firmware_ota.bin"
 #define FW_VERSION_FILE "/etc/defconfig/cf-plery/version"
 #define FW_UPLOAD_TMP   "/tmp/firmware_upload.bin"
-
-typedef enum {
-    FS_IDLE = 0,
-    FS_CHECKING,
-    FS_CHECKED,
-    FS_DOWNLOADING,
-    FS_ERROR,
-    FS_APPLYING,
-} fw_state_t;
-
-static volatile pid_t      g_fota_pid   = -1;
-static volatile fw_state_t g_fota_state = FS_IDLE;
-static volatile int        g_fota_keep  = 1;
 
 /* Read first line of a file into buf (strips \r\n). Returns 1 on success. */
 static int fw_read_str(const char *path, char *buf, size_t sz)
@@ -1431,36 +1443,22 @@ static int fw_read_str(const char *path, char *buf, size_t sz)
     return ok;
 }
 
-/* Determine state purely from files (no process tracking). */
-static fw_state_t fw_state_from_files(void)
-{
-    struct stat st;
-
-    if (stat(FOTA_APPLYING, &st) == 0) return FS_APPLYING;
-
-    int has_url = (stat(FOTA_URL_FILE, &st) == 0 && st.st_size > 0);
-
-    if (has_url) return FS_CHECKED;
-
-    return FS_IDLE;
-}
-
-/* Get current state string; reaps child if exited. */
+/* Get current state string; reaps download task if exited. */
 static const char *fw_get_state_str(void)
 {
-    if (g_fota_pid > 0) {
+    if (!g_fw) return "idle";
+
+    if (g_fw->task_pid > 0) {
         int wst;
-        pid_t r = waitpid((pid_t)g_fota_pid, &wst, WNOHANG);
-        if (r > 0) {
-            g_fota_pid   = -1;
-            g_fota_state = fw_state_from_files();
+        pid_t r = waitpid(g_fw->task_pid, &wst, WNOHANG);
+        if (r > 0 || (r < 0 && errno == ECHILD)) {
+            /* Task exited — if still downloading (no transition to applying), it failed */
+            if (g_fw->state == FS_DOWNLOADING) g_fw->state = FS_ERROR;
+            g_fw->task_pid = 0;
         }
-        /* else still running: keep current state */
-    } else if (g_fota_state != FS_APPLYING) {
-        g_fota_state = fw_state_from_files();
     }
 
-    switch (g_fota_state) {
+    switch (g_fw->state) {
         case FS_IDLE:        return "idle";
         case FS_CHECKING:    return "checking";
         case FS_CHECKED:     return "checked";
@@ -1635,37 +1633,34 @@ static long long fw_json_num(const char *json, const char *key)
     return atoll(p);
 }
 
-/* ---- Background task functions (run in forked child) ---- */
+/* ---- FOTA task functions ---- */
 
-/* Child: check GitHub API for new release, cache result in /tmp/fota/ */
-static void fw_task_check(void)
+/* Synchronous: fetch latest release info from GitHub into g_fw. Returns 0 on success. */
+static int fw_do_check(void)
 {
+    if (!g_fw) return 1;
     char *body = fw_https_get_body(GITHUB_API_HOST,
         "/repos/" GITHUB_REPO "/releases/latest");
-    if (!body) _exit(1);
+    if (!body) return 1;
 
     char tag[64] = {0}, dl_url[512] = {0};
     fw_json_str(body, "tag_name", tag, sizeof(tag));
-    /* browser_download_url is inside assets[0] */
     fw_json_str(body, "browser_download_url", dl_url, sizeof(dl_url));
     free(body);
 
-    if (!tag[0] || !dl_url[0]) _exit(1);
+    if (!tag[0] || !dl_url[0]) return 1;
 
-    /* Write cached info — always allow download, comparison is UI-side only */
-    mkdir(FOTA_DIR, 0755);
-    FILE *f;
-    f = fopen(FOTA_VERSION, "w"); if (f) { fputs(tag, f); fputc('\n', f); fclose(f); }
-    f = fopen(FOTA_URL_FILE, "w"); if (f) { fputs(dl_url, f); fputc('\n', f); fclose(f); }
-    _exit(0);
+    strncpy(g_fw->new_version, tag,    sizeof(g_fw->new_version) - 1);
+    strncpy(g_fw->dl_url,      dl_url, sizeof(g_fw->dl_url)      - 1);
+    return 0;
 }
 
-/* Download firmware from cached URL to FOTA_BIN. Returns 0 on success. */
+/* Download firmware from g_fw->dl_url to FOTA_BIN. Returns 0 on success. */
 static int fw_do_download(void)
 {
+    if (!g_fw || !g_fw->dl_url[0]) return 1;
     char dl_url[512] = {0};
-    fw_read_str(FOTA_URL_FILE, dl_url, sizeof(dl_url));
-    if (!dl_url[0]) return 1;
+    strncpy(dl_url, g_fw->dl_url, sizeof(dl_url) - 1);
 
     char final_url[512] = {0};
     if (fw_resolve_url(dl_url, final_url) < 0)
@@ -1718,59 +1713,37 @@ static int fw_do_download(void)
     return 0;
 }
 
-/* Child: download only (used when firmware was already checked separately) */
-static void fw_task_download(void) { _exit(fw_do_download()); }
-
 /* Child: download + validate + apply in one step */
 static void fw_task_update(void)
 {
-    if (fw_do_download() != 0) _exit(1);
+    if (fw_do_download() != 0) {
+        if (g_fw) g_fw->state = FS_ERROR;
+        _exit(1);
+    }
 
     if (system("fwtool -q -i /dev/null " FOTA_BIN " 2>/dev/null") != 0 ||
         system("sysupgrade -T " FOTA_BIN " >/dev/null 2>&1") != 0) {
         unlink(FOTA_BIN);
+        if (g_fw) g_fw->state = FS_ERROR;
         _exit(1);
     }
 
     /* Mark applying so status reflects correctly */
-    FILE *f = fopen(FOTA_APPLYING, "w"); if (f) fclose(f);
+    if (g_fw) g_fw->state = FS_APPLYING;
     sleep(1);
 
     int dn = open("/dev/null", O_WRONLY);
     if (dn >= 0) { dup2(dn, STDOUT_FILENO); dup2(dn, STDERR_FILENO); close(dn); }
 
-    if (g_fota_keep)
+    int keep = g_fw ? g_fw->keep : 1;
+    if (keep)
         execl("/sbin/sysupgrade", "sysupgrade", FOTA_BIN, (char *)NULL);
     else
         execl("/sbin/sysupgrade", "sysupgrade", "-n", FOTA_BIN, (char *)NULL);
     _exit(1);
 }
 
-/* Kill active background FOTA task. */
-static void fw_kill_fota(void)
-{
-    if (g_fota_pid > 0) {
-        kill((pid_t)g_fota_pid, SIGTERM);
-        usleep(200000);
-        waitpid((pid_t)g_fota_pid, NULL, WNOHANG);
-        g_fota_pid = -1;
-    }
-}
-
-/* Fork and run a task function in child process. */
-static pid_t fw_fork_task(void (*task)(void))
-{
-    pid_t pid = fork();
-    if (pid == 0) {
-        int dn = open("/dev/null", O_WRONLY);
-        if (dn >= 0) { dup2(dn, STDOUT_FILENO); dup2(dn, STDERR_FILENO); close(dn); }
-        task();
-        _exit(0);
-    }
-    return pid;
-}
-
-/* Read exactly n bytes from fd. Returns bytes read (may be < n on EOF/error). */
+/* Read exactly n bytes from fd.Returns bytes read (may be < n on EOF/error). */
 static ssize_t fw_read_exact(int fd, void *buf, size_t n)
 {
     size_t total = 0;
@@ -1846,10 +1819,11 @@ static int handle_firmware(int client_fd, const http_request_t *req)
     /* ── GET /api/firmware/status ─────────────────────────────── */
     if (strcmp(action, "status") == 0) {
         const char *state = fw_get_state_str();
-        char cur_ver[64] = {0}, new_ver[64] = {0};
+        char cur_ver[64] = {0};
         fw_read_str(FW_VERSION_FILE, cur_ver, sizeof(cur_ver));
-        fw_read_str(FOTA_VERSION,    new_ver, sizeof(new_ver));
-        int pct = (g_fota_state == FS_DOWNLOADING) ? fw_download_pct() : 0;
+        const char *new_ver = (g_fw && g_fw->new_version[0]) ? g_fw->new_version : "";
+        fw_state_t cur_state = g_fw ? g_fw->state : FS_IDLE;
+        int pct = (cur_state == FS_DOWNLOADING) ? fw_download_pct() : 0;
 
         char body[256];
         int len = snprintf(body, sizeof(body),
@@ -1864,40 +1838,45 @@ static int handle_firmware(int client_fd, const http_request_t *req)
 
     /* ── POST /api/firmware/check ─────────────────────────────── */
     if (strcmp(action, "check") == 0) {
-        if (g_fota_state == FS_DOWNLOADING || g_fota_state == FS_APPLYING) {
+        if (g_fw && (g_fw->state == FS_DOWNLOADING || g_fw->state == FS_APPLYING)) {
             http_send_error(client_fd, 409, "Update in progress");
             return 1;
         }
-        fw_kill_fota();
+        /* Synchronous check — blocks ~1-2s in this connection handler fork */
         unlink(FOTA_BIN);
-        unlink(FOTA_VERSION); unlink(FOTA_URL_FILE); unlink(FOTA_APPLYING);
-        g_fota_pid   = fw_fork_task(fw_task_check);
-        g_fota_state = FS_CHECKING;
-        static const char r[] = "{\"errCode\":0}";
+        if (g_fw) { g_fw->state = FS_CHECKING; g_fw->new_version[0] = '\0'; g_fw->dl_url[0] = '\0'; }
+        int err = fw_do_check();
+        if (g_fw) g_fw->state = err ? FS_ERROR : FS_CHECKED;
+
+        const char *new_ver = (g_fw && g_fw->new_version[0]) ? g_fw->new_version : "";
+        const char *st_str  = fw_get_state_str();
+        char body[256];
+        int len = snprintf(body, sizeof(body),
+            "{\"errCode\":0,\"state\":\"%s\",\"new_version\":\"%s\",\"download_pct\":0}",
+            st_str, new_ver);
         http_send_response(client_fd, 200, "OK",
-            "application/json; charset=utf-8", r, sizeof(r) - 1);
+            "application/json; charset=utf-8", body, (size_t)len);
         return 1;
     }
 
     /* ── POST /api/firmware/update?keep=1|0 ───────────────────── */
     if (strcmp(action, "update") == 0) {
-        if (g_fota_state == FS_DOWNLOADING || g_fota_state == FS_APPLYING) {
+        if (g_fw && (g_fw->state == FS_DOWNLOADING || g_fw->state == FS_APPLYING)) {
             http_send_error(client_fd, 409, "Update in progress");
             return 1;
         }
-        struct stat st;
-        if (stat(FOTA_URL_FILE, &st) != 0) {
+        if (!g_fw || !g_fw->dl_url[0]) {
             http_send_error(client_fd, 400, "No update available, check first");
             return 1;
         }
         int keep = 1;
         const char *qk = strstr(req->query, "keep=");
         if (qk && qk[5] == '0') keep = 0;
-        g_fota_keep = keep;
-        fw_kill_fota();
-        unlink(FOTA_BIN); unlink(FOTA_APPLYING);
-        g_fota_pid   = fw_fork_task(fw_task_update);
-        g_fota_state = FS_DOWNLOADING;
+        if (g_fw) { g_fw->keep = keep; g_fw->state = FS_DOWNLOADING; g_fw->task_pid = 0; }
+        unlink(FOTA_BIN);
+        pid_t pid = fork();
+        if (pid == 0) { fw_task_update(); _exit(1); }
+        if (g_fw && pid > 0) g_fw->task_pid = pid;
         static const char r[] = "{\"errCode\":0}";
         http_send_response(client_fd, 200, "OK",
             "application/json; charset=utf-8", r, sizeof(r) - 1);
@@ -1906,13 +1885,18 @@ static int handle_firmware(int client_fd, const http_request_t *req)
 
     /* ── POST /api/firmware/cancel ────────────────────────────── */
     if (strcmp(action, "cancel") == 0) {
-        if (g_fota_state != FS_DOWNLOADING) {
+        if (!g_fw || g_fw->state != FS_DOWNLOADING) {
             http_send_error(client_fd, 409, "Nothing to cancel");
             return 1;
         }
-        fw_kill_fota();
-        unlink(FOTA_BIN); unlink(FOTA_APPLYING);
-        g_fota_state = FS_IDLE;
+        if (g_fw->task_pid > 0) {
+            kill(g_fw->task_pid, SIGTERM);
+            usleep(200000);
+            waitpid(g_fw->task_pid, NULL, WNOHANG);
+            g_fw->task_pid = 0;
+        }
+        unlink(FOTA_BIN);
+        g_fw->state = FS_IDLE;
         static const char r[] = "{\"errCode\":0}";
         http_send_response(client_fd, 200, "OK",
             "application/json; charset=utf-8", r, sizeof(r) - 1);
@@ -1936,7 +1920,7 @@ static int handle_firmware(int client_fd, const http_request_t *req)
         const char *qk = strstr(req->query, "keep=");
         if (qk && qk[5] == '0') keep = 0;
 
-        g_fota_state = FS_APPLYING;
+        if (g_fw) g_fw->state = FS_APPLYING;
         static const char r[] = "{\"errCode\":0}";
         http_send_response(client_fd, 200, "OK",
             "application/json; charset=utf-8", r, sizeof(r) - 1);
@@ -2001,7 +1985,7 @@ static int handle_firmware(int client_fd, const http_request_t *req)
             return 1;
         }
 
-        g_fota_state = FS_APPLYING;
+        if (g_fw) g_fw->state = FS_APPLYING;
         static const char r[] = "{\"errCode\":0}";
         http_send_response(client_fd, 200, "OK",
             "application/json; charset=utf-8", r, sizeof(r) - 1);

@@ -161,7 +161,7 @@ const status = ref<FwStatus>({
 const currentVersion = computed(() => store.version?.version ?? '')
 const state = computed(() => status.value.state)
 
-const DATE_RE = /(\d{8}-\d{4})$/
+const DATE_RE = /(\d{8}-\d{4,6})$/
 function extractDate(v: string) { return v.match(DATE_RE)?.[1] ?? '' }
 const isNewer = computed(() => {
   const cur = extractDate(currentVersion.value)
