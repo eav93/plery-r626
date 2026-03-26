@@ -108,13 +108,7 @@ jobs:
       # ---- Firmware version ----
       - name: Set firmware version
         run: |
-          MAJOR=2
-          BUILD_NUM=${GITHUB_RUN_NUMBER}
-          C1=$(( BUILD_NUM / (33 * 33) ))
-          C2=$(( (BUILD_NUM / 33) % 33 ))
-          C3=$(( BUILD_NUM % 33 ))
-          [ "$C1" -gt 32 ] && C1=32
-          VERSION="CF-PLERY-R626-eav93-V${MAJOR}.${C1}.${C2}.${C3}"
+          VERSION=$(date -u '+%Y%m%d-%H%M')
           echo "FIRMWARE_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "Version: $VERSION"
 
