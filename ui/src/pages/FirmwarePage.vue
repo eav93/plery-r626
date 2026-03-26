@@ -52,7 +52,7 @@
 
     <!-- Online buttons -->
     <div class="form-actions">
-      <button v-if="state === 'idle' || state === 'error' || state === 'ready'"
+      <button v-if="state === 'idle' || state === 'checked' || state === 'error'"
               class="btn btn-primary" :disabled="busy" @click="checkUpdate">
         <svg v-if="busy" class="animate-spin inline-block mr-1 w-4 h-4" viewBox="0 0 24 24" fill="none">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -67,7 +67,7 @@
         </svg>
         {{ t('CheckVersion') }}
       </button>
-      <button v-if="state === 'ready'" class="btn btn-primary" @click="applyOnline">
+      <button v-if="state === 'checked'" class="btn btn-primary" @click="startUpdate">
         {{ t('update') }}
       </button>
       <button v-if="state === 'downloading'" class="btn btn-ghost" @click="cancelDownload">
@@ -225,11 +225,11 @@ async function cancelDownload() {
   await fetchStatus()
 }
 
-async function applyOnline() {
+async function startUpdate() {
   const keep = onlineKeep.value ? 1 : 0
-  applying.value = true
-  try { await post(`/api/firmware/apply?keep=${keep}`) } catch { /* ignore */ }
-  startCountdown(90)
+  try { await post(`/api/firmware/update?keep=${keep}`) } catch { /* ignore */ }
+  await fetchStatus()
+  schedulePoll()
 }
 
 function onFileChange(e: Event) {
@@ -276,8 +276,8 @@ async function uploadFirmware() {
 const onlineStatusMsg = computed(() => {
   switch (state.value) {
     case 'checking':    return t('CheckVersion')
+    case 'checked':     return ''
     case 'downloading': return t('CheckNewVersion')
-    case 'ready':       return t('NewVersionOK')
     case 'error':       return t('NetworkError')
     default:            return ''
   }
@@ -286,7 +286,8 @@ const onlineStatusMsg = computed(() => {
 onMounted(async () => {
   if (!store.version) store.fetchVersion()
   await fetchStatus()
-  schedulePoll()
+  if (state.value === 'idle') checkUpdate()
+  else schedulePoll()
 })
 onUnmounted(() => { if (pollTimer) clearTimeout(pollTimer) })
 </script>

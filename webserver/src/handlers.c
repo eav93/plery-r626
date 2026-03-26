@@ -1400,13 +1400,15 @@ static int handle_system_ports(int client_fd, const http_request_t *req)
 #define FOTA_VERSION    FOTA_DIR "/version"
 #define FOTA_TOTAL      FOTA_DIR "/total_length"
 #define FOTA_MD5        FOTA_DIR "/md5sum"
+#define FOTA_URL_FILE   FOTA_DIR "/download_url"
+#define FOTA_APPLYING   FOTA_DIR "/applying"
 #define FW_VERSION_FILE "/etc/defconfig/cf-plery/version"
 #define FW_UPLOAD_TMP   "/tmp/firmware_upload.bin"
 
 typedef enum {
     FS_IDLE = 0,
     FS_CHECKING,
-    FS_UP_TO_DATE,
+    FS_CHECKED,
     FS_DOWNLOADING,
     FS_READY,
     FS_ERROR,
@@ -1415,6 +1417,7 @@ typedef enum {
 
 static volatile pid_t      g_fota_pid   = -1;
 static volatile fw_state_t g_fota_state = FS_IDLE;
+static volatile int        g_fota_keep  = 1;
 
 /* Read first line of a file into buf (strips \r\n). Returns 1 on success. */
 static int fw_read_str(const char *path, char *buf, size_t sz)
@@ -1434,16 +1437,20 @@ static int fw_read_str(const char *path, char *buf, size_t sz)
 /* Determine state purely from files (no process tracking). */
 static fw_state_t fw_state_from_files(void)
 {
+    struct stat st;
+
+    if (stat(FOTA_APPLYING, &st) == 0) return FS_APPLYING;
+
     char total[32] = {0};
     fw_read_str(FOTA_TOTAL, total, sizeof(total));
-
     if (strcmp(total, "ERROR") == 0) return FS_ERROR;
 
-    struct stat st;
-    int has_md5 = (stat(FOTA_MD5, &st) == 0 && st.st_size > 0);
     int has_bin = (stat(FOTA_BIN, &st) == 0 && st.st_size > 1000000);
+    int has_md5 = (stat(FOTA_MD5, &st) == 0 && st.st_size > 0);
+    int has_url = (stat(FOTA_URL_FILE, &st) == 0 && st.st_size > 0);
 
     if (has_bin && has_md5) return FS_READY;
+    if (has_url && !has_bin) return FS_CHECKED;
 
     return FS_IDLE;
 }
@@ -1466,7 +1473,7 @@ static const char *fw_get_state_str(void)
     switch (g_fota_state) {
         case FS_IDLE:        return "idle";
         case FS_CHECKING:    return "checking";
-        case FS_UP_TO_DATE:  return "up_to_date";
+        case FS_CHECKED:     return "checked";
         case FS_DOWNLOADING: return "downloading";
         case FS_READY:       return "ready";
         case FS_ERROR:       return "error";
@@ -1492,7 +1499,6 @@ static int fw_download_pct(void)
 /* ---- HTTPS via openssl s_client ----------------------------------------- */
 #define GITHUB_API_HOST "api.github.com"
 #define GITHUB_REPO     "eav93/plery-r626"
-#define FOTA_URL_FILE   FOTA_DIR "/download_url"
 
 /* Parse "https://host/path" → host + path. Returns 0 on success. */
 static int fw_parse_url(const char *url, char *host, size_t hlen,
@@ -1684,50 +1690,42 @@ static void fw_task_check(void)
     _exit(0);
 }
 
-/* Child: download firmware from cached URL to FOTA_BIN, tracking progress */
-static void fw_task_download(void)
+/* Download firmware from cached URL to FOTA_BIN. Returns 0 on success. */
+static int fw_do_download(void)
 {
     char dl_url[512] = {0};
     fw_read_str(FOTA_URL_FILE, dl_url, sizeof(dl_url));
-    if (!dl_url[0]) { _exit(1); }
+    if (!dl_url[0]) return 1;
 
-    /* Resolve redirects to get final CDN URL */
     char final_url[512] = {0};
     if (fw_resolve_url(dl_url, final_url) < 0)
         strncpy(final_url, dl_url, sizeof(final_url) - 1);
 
     char host[128] = {0}, path[256] = {0};
     if (fw_parse_url(final_url, host, sizeof(host), path, sizeof(path)) < 0)
-        _exit(1);
+        return 1;
 
     FILE *stream = fw_https_open(host, path);
-    if (!stream) _exit(1);
+    if (!stream) return 1;
 
-    /* Skip HTTP response headers (read until \r\n\r\n) */
-    int state = 0;
-    long long content_length = -1;
+    int hstate = 0;
     char hdr_line[512] = {0};
     int hpos = 0;
-
     int c;
     while ((c = fgetc(stream)) != EOF) {
-        /* Track state for \r\n\r\n */
-        if      (state == 0 && c == '\r') state = 1;
-        else if (state == 1 && c == '\n') state = 2;
-        else if (state == 2 && c == '\r') state = 3;
-        else if (state == 3 && c == '\n') break; /* end of headers */
-        else state = (c == '\r') ? 1 : 0;
+        if      (hstate == 0 && c == '\r') hstate = 1;
+        else if (hstate == 1 && c == '\n') hstate = 2;
+        else if (hstate == 2 && c == '\r') hstate = 3;
+        else if (hstate == 3 && c == '\n') break;
+        else hstate = (c == '\r') ? 1 : 0;
 
-        /* Accumulate line to find Content-Length */
         if (c == '\n') {
             hdr_line[hpos] = '\0';
             if (strncasecmp(hdr_line, "content-length:", 15) == 0) {
-                content_length = atoll(hdr_line + 15);
-                /* Update total_length with actual value */
-                char sz_str[32];
-                snprintf(sz_str, sizeof(sz_str), "%lld\n", content_length);
+                long long cl = atoll(hdr_line + 15);
+                char sz[32]; snprintf(sz, sizeof(sz), "%lld\n", cl);
                 FILE *tf = fopen(FOTA_TOTAL, "w");
-                if (tf) { fputs(sz_str, tf); fclose(tf); }
+                if (tf) { fputs(sz, tf); fclose(tf); }
             }
             hpos = 0;
         } else if (c != '\r' && hpos < (int)sizeof(hdr_line) - 1) {
@@ -1735,9 +1733,8 @@ static void fw_task_download(void)
         }
     }
 
-    /* Stream body to firmware file */
     FILE *out = fopen(FOTA_BIN, "wb");
-    if (!out) { pclose(stream); _exit(1); }
+    if (!out) { pclose(stream); return 1; }
 
     char buf[8192];
     long long written = 0;
@@ -1752,12 +1749,40 @@ static void fw_task_download(void)
     if (written < 1000000) {
         unlink(FOTA_BIN);
         FILE *f = fopen(FOTA_TOTAL, "w"); if (f) { fputs("ERROR\n", f); fclose(f); }
+        return 1;
+    }
+
+    system("md5sum " FOTA_BIN " | awk '{print $1}' > " FOTA_MD5);
+    return 0;
+}
+
+/* Child: download only (used when firmware was already checked separately) */
+static void fw_task_download(void) { _exit(fw_do_download()); }
+
+/* Child: download + validate + apply in one step */
+static void fw_task_update(void)
+{
+    if (fw_do_download() != 0) _exit(1);
+
+    if (system("fwtool -q -i /dev/null " FOTA_BIN " 2>/dev/null") != 0 ||
+        system("sysupgrade -T " FOTA_BIN " >/dev/null 2>&1") != 0) {
+        unlink(FOTA_BIN);
+        FILE *f = fopen(FOTA_TOTAL, "w"); if (f) { fputs("ERROR\n", f); fclose(f); }
         _exit(1);
     }
 
-    /* Write md5sum */
-    system("md5sum " FOTA_BIN " | awk '{print $1}' > " FOTA_MD5);
-    _exit(0);
+    /* Mark applying so status reflects correctly */
+    FILE *f = fopen(FOTA_APPLYING, "w"); if (f) fclose(f);
+    sleep(1);
+
+    int dn = open("/dev/null", O_WRONLY);
+    if (dn >= 0) { dup2(dn, STDOUT_FILENO); dup2(dn, STDERR_FILENO); close(dn); }
+
+    if (g_fota_keep)
+        execl("/sbin/sysupgrade", "sysupgrade", FOTA_BIN, (char *)NULL);
+    else
+        execl("/sbin/sysupgrade", "sysupgrade", "-n", FOTA_BIN, (char *)NULL);
+    _exit(1);
 }
 
 /* Kill active background FOTA task. */
@@ -1880,6 +1905,7 @@ static int handle_firmware(int client_fd, const http_request_t *req)
     if (strcmp(action, "check") == 0) {
         fw_kill_fota();
         unlink(FOTA_TOTAL); unlink(FOTA_MD5); unlink(FOTA_BIN);
+        unlink(FOTA_VERSION); unlink(FOTA_URL_FILE); unlink(FOTA_APPLYING);
         g_fota_pid   = fw_fork_task(fw_task_check);
         g_fota_state = FS_CHECKING;
         static const char r[] = "{\"errCode\":0}";
@@ -1888,11 +1914,20 @@ static int handle_firmware(int client_fd, const http_request_t *req)
         return 1;
     }
 
-    /* ── POST /api/firmware/download ──────────────────────────── */
-    if (strcmp(action, "download") == 0) {
+    /* ── POST /api/firmware/update?keep=1|0 ───────────────────── */
+    if (strcmp(action, "update") == 0) {
+        struct stat st;
+        if (stat(FOTA_URL_FILE, &st) != 0) {
+            http_send_error(client_fd, 400, "No update available, check first");
+            return 1;
+        }
+        int keep = 1;
+        const char *qk = strstr(req->query, "keep=");
+        if (qk && qk[5] == '0') keep = 0;
+        g_fota_keep = keep;
         fw_kill_fota();
-        unlink(FOTA_MD5); unlink(FOTA_BIN);
-        g_fota_pid   = fw_fork_task(fw_task_download);
+        unlink(FOTA_BIN); unlink(FOTA_MD5); unlink(FOTA_APPLYING);
+        g_fota_pid   = fw_fork_task(fw_task_update);
         g_fota_state = FS_DOWNLOADING;
         static const char r[] = "{\"errCode\":0}";
         http_send_response(client_fd, 200, "OK",
@@ -1904,6 +1939,7 @@ static int handle_firmware(int client_fd, const http_request_t *req)
     if (strcmp(action, "cancel") == 0) {
         fw_kill_fota();
         unlink(FOTA_BIN); unlink(FOTA_MD5); unlink(FOTA_TOTAL);
+        unlink(FOTA_APPLYING);
         g_fota_state = FS_IDLE;
         static const char r[] = "{\"errCode\":0}";
         http_send_response(client_fd, 200, "OK",
