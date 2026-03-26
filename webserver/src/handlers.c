@@ -1452,8 +1452,9 @@ static const char *fw_get_state_str(void)
         int wst;
         pid_t r = waitpid(g_fw->task_pid, &wst, WNOHANG);
         if (r > 0 || (r < 0 && errno == ECHILD)) {
-            /* Task exited — if still downloading (no transition to applying), it failed */
-            if (g_fw->state == FS_DOWNLOADING) g_fw->state = FS_ERROR;
+            /* Task exited — if not yet in applying state, it failed */
+            if (g_fw->state == FS_DOWNLOADING || g_fw->state == FS_APPLYING)
+                g_fw->state = FS_ERROR;
             g_fw->task_pid = 0;
         }
     }
@@ -1498,16 +1499,20 @@ static int fw_parse_url(const char *url, char *host, size_t hlen,
     return 0;
 }
 
-/* Open HTTPS stream: pipe HTTP GET request through openssl s_client.
+/* Open HTTPS GET stream via openssl s_client.
+ * timeout_sec=0 → no timeout wrapper (for large downloads).
  * Returns popen FILE* reading the raw HTTP response.  Caller must pclose(). */
-static FILE *fw_https_open(const char *host, const char *path)
+static FILE *fw_https_open(const char *host, const char *path, int timeout_sec)
 {
     char cmd[1024];
+    char tprefix[32] = {0};
+    if (timeout_sec > 0)
+        snprintf(tprefix, sizeof(tprefix), "timeout %d ", timeout_sec);
     snprintf(cmd, sizeof(cmd),
         "printf 'GET %s HTTP/1.0\\r\\nHost: %s\\r\\n"
         "User-Agent: wbsrv/1.0\\r\\nConnection: close\\r\\n\\r\\n' "
-        "| timeout 15 openssl s_client -quiet -connect '%s:443' 2>/dev/null",
-        path, host, host);
+        "| %sopenssl s_client -quiet -connect '%s:443' 2>/dev/null",
+        path, host, tprefix, host);
     return popen(cmd, "r");
 }
 
@@ -1515,7 +1520,7 @@ static FILE *fw_https_open(const char *host, const char *path)
  * Returns malloc'd NUL-terminated body string, or NULL.  Caller frees. */
 static char *fw_https_get_body(const char *host, const char *path)
 {
-    FILE *f = fw_https_open(host, path);
+    FILE *f = fw_https_open(host, path, 15);
     if (!f) return NULL;
 
     /* Read entire response (up to 64 KB) */
@@ -1548,7 +1553,7 @@ static int fw_https_head(const char *host, const char *path,
     snprintf(cmd, sizeof(cmd),
         "printf 'HEAD %s HTTP/1.0\\r\\nHost: %s\\r\\n"
         "User-Agent: wbsrv/1.0\\r\\nConnection: close\\r\\n\\r\\n' "
-        "| openssl s_client -quiet -connect '%s:443' 2>/dev/null",
+        "| timeout 15 openssl s_client -quiet -connect '%s:443' 2>/dev/null",
         path, host, host);
     FILE *f = popen(cmd, "r");
     if (!f) return 0;
@@ -1670,7 +1675,7 @@ static int fw_do_download(void)
     if (fw_parse_url(final_url, host, sizeof(host), path, sizeof(path)) < 0)
         return 1;
 
-    FILE *stream = fw_https_open(host, path);
+    FILE *stream = fw_https_open(host, path, 300);  /* 5 min for ~15 MB firmware */
     if (!stream) return 1;
 
     int hstate = 0;
@@ -1838,7 +1843,9 @@ static int handle_firmware(int client_fd, const http_request_t *req)
 
     /* ── POST /api/firmware/check ─────────────────────────────── */
     if (strcmp(action, "check") == 0) {
-        if (g_fw && (g_fw->state == FS_DOWNLOADING || g_fw->state == FS_APPLYING)) {
+        if (g_fw && (g_fw->state == FS_CHECKING ||
+                     g_fw->state == FS_DOWNLOADING ||
+                     g_fw->state == FS_APPLYING)) {
             http_send_error(client_fd, 409, "Update in progress");
             return 1;
         }
