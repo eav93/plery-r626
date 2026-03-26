@@ -5,12 +5,7 @@
     <div class="box">
       <div class="section-title">{{ t('onlineupg') }}</div>
 
-      <div class="form-row">
-        <label class="form-row__label">{{ t('current_ver') }}</label>
-        <div class="form-row__value font-mono text-sm">{{ status.current_version || '—' }}</div>
-      </div>
-
-      <div v-if="status.new_version && status.new_version !== status.current_version" class="form-row">
+      <div v-if="status.new_version && status.new_version !== currentVersion" class="form-row">
         <label class="form-row__label">{{ t('BestNewVersion') }}</label>
         <div class="form-row__value font-mono text-sm text-[#ed6c00] font-semibold">{{ status.new_version }}</div>
       </div>
@@ -129,21 +124,24 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useApi } from '@/composables/useApi'
 import { useNotify } from '@/composables/useNotify'
+import { useSystemStore } from '@/stores/system'
 
 const { t } = useI18n()
 const { post } = useApi()
 const { error } = useNotify()
+const store = useSystemStore()
 
 interface FwStatus {
   state: string
-  current_version: string
   new_version: string
   download_pct: number
 }
 
 const status = ref<FwStatus>({
-  state: 'idle', current_version: '', new_version: '', download_pct: 0,
+  state: 'idle', new_version: '', download_pct: 0,
 })
+
+const currentVersion = computed(() => store.version?.version ?? '')
 const state = computed(() => status.value.state)
 
 const onlineKeep = ref(true)
