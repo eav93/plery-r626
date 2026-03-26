@@ -108,7 +108,7 @@ jobs:
       # ---- Firmware version ----
       - name: Set firmware version
         run: |
-          VERSION=$(date -u '+%Y%m%d-%H%M')
+          VERSION="CF-PLERY-R626-eav93-$(date -u '+%Y%m%d-%H%M')"
           echo "FIRMWARE_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "Version: $VERSION"
 

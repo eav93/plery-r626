@@ -161,11 +161,12 @@ const status = ref<FwStatus>({
 const currentVersion = computed(() => store.version?.version ?? '')
 const state = computed(() => status.value.state)
 
-const DATE_VERSION_RE = /^\d{8}-\d{4}$/
+const DATE_RE = /(\d{8}-\d{4})$/
+function extractDate(v: string) { return v.match(DATE_RE)?.[1] ?? '' }
 const isNewer = computed(() => {
-  const cur = currentVersion.value
-  const nv  = status.value.new_version
-  return DATE_VERSION_RE.test(cur) && DATE_VERSION_RE.test(nv) && nv > cur
+  const cur = extractDate(currentVersion.value)
+  const nv  = extractDate(status.value.new_version)
+  return cur.length > 0 && nv.length > 0 && nv > cur
 })
 const isUpToDate = computed(() =>
   !!status.value.new_version && status.value.new_version === currentVersion.value

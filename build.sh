@@ -109,7 +109,7 @@ log "Using temporary rootfs workspace: $ROOTFS_DIR"
 VERSION_FILE="$ROOTFS_DIR/etc/defconfig/cf-plery/version"
 
 if [ -z "${FIRMWARE_VERSION:-}" ]; then
-    FIRMWARE_VERSION=$(date '+%Y%m%d-%H%M')
+    FIRMWARE_VERSION="CF-PLERY-R626-eav93-$(date '+%Y%m%d-%H%M')"
 fi
 
 echo -n "$FIRMWARE_VERSION" > "$VERSION_FILE"
