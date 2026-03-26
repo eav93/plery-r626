@@ -262,6 +262,7 @@ const onlineStatusMsg = computed(() => {
 })
 
 onMounted(async () => {
+  if (!store.version) store.fetchVersion()
   await fetchStatus()
   schedulePoll()
 })
