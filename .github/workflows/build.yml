@@ -92,12 +92,13 @@ jobs:
           rm -rf openssl-src
 
           # Runtime libs: extract from LEDE mipsel package for linker stubs
+          # .ipk is a gzipped tar containing data.tar.gz (OpenWrt/IPKG format)
           wget -q "https://archive.openwrt.org/releases/17.01.7/packages/mipsel_24kc/base/libopenssl_1.0.2t-1_mipsel_24kc.ipk"
           mkdir -p ipk-tmp && cd ipk-tmp
-          ar x ../libopenssl_1.0.2t-1_mipsel_24kc.ipk
+          tar xzf ../libopenssl_1.0.2t-1_mipsel_24kc.ipk
           tar xzf data.tar.gz
-          cp usr/lib/libssl.so.1.0.0    ../openssl-mips/lib/libssl.so
-          cp usr/lib/libcrypto.so.1.0.0 ../openssl-mips/lib/libcrypto.so
+          cp ./usr/lib/libssl.so.1.0.0    ../openssl-mips/lib/libssl.so
+          cp ./usr/lib/libcrypto.so.1.0.0 ../openssl-mips/lib/libcrypto.so
           cd .. && rm -rf ipk-tmp libopenssl_1.0.2t-1_mipsel_24kc.ipk
 
       - name: Install OpenSSL into SDK staging_dir
