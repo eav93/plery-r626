@@ -69,37 +69,40 @@ jobs:
           printf '#ifndef _UCI_CONFIG_H\n#define _UCI_CONFIG_H\n#define UCI_PREFIX "/usr"\n#endif\n' \
             > libuci/uci_config.h
 
-      # ---- OpenSSL headers + libs for cross-compile ----
+      # ---- OpenSSL static libs for cross-compile ----
       - name: Cache OpenSSL for MIPS
         uses: actions/cache@v5
         id: openssl-cache
         with:
-          path: webserver/include/openssl
-          key: openssl-headers-1.0.2t
+          path: |
+            webserver/include/openssl
+            webserver/lib/libssl.a
+            webserver/lib/libcrypto.a
+          key: openssl-mips-static-1.0.2t
 
-      - name: Fetch OpenSSL headers
+      - name: Build OpenSSL for MIPS (static)
         if: steps.openssl-cache.outputs.cache-hit != 'true'
+        env:
+          STAGING_DIR: ${{ github.workspace }}/${{ env.SDK_NAME }}/staging_dir
         run: |
+          TOOLCHAIN=${{ github.workspace }}/${{ env.SDK_NAME }}/staging_dir/toolchain-mipsel_24kc_gcc-5.4.0_musl-1.1.16
+          export PATH="$TOOLCHAIN/bin:$PATH"
           git clone -q --depth=1 -b OpenSSL_1_0_2t https://github.com/openssl/openssl.git openssl-src
-          cd openssl-src && ./Configure linux-generic32 --prefix=/usr no-shared > /dev/null
-          mkdir -p ../webserver/include
+          cd openssl-src
+          ./Configure linux-generic32 \
+            --cross-compile-prefix=mipsel-openwrt-linux-musl- \
+            --prefix=/usr no-shared no-asm
+          make -j$(nproc) build_libs
+          mkdir -p ../webserver/include ../webserver/lib
           cp -rL include/openssl ../webserver/include/
+          cp libssl.a libcrypto.a ../webserver/lib/
           cd .. && rm -rf openssl-src
-
-      - name: Prepare OpenSSL libs for linking
-        run: |
-          mkdir -p webserver/lib
-          cp rootfs/usr/lib/libssl.so.1.0.0    webserver/lib/libssl.so
-          cp rootfs/usr/lib/libcrypto.so.1.0.0 webserver/lib/libcrypto.so
 
       # ---- Build wbsrv ----
       - name: Build wbsrv (MIPS)
         env:
           STAGING_DIR: ${{ github.workspace }}/${{ env.SDK_NAME }}/staging_dir
         run: |
-          file webserver/lib/libssl.so webserver/lib/libcrypto.so
-          TOOLCHAIN=${{ github.workspace }}/${{ env.SDK_NAME }}/staging_dir/toolchain-mipsel_24kc_gcc-5.4.0_musl-1.1.16
-          "$TOOLCHAIN/bin/mipsel-openwrt-linux-musl-nm" -D webserver/lib/libssl.so | grep -c SSL_new || true
           cd webserver
           make cross \
             SDK_DIR=${{ github.workspace }}/${{ env.SDK_NAME }} \
