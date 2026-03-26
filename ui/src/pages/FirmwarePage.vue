@@ -54,9 +54,17 @@
     <div class="form-actions">
       <button v-if="state === 'idle' || state === 'error' || state === 'ready'"
               class="btn btn-primary" :disabled="busy" @click="checkUpdate">
+        <svg v-if="busy" class="animate-spin inline-block mr-1 w-4 h-4" viewBox="0 0 24 24" fill="none">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+        </svg>
         {{ t('ManualCheck') }}
       </button>
       <button v-if="state === 'checking'" class="btn btn-ghost" disabled>
+        <svg class="animate-spin inline-block mr-1 w-4 h-4" viewBox="0 0 24 24" fill="none">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+        </svg>
         {{ t('CheckVersion') }}
       </button>
       <button v-if="state === 'ready'" class="btn btn-primary" @click="applyOnline">
