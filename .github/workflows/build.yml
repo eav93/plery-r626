@@ -83,7 +83,7 @@ jobs:
           git clone -q --depth=1 -b OpenSSL_1_0_2t https://github.com/openssl/openssl.git openssl-src
           cd openssl-src && ./Configure linux-generic32 --prefix=/usr no-shared > /dev/null
           mkdir -p ../webserver/include
-          cp -r include/openssl ../webserver/include/
+          cp -rL include/openssl ../webserver/include/
           cd .. && rm -rf openssl-src
 
       # ---- Build wbsrv ----
