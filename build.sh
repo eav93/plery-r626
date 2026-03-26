@@ -107,11 +107,9 @@ log "Using temporary rootfs workspace: $ROOTFS_DIR"
 
 # ---- Write firmware version ----
 VERSION_FILE="$ROOTFS_DIR/etc/defconfig/cf-plery/version"
-BASE_VERSION="CF-PLERY-R626-eav93"
 
 if [ -z "${FIRMWARE_VERSION:-}" ]; then
-    BUILD_DATE=$(date '+%Y%m%d-%H%M')
-    FIRMWARE_VERSION="${BASE_VERSION}-${BUILD_DATE}"
+    FIRMWARE_VERSION=$(date '+%Y%m%d-%H%M')
 fi
 
 echo -n "$FIRMWARE_VERSION" > "$VERSION_FILE"

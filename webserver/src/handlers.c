@@ -1445,12 +1445,12 @@ static fw_state_t fw_state_from_files(void)
 
     if (has_bin && has_md5) return FS_READY;
 
-    /* Version file: if cached version equals current → up to date */
+    /* Version file: if cached version is same or older → up to date */
     char fota_ver[64] = {0};
     char cur_ver[64]  = {0};
     fw_read_str(FOTA_VERSION,    fota_ver, sizeof(fota_ver));
     fw_read_str(FW_VERSION_FILE, cur_ver,  sizeof(cur_ver));
-    if (fota_ver[0] && cur_ver[0] && strcmp(fota_ver, cur_ver) == 0)
+    if (fota_ver[0] && cur_ver[0] && strcmp(fota_ver, cur_ver) <= 0)
         return FS_UP_TO_DATE;
 
     return FS_IDLE;
@@ -1691,8 +1691,8 @@ static void fw_task_check(void)
     f = fopen(FOTA_VERSION, "w"); if (f) { fputs(tag, f); fputc('\n', f); fclose(f); }
     f = fopen(FOTA_URL_FILE, "w"); if (f) { fputs(dl_url, f); fputc('\n', f); fclose(f); }
 
-    if (strcmp(tag, cur) == 0) {
-        /* Same version — up to date */
+    if (strcmp(tag, cur) <= 0) {
+        /* Same or older version — up to date */
         f = fopen(FOTA_TOTAL, "w"); if (f) { fputs("0\n", f); fclose(f); }
     } else {
         char sz_str[32];
