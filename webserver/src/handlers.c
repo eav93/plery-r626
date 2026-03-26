@@ -4,11 +4,15 @@
 #include "uci.h"
 
 #include <ctype.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -96,6 +100,15 @@ static void session_destroy(const char *token)
             g_sessions[i].token[0] = '\0';
             g_sessions[i].expires  = 0;
         }
+    }
+}
+
+/* Invalidate all active sessions */
+static void session_destroy_all(void)
+{
+    for (int i = 0; i < SESSION_MAX; i++) {
+        g_sessions[i].token[0] = '\0';
+        g_sessions[i].expires  = 0;
     }
 }
 
@@ -371,16 +384,18 @@ static void uci_append_key(struct uci_context *ctx, const char *key_path,
         *first = 0;
 
     } else if (ptr.s) {
-        /* Section: emit every option with full path as key */
+        /* Check whether section has any options */
+        int has_opts = 0;
         struct uci_element *e;
-        uci_foreach_element(&ptr.s->options, e) {
-            struct uci_option *o = uci_to_option(e);
+        uci_foreach_element(&ptr.s->options, e) { has_opts = 1; break; }
 
-            char full_path[384], esc_key[384], esc_val[512];
-            snprintf(full_path, sizeof(full_path), "%s.%s", key_path, e->name);
-            json_escape(full_path, esc_key, sizeof(esc_key));
-            append_uci_val(o, esc_val, sizeof(esc_val));
-
+        if (!has_opts && ptr.s->type) {
+            /* No options: return the section type as the value.
+             * This supports paths like "network.workmode" where the
+             * workmode is stored as the section type (e.g. "router"). */
+            char esc_key[384], esc_val[512];
+            json_escape(key_path, esc_key, sizeof(esc_key));
+            json_escape(ptr.s->type, esc_val, sizeof(esc_val));
             if (*off + 900 > *cap) {
                 *cap *= 2;
                 *buf = realloc(*buf, *cap);
@@ -389,6 +404,25 @@ static void uci_append_key(struct uci_context *ctx, const char *key_path,
             *off += (size_t)snprintf(*buf + *off, *cap - *off,
                 "%s\"%s\":\"%s\"", *first ? "" : ",", esc_key, esc_val);
             *first = 0;
+        } else {
+            /* Section has options: emit each with full path as key */
+            uci_foreach_element(&ptr.s->options, e) {
+                struct uci_option *o = uci_to_option(e);
+
+                char full_path[384], esc_key[384], esc_val[512];
+                snprintf(full_path, sizeof(full_path), "%s.%s", key_path, e->name);
+                json_escape(full_path, esc_key, sizeof(esc_key));
+                append_uci_val(o, esc_val, sizeof(esc_val));
+
+                if (*off + 900 > *cap) {
+                    *cap *= 2;
+                    *buf = realloc(*buf, *cap);
+                    if (!*buf) return;
+                }
+                *off += (size_t)snprintf(*buf + *off, *cap - *off,
+                    "%s\"%s\":\"%s\"", *first ? "" : ",", esc_key, esc_val);
+                *first = 0;
+            }
         }
     }
     /* package-level (ptr.p only) — not supported */
@@ -1097,215 +1131,6 @@ static int handle_arp(int client_fd, const http_request_t *req)
     return 1;
 }
 
-/* ------------------------------------------------------------------ */
-/* GET  /api/wifi  — read WiFi config from UCI                        */
-/* POST /api/wifi  — write WiFi config to UCI                         */
-/*                                                                    */
-/* SSID is stored in the primary wifi-iface section (ifname=ra0 for  */
-/* 2.4G, rai0 for 5G). When apply wireless runs, uci2dat syncs UCI   */
-/* to DAT files automatically. Encryption/key/hidden go to the named */
-/* mbox / mbox5g sections (managed by webmgnt).                      */
-/* ------------------------------------------------------------------ */
-
-/* Fallback: read SSID from DAT file if UCI section has no ssid yet. */
-#define DAT_24G "/etc/wireless/mt7628/mt7628.dat"
-#define DAT_5G  "/etc/wireless/mt7663e/mt7663e.2.dat"
-
-static int dat_read(const char *path, const char *key,
-                    char *val, size_t val_sz)
-{
-    FILE *f = fopen(path, "r");
-    if (!f) return 0;
-    char line[512];
-    size_t klen = strlen(key);
-    int found = 0;
-    while (fgets(line, sizeof(line), f)) {
-        size_t len = strlen(line);
-        while (len > 0 && (line[len-1] == '\n' || line[len-1] == '\r'))
-            line[--len] = '\0';
-        if (strncmp(line, key, klen) == 0 && line[klen] == '=') {
-            snprintf(val, val_sz, "%s", line + klen + 1);
-            found = 1;
-            break;
-        }
-    }
-    fclose(f);
-    return found;
-}
-
-/* Find the wifi-iface UCI section whose ifname matches.
- * pkg must be already loaded. Fills out[] with the section name
- * component only, e.g. "@wifi-iface[0]" or "mbox".
- * Returns 1 on success. */
-static int uci_wifi_find_section(struct uci_context *ctx,
-                                  struct uci_package *pkg,
-                                  const char *ifname,
-                                  char *out, size_t out_sz)
-{
-    if (!pkg) return 0;
-    struct uci_element *e;
-    uci_foreach_element(&pkg->sections, e) {
-        struct uci_section *s = uci_to_section(e);
-        if (strcmp(s->type, "wifi-iface") != 0) continue;
-        const char *ifn = uci_lookup_option_string(ctx, s, "ifname");
-        if (ifn && strcmp(ifn, ifname) == 0) {
-            snprintf(out, out_sz, "%s", s->e.name);
-            return 1;
-        }
-    }
-    return 0;
-}
-
-static int handle_wifi(int client_fd, const http_request_t *req)
-{
-    if (strncmp(req->path, "/api/wifi", 9) != 0) return 0;
-    if (!check_auth(client_fd, req)) return 1;
-
-    if (strcmp(req->method, "GET") == 0) {
-        char ssid24[128] = {0}, ssid5g[128] = {0};
-        char enc24[64]="psk2", key24[128]="";
-        char enc5g[64]="psk2", key5g[128]="";
-        char hide24[4]="0", hide5g[4]="0";
-
-        struct uci_context *ctx = uci_alloc_context();
-        if (ctx) {
-            struct uci_package *pkg = NULL;
-            uci_load(ctx, "wireless", &pkg);
-
-            /* Find primary wifi-iface sections by ifname */
-            char sec24[64]={0}, sec5g[64]={0};
-            uci_wifi_find_section(ctx, pkg, "ra0",  sec24, sizeof(sec24));
-            uci_wifi_find_section(ctx, pkg, "rai0", sec5g, sizeof(sec5g));
-
-            char tmp[192];
-            struct uci_ptr ptr;
-
-            /* Read SSID from primary sections (ra0 / rai0) */
-#define UCI_GET(section, option, dst, dst_sz) do { \
-    snprintf(tmp, sizeof(tmp), "wireless.%s.%s", (section), (option)); \
-    if (uci_lookup_ptr(ctx, &ptr, tmp, true) == UCI_OK && ptr.o) \
-        snprintf((dst), (dst_sz), "%s", ptr.o->v.string); \
-} while(0)
-            if (sec24[0]) UCI_GET(sec24, "ssid", ssid24, sizeof(ssid24));
-            if (sec5g[0]) UCI_GET(sec5g, "ssid", ssid5g, sizeof(ssid5g));
-
-            /* Read encryption/key/hidden from mbox sections */
-            UCI_GET("mbox",   "encryption", enc24,  sizeof(enc24));
-            UCI_GET("mbox",   "key",        key24,  sizeof(key24));
-            UCI_GET("mbox",   "hidden",     hide24, sizeof(hide24));
-            UCI_GET("mbox5g", "encryption", enc5g,  sizeof(enc5g));
-            UCI_GET("mbox5g", "key",        key5g,  sizeof(key5g));
-            UCI_GET("mbox5g", "hidden",     hide5g, sizeof(hide5g));
-#undef UCI_GET
-            uci_free_context(ctx);
-        }
-
-        /* Fallback: read SSID from DAT if UCI section has no ssid yet */
-        if (!ssid24[0]) dat_read(DAT_24G, "SSID1", ssid24, sizeof(ssid24));
-        if (!ssid5g[0]) dat_read(DAT_5G,  "SSID1", ssid5g, sizeof(ssid5g));
-
-        char esc_ssid24[256], esc_ssid5g[256];
-        char esc_key24[256], esc_key5g[256];
-        json_escape(ssid24, esc_ssid24, sizeof(esc_ssid24));
-        json_escape(ssid5g, esc_ssid5g, sizeof(esc_ssid5g));
-        json_escape(key24,  esc_key24,  sizeof(esc_key24));
-        json_escape(key5g,  esc_key5g,  sizeof(esc_key5g));
-
-        char out[1024];
-        int len = snprintf(out, sizeof(out),
-            "{"
-            "\"radio0\":{\"ssid\":\"%s\",\"encryption\":\"%s\","
-                        "\"key\":\"%s\",\"hidden\":%s},"
-            "\"radio1\":{\"ssid\":\"%s\",\"encryption\":\"%s\","
-                        "\"key\":\"%s\",\"hidden\":%s}"
-            "}",
-            esc_ssid24, enc24, esc_key24, (hide24[0]=='1') ? "true" : "false",
-            esc_ssid5g, enc5g, esc_key5g, (hide5g[0]=='1') ? "true" : "false");
-
-        http_send_response(client_fd, 200, "OK",
-                           "application/json", out, len);
-        return 1;
-    }
-
-    if (strcmp(req->method, "POST") == 0) {
-        char *body = read_body(client_fd, req);
-        if (!body) {
-            static const char err[] = "{\"errCode\":-1,\"errMsg\":\"No body\"}";
-            http_send_response(client_fd, 400, "Bad Request",
-                               "application/json", err, sizeof(err)-1);
-            return 1;
-        }
-
-        char ssid24[128]="", ssid5g[128]="";
-        char enc24[64]="", key24[128]="", hide24[4]="0";
-        char enc5g[64]="", key5g[128]="", hide5g[4]="0";
-
-        const char *r0 = strstr(body, "\"radio0\"");
-        const char *r1 = strstr(body, "\"radio1\"");
-        if (r0) {
-            json_get_str(r0, "ssid",       ssid24, sizeof(ssid24));
-            json_get_str(r0, "encryption", enc24,  sizeof(enc24));
-            json_get_str(r0, "key",        key24,  sizeof(key24));
-            char htmp[8] = "false";
-            json_get_str(r0, "hidden", htmp, sizeof(htmp));
-            snprintf(hide24, sizeof(hide24), "%s",
-                     strcmp(htmp,"true")==0 ? "1" : "0");
-        }
-        if (r1) {
-            json_get_str(r1, "ssid",       ssid5g, sizeof(ssid5g));
-            json_get_str(r1, "encryption", enc5g,  sizeof(enc5g));
-            json_get_str(r1, "key",        key5g,  sizeof(key5g));
-            char htmp[8] = "false";
-            json_get_str(r1, "hidden", htmp, sizeof(htmp));
-            snprintf(hide5g, sizeof(hide5g), "%s",
-                     strcmp(htmp,"true")==0 ? "1" : "0");
-        }
-        free(body);
-
-        struct uci_context *ctx = uci_alloc_context();
-        if (ctx) {
-            struct uci_package *pkg = NULL;
-            uci_load(ctx, "wireless", &pkg);
-
-            /* Find primary wifi-iface sections by ifname */
-            char sec24[64]={0}, sec5g[64]={0};
-            uci_wifi_find_section(ctx, pkg, "ra0",  sec24, sizeof(sec24));
-            uci_wifi_find_section(ctx, pkg, "rai0", sec5g, sizeof(sec5g));
-
-            char tmp[256];
-            struct uci_ptr ptr;
-#define UCI_SET(section, option, val) do { \
-    if ((val)[0]) { \
-        snprintf(tmp, sizeof(tmp), "wireless.%s.%s=%s", \
-                 (section), (option), (val)); \
-        if (uci_lookup_ptr(ctx, &ptr, tmp, true) == UCI_OK) \
-            uci_set(ctx, &ptr); \
-    } \
-} while(0)
-            /* Write SSID+hidden to primary sections (uci2dat uses these) */
-            if (sec24[0]) { UCI_SET(sec24, "ssid",   ssid24); UCI_SET(sec24, "hidden", hide24); }
-            if (sec5g[0]) { UCI_SET(sec5g, "ssid",   ssid5g); UCI_SET(sec5g, "hidden", hide5g); }
-
-            /* Write encryption/key/hidden to mbox sections */
-            UCI_SET("mbox",   "encryption", enc24);
-            UCI_SET("mbox",   "key",        key24);
-            UCI_SET("mbox",   "hidden",     hide24);
-            UCI_SET("mbox5g", "encryption", enc5g);
-            UCI_SET("mbox5g", "key",        key5g);
-            UCI_SET("mbox5g", "hidden",     hide5g);
-#undef UCI_SET
-            if (pkg) uci_commit(ctx, &pkg, false);
-            uci_free_context(ctx);
-        }
-
-        static const char ok[] = "{\"result\":\"ok\"}";
-        http_send_response(client_fd, 200, "OK",
-                           "application/json", ok, sizeof(ok)-1);
-        return 1;
-    }
-
-    return 0;
-}
 
 /* ------------------------------------------------------------------ */
 /* Actions: POST /api/action/reboot                                    */
@@ -1430,7 +1255,7 @@ static int handle_auth(int client_fd, const http_request_t *req)
         char stored[128] = {0};
         struct uci_context *ctx = uci_alloc_context();
         if (ctx) {
-            char key[] = "mbox.management.password";
+            char key[] = "management.admin.password";
             struct uci_ptr ptr;
             if (uci_lookup_ptr(ctx, &ptr, key, true) == UCI_OK &&
                 (ptr.flags & UCI_LOOKUP_COMPLETE) && ptr.o &&
@@ -1490,6 +1315,20 @@ static int handle_auth(int client_fd, const http_request_t *req)
         return 1;
     }
 
+    /* POST /api/auth/logout-all — invalidate every active session */
+    if (strcmp(action, "logout-all") == 0) {
+        session_destroy_all();
+        static const char logout_all_resp[] =
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: application/json; charset=utf-8\r\n"
+            "Set-Cookie: slt=; Path=/; Max-Age=0; HttpOnly\r\n"
+            "Content-Length: 15\r\n"
+            "\r\n"
+            "{\"errCode\":0}\r\n";
+        write(client_fd, logout_all_resp, sizeof(logout_all_resp) - 1);
+        return 1;
+    }
+
     return 0;
 }
 
@@ -1543,6 +1382,659 @@ static int handle_system_ports(int client_fd, const http_request_t *req)
 }
 
 /* ------------------------------------------------------------------ */
+/* Firmware / FOTA endpoints                                           */
+/* GET  /api/firmware/status   — current state + version + progress   */
+/* POST /api/firmware/check    — check GitHub for new release         */
+/* POST /api/firmware/download — download firmware from GitHub        */
+/* POST /api/firmware/cancel   — kill active download process         */
+/* POST /api/firmware/apply?keep=1|0 — sysupgrade /tmp/fota/fw.bin   */
+/* POST /api/firmware/upload?keep=1|0 — multipart upload + sysupgrade */
+/*                                                                     */
+/* GitHub API: https://api.github.com/repos/eav93/plery-r626/releases */
+/* Downloads go to /tmp/fota/firmware.bin via wget                    */
+/* Image validated with: sysupgrade -T <file>                         */
+/* ------------------------------------------------------------------ */
+
+#define FOTA_DIR        "/tmp/fota"
+#define FOTA_BIN        FOTA_DIR "/firmware.bin"
+#define FOTA_VERSION    FOTA_DIR "/version"
+#define FOTA_TOTAL      FOTA_DIR "/total_length"
+#define FOTA_MD5        FOTA_DIR "/md5sum"
+#define FW_VERSION_FILE "/etc/defconfig/cf-plery/version"
+#define FW_UPLOAD_TMP   "/tmp/firmware_upload.bin"
+
+typedef enum {
+    FS_IDLE = 0,
+    FS_CHECKING,
+    FS_UP_TO_DATE,
+    FS_DOWNLOADING,
+    FS_READY,
+    FS_ERROR,
+    FS_APPLYING,
+} fw_state_t;
+
+static volatile pid_t      g_fota_pid   = -1;
+static volatile fw_state_t g_fota_state = FS_IDLE;
+
+/* Read first line of a file into buf (strips \r\n). Returns 1 on success. */
+static int fw_read_str(const char *path, char *buf, size_t sz)
+{
+    buf[0] = '\0';
+    FILE *f = fopen(path, "r");
+    if (!f) return 0;
+    int ok = (fgets(buf, (int)sz, f) != NULL);
+    fclose(f);
+    if (ok) {
+        char *p = strchr(buf, '\r'); if (p) *p = '\0';
+        p = strchr(buf, '\n');       if (p) *p = '\0';
+    }
+    return ok;
+}
+
+/* Determine state purely from files (no process tracking). */
+static fw_state_t fw_state_from_files(void)
+{
+    char total[32] = {0};
+    fw_read_str(FOTA_TOTAL, total, sizeof(total));
+
+    if (strcmp(total, "ERROR") == 0) return FS_ERROR;
+
+    struct stat st;
+    int has_md5 = (stat(FOTA_MD5, &st) == 0 && st.st_size > 0);
+    int has_bin = (stat(FOTA_BIN, &st) == 0 && st.st_size > 1000000);
+
+    if (has_bin && has_md5) return FS_READY;
+
+    /* Version file: if cached version equals current → up to date */
+    char fota_ver[64] = {0};
+    char cur_ver[64]  = {0};
+    fw_read_str(FOTA_VERSION,    fota_ver, sizeof(fota_ver));
+    fw_read_str(FW_VERSION_FILE, cur_ver,  sizeof(cur_ver));
+    if (fota_ver[0] && cur_ver[0] && strcmp(fota_ver, cur_ver) == 0)
+        return FS_UP_TO_DATE;
+
+    return FS_IDLE;
+}
+
+/* Get current state string; reaps child if exited. */
+static const char *fw_get_state_str(void)
+{
+    if (g_fota_pid > 0) {
+        int wst;
+        pid_t r = waitpid((pid_t)g_fota_pid, &wst, WNOHANG);
+        if (r > 0) {
+            g_fota_pid   = -1;
+            g_fota_state = fw_state_from_files();
+        }
+        /* else still running: keep current state */
+    } else if (g_fota_state != FS_APPLYING) {
+        g_fota_state = fw_state_from_files();
+    }
+
+    switch (g_fota_state) {
+        case FS_IDLE:        return "idle";
+        case FS_CHECKING:    return "checking";
+        case FS_UP_TO_DATE:  return "up_to_date";
+        case FS_DOWNLOADING: return "downloading";
+        case FS_READY:       return "ready";
+        case FS_ERROR:       return "error";
+        case FS_APPLYING:    return "applying";
+        default:             return "idle";
+    }
+}
+
+/* Download progress 0-100. */
+static int fw_download_pct(void)
+{
+    char total_str[32] = {0};
+    fw_read_str(FOTA_TOTAL, total_str, sizeof(total_str));
+    long long total = atoll(total_str);
+    if (total <= 0) return 0;
+    struct stat st;
+    if (stat(FOTA_BIN, &st) != 0) return 0;
+    long long cur = (long long)st.st_size;
+    if (cur >= total) return 99;
+    return (int)(cur * 100LL / total);
+}
+
+/* ---- HTTPS via openssl s_client ----------------------------------------- */
+#define GITHUB_API_HOST "api.github.com"
+#define GITHUB_REPO     "eav93/plery-r626"
+#define FOTA_URL_FILE   FOTA_DIR "/download_url"
+
+/* Parse "https://host/path" → host + path. Returns 0 on success. */
+static int fw_parse_url(const char *url, char *host, size_t hlen,
+                         char *path, size_t plen)
+{
+    if (strncmp(url, "https://", 8) != 0) return -1;
+    const char *p = url + 8;
+    const char *sl = strchr(p, '/');
+    if (!sl) {
+        strncpy(host, p, hlen - 1); host[hlen - 1] = '\0';
+        strncpy(path, "/", plen - 1);
+    } else {
+        size_t n = (size_t)(sl - p);
+        if (n >= hlen) n = hlen - 1;
+        memcpy(host, p, n); host[n] = '\0';
+        strncpy(path, sl, plen - 1); path[plen - 1] = '\0';
+    }
+    return 0;
+}
+
+/* Open HTTPS stream: pipe HTTP GET request through openssl s_client.
+ * Returns popen FILE* reading the raw HTTP response.  Caller must pclose(). */
+static FILE *fw_https_open(const char *host, const char *path)
+{
+    char cmd[1024];
+    snprintf(cmd, sizeof(cmd),
+        "printf 'GET %s HTTP/1.0\\r\\nHost: %s\\r\\n"
+        "User-Agent: wbsrv/1.0\\r\\nConnection: close\\r\\n\\r\\n' "
+        "| openssl s_client -quiet -connect '%s:443' 2>/dev/null",
+        path, host, host);
+    return popen(cmd, "r");
+}
+
+/* Fetch small text response body (headers + body → strip headers in C).
+ * Returns malloc'd NUL-terminated body string, or NULL.  Caller frees. */
+static char *fw_https_get_body(const char *host, const char *path)
+{
+    FILE *f = fw_https_open(host, path);
+    if (!f) return NULL;
+
+    /* Read entire response (up to 64 KB) */
+    char *buf = malloc(65536);
+    if (!buf) { pclose(f); return NULL; }
+    size_t off = 0;
+    size_t cap = 65536;
+    while (off < cap - 1) {
+        size_t n = fread(buf + off, 1, cap - 1 - off, f);
+        if (n == 0) break;
+        off += n;
+    }
+    buf[off] = '\0';
+    pclose(f);
+
+    /* Find body after \r\n\r\n */
+    char *body = strstr(buf, "\r\n\r\n");
+    if (!body) { free(buf); return NULL; }
+    body += 4;
+    char *result = strdup(body);
+    free(buf);
+    return result;
+}
+
+/* Do a HEAD request, return HTTP status and Location header value. */
+static int fw_https_head(const char *host, const char *path,
+                          char *location, size_t llen)
+{
+    char cmd[1024];
+    snprintf(cmd, sizeof(cmd),
+        "printf 'HEAD %s HTTP/1.0\\r\\nHost: %s\\r\\n"
+        "User-Agent: wbsrv/1.0\\r\\nConnection: close\\r\\n\\r\\n' "
+        "| openssl s_client -quiet -connect '%s:443' 2>/dev/null",
+        path, host, host);
+    FILE *f = popen(cmd, "r");
+    if (!f) return 0;
+
+    char resp[4096] = {0};
+    fread(resp, 1, sizeof(resp) - 1, f);
+    pclose(f);
+
+    int status = 0;
+    sscanf(resp, "HTTP/1.%*d %d", &status);
+
+    if (location && llen > 0) {
+        location[0] = '\0';
+        char *p = resp;
+        while (*p) {
+            if (strncasecmp(p, "location:", 9) == 0) {
+                char *v = p + 9;
+                while (*v == ' ' || *v == '\t') v++;
+                size_t i = 0;
+                while (*v && *v != '\r' && *v != '\n' && i < llen - 1)
+                    location[i++] = *v++;
+                location[i] = '\0';
+                break;
+            }
+            p++;
+        }
+    }
+    return status;
+}
+
+/* Follow redirects up to 5 hops.  Writes final URL to *out (must be ≥512). */
+static int fw_resolve_url(const char *url, char *out)
+{
+    char cur[512];
+    strncpy(cur, url, sizeof(cur) - 1);
+    for (int hop = 0; hop < 5; hop++) {
+        char host[128] = {0}, path[256] = {0};
+        if (fw_parse_url(cur, host, sizeof(host), path, sizeof(path)) < 0)
+            return -1;
+        char location[512] = {0};
+        int st = fw_https_head(host, path, location, sizeof(location));
+        if (st / 100 == 3 && location[0])
+            strncpy(cur, location, sizeof(cur) - 1);
+        else {
+            strncpy(out, cur, 512 - 1);
+            return 0;
+        }
+    }
+    return -1;
+}
+
+/* Extract JSON string value for key.  Returns 1 on success. */
+static int fw_json_str(const char *json, const char *key,
+                        char *out, size_t outsz)
+{
+    char needle[64];
+    snprintf(needle, sizeof(needle), "\"%s\"", key);
+    const char *p = strstr(json, needle);
+    if (!p) return 0;
+    p += strlen(needle);
+    while (*p == ':' || *p == ' ' || *p == '\t') p++;
+    if (*p != '"') return 0;
+    p++;
+    size_t i = 0;
+    while (*p && *p != '"' && i < outsz - 1) {
+        if (*p == '\\') { p++; if (!*p) break; }
+        out[i++] = *p++;
+    }
+    out[i] = '\0';
+    return 1;
+}
+
+/* Extract JSON number value for key.  Returns value or -1. */
+static long long fw_json_num(const char *json, const char *key)
+{
+    char needle[64];
+    snprintf(needle, sizeof(needle), "\"%s\"", key);
+    const char *p = strstr(json, needle);
+    if (!p) return -1;
+    p += strlen(needle);
+    while (*p == ':' || *p == ' ' || *p == '\t') p++;
+    return atoll(p);
+}
+
+/* ---- Background task functions (run in forked child) ---- */
+
+/* Child: check GitHub API for new release, cache result in /tmp/fota/ */
+static void fw_task_check(void)
+{
+    char *body = fw_https_get_body(GITHUB_API_HOST,
+        "/repos/" GITHUB_REPO "/releases/latest");
+    if (!body) {
+        /* Write ERROR marker */
+        FILE *f = fopen(FOTA_TOTAL, "w"); if (f) { fputs("ERROR\n", f); fclose(f); }
+        _exit(1);
+    }
+
+    char tag[64] = {0}, dl_url[512] = {0};
+    fw_json_str(body, "tag_name", tag, sizeof(tag));
+    /* browser_download_url is inside assets[0] */
+    fw_json_str(body, "browser_download_url", dl_url, sizeof(dl_url));
+    long long size = fw_json_num(body, "size");
+    free(body);
+
+    if (!tag[0] || !dl_url[0]) {
+        FILE *f = fopen(FOTA_TOTAL, "w"); if (f) { fputs("ERROR\n", f); fclose(f); }
+        _exit(1);
+    }
+
+    /* Compare with current version */
+    char cur[64] = {0};
+    fw_read_str(FW_VERSION_FILE, cur, sizeof(cur));
+
+    /* Write cached info */
+    mkdir(FOTA_DIR, 0755);
+    FILE *f;
+    f = fopen(FOTA_VERSION, "w"); if (f) { fputs(tag, f); fputc('\n', f); fclose(f); }
+    f = fopen(FOTA_URL_FILE, "w"); if (f) { fputs(dl_url, f); fputc('\n', f); fclose(f); }
+
+    if (strcmp(tag, cur) == 0) {
+        /* Same version — up to date */
+        f = fopen(FOTA_TOTAL, "w"); if (f) { fputs("0\n", f); fclose(f); }
+    } else {
+        char sz_str[32];
+        snprintf(sz_str, sizeof(sz_str), "%lld\n", size > 0 ? size : 0);
+        f = fopen(FOTA_TOTAL, "w"); if (f) { fputs(sz_str, f); fclose(f); }
+    }
+    _exit(0);
+}
+
+/* Child: download firmware from cached URL to FOTA_BIN, tracking progress */
+static void fw_task_download(void)
+{
+    char dl_url[512] = {0};
+    fw_read_str(FOTA_URL_FILE, dl_url, sizeof(dl_url));
+    if (!dl_url[0]) { _exit(1); }
+
+    /* Resolve redirects to get final CDN URL */
+    char final_url[512] = {0};
+    if (fw_resolve_url(dl_url, final_url) < 0)
+        strncpy(final_url, dl_url, sizeof(final_url) - 1);
+
+    char host[128] = {0}, path[256] = {0};
+    if (fw_parse_url(final_url, host, sizeof(host), path, sizeof(path)) < 0)
+        _exit(1);
+
+    FILE *stream = fw_https_open(host, path);
+    if (!stream) _exit(1);
+
+    /* Skip HTTP response headers (read until \r\n\r\n) */
+    int state = 0;
+    long long content_length = -1;
+    char hdr_line[512] = {0};
+    int hpos = 0;
+
+    int c;
+    while ((c = fgetc(stream)) != EOF) {
+        /* Track state for \r\n\r\n */
+        if      (state == 0 && c == '\r') state = 1;
+        else if (state == 1 && c == '\n') state = 2;
+        else if (state == 2 && c == '\r') state = 3;
+        else if (state == 3 && c == '\n') break; /* end of headers */
+        else state = (c == '\r') ? 1 : 0;
+
+        /* Accumulate line to find Content-Length */
+        if (c == '\n') {
+            hdr_line[hpos] = '\0';
+            if (strncasecmp(hdr_line, "content-length:", 15) == 0) {
+                content_length = atoll(hdr_line + 15);
+                /* Update total_length with actual value */
+                char sz_str[32];
+                snprintf(sz_str, sizeof(sz_str), "%lld\n", content_length);
+                FILE *tf = fopen(FOTA_TOTAL, "w");
+                if (tf) { fputs(sz_str, tf); fclose(tf); }
+            }
+            hpos = 0;
+        } else if (c != '\r' && hpos < (int)sizeof(hdr_line) - 1) {
+            hdr_line[hpos++] = (char)c;
+        }
+    }
+
+    /* Stream body to firmware file */
+    FILE *out = fopen(FOTA_BIN, "wb");
+    if (!out) { pclose(stream); _exit(1); }
+
+    char buf[8192];
+    long long written = 0;
+    size_t n;
+    while ((n = fread(buf, 1, sizeof(buf), stream)) > 0) {
+        fwrite(buf, 1, n, out);
+        written += (long long)n;
+    }
+    fclose(out);
+    pclose(stream);
+
+    if (written < 1000000) {
+        unlink(FOTA_BIN);
+        FILE *f = fopen(FOTA_TOTAL, "w"); if (f) { fputs("ERROR\n", f); fclose(f); }
+        _exit(1);
+    }
+
+    /* Write md5sum */
+    system("md5sum " FOTA_BIN " | awk '{print $1}' > " FOTA_MD5);
+    _exit(0);
+}
+
+/* Kill active background FOTA task. */
+static void fw_kill_fota(void)
+{
+    if (g_fota_pid > 0) {
+        kill((pid_t)g_fota_pid, SIGTERM);
+        usleep(200000);
+        waitpid((pid_t)g_fota_pid, NULL, WNOHANG);
+        g_fota_pid = -1;
+    }
+}
+
+/* Fork and run a task function in child process. */
+static pid_t fw_fork_task(void (*task)(void))
+{
+    pid_t pid = fork();
+    if (pid == 0) {
+        int dn = open("/dev/null", O_WRONLY);
+        if (dn >= 0) { dup2(dn, STDOUT_FILENO); dup2(dn, STDERR_FILENO); close(dn); }
+        task();
+        _exit(0);
+    }
+    return pid;
+}
+
+/* Read exactly n bytes from fd. Returns bytes read (may be < n on EOF/error). */
+static ssize_t fw_read_exact(int fd, void *buf, size_t n)
+{
+    size_t total = 0;
+    while (total < n) {
+        ssize_t r = read(fd, (char *)buf + total, n - total);
+        if (r <= 0) return total > 0 ? (ssize_t)total : r;
+        total += (size_t)r;
+    }
+    return (ssize_t)total;
+}
+
+/* Skip multipart part headers (read until \r\n\r\n).
+ * Returns bytes consumed, or -1 on error. */
+static long fw_skip_part_headers(int fd, size_t max_bytes)
+{
+    int state = 0;  /* state machine: 0=any, 1=\r, 2=\r\n, 3=\r\n\r */
+    long consumed = 0;
+    while ((size_t)consumed < max_bytes) {
+        unsigned char c;
+        if (read(fd, &c, 1) <= 0) return -1;
+        consumed++;
+        switch (state) {
+            case 0: state = (c == '\r') ? 1 : 0;                             break;
+            case 1: state = (c == '\n') ? 2 : (c == '\r' ? 1 : 0);          break;
+            case 2: state = (c == '\r') ? 3 : 0;                             break;
+            case 3:
+                if (c == '\n') return consumed;  /* found \r\n\r\n */
+                state = (c == '\r') ? 1 : 0;
+                break;
+        }
+    }
+    return -1;
+}
+
+/* Save multipart file part from fd to outpath.
+ * End-of-part marker: \r\n--<boundary>--\r\n  (boundary_len + 8 bytes) */
+static int fw_save_upload(int fd, size_t content_length,
+                           const char *boundary, const char *outpath)
+{
+    if (content_length == 0) return -1;
+
+    long hdr = fw_skip_part_headers(fd, content_length);
+    if (hdr < 0) return -1;
+
+    size_t end_size = strlen(boundary) + 8;  /* \r\n--<b>--\r\n */
+    if (content_length <= (size_t)hdr + end_size) return -1;
+    size_t file_size = content_length - (size_t)hdr - end_size;
+
+    FILE *out = fopen(outpath, "wb");
+    if (!out) return -1;
+
+    char buf[8192];
+    size_t remaining = file_size;
+    int ok = 1;
+    while (remaining > 0) {
+        size_t want = remaining < sizeof(buf) ? remaining : sizeof(buf);
+        ssize_t got = fw_read_exact(fd, buf, want);
+        if (got <= 0) { ok = 0; break; }
+        if (fwrite(buf, 1, (size_t)got, out) != (size_t)got) { ok = 0; break; }
+        remaining -= (size_t)got;
+    }
+    fclose(out);
+    return ok ? 0 : -1;
+}
+
+static int handle_firmware(int client_fd, const http_request_t *req)
+{
+    if (strncmp(req->path, "/api/firmware/", 14) != 0) return 0;
+    if (!check_auth(client_fd, req)) return 1;
+
+    const char *action = req->path + 14;
+
+    /* ── GET /api/firmware/status ─────────────────────────────── */
+    if (strcmp(action, "status") == 0) {
+        const char *state = fw_get_state_str();
+        char cur_ver[64] = {0}, new_ver[64] = {0};
+        fw_read_str(FW_VERSION_FILE, cur_ver, sizeof(cur_ver));
+        fw_read_str(FOTA_VERSION,    new_ver, sizeof(new_ver));
+        int pct = (g_fota_state == FS_DOWNLOADING) ? fw_download_pct() : 0;
+
+        char body[256];
+        int len = snprintf(body, sizeof(body),
+            "{\"errCode\":0,\"state\":\"%s\","
+            "\"current_version\":\"%s\",\"new_version\":\"%s\","
+            "\"download_pct\":%d}",
+            state, cur_ver, new_ver, pct);
+        http_send_response(client_fd, 200, "OK",
+            "application/json; charset=utf-8", body, (size_t)len);
+        return 1;
+    }
+
+    /* ── POST /api/firmware/check ─────────────────────────────── */
+    if (strcmp(action, "check") == 0) {
+        fw_kill_fota();
+        unlink(FOTA_TOTAL); unlink(FOTA_MD5); unlink(FOTA_BIN);
+        g_fota_pid   = fw_fork_task(fw_task_check);
+        g_fota_state = FS_CHECKING;
+        static const char r[] = "{\"errCode\":0}";
+        http_send_response(client_fd, 200, "OK",
+            "application/json; charset=utf-8", r, sizeof(r) - 1);
+        return 1;
+    }
+
+    /* ── POST /api/firmware/download ──────────────────────────── */
+    if (strcmp(action, "download") == 0) {
+        fw_kill_fota();
+        unlink(FOTA_MD5); unlink(FOTA_BIN);
+        g_fota_pid   = fw_fork_task(fw_task_download);
+        g_fota_state = FS_DOWNLOADING;
+        static const char r[] = "{\"errCode\":0}";
+        http_send_response(client_fd, 200, "OK",
+            "application/json; charset=utf-8", r, sizeof(r) - 1);
+        return 1;
+    }
+
+    /* ── POST /api/firmware/cancel ────────────────────────────── */
+    if (strcmp(action, "cancel") == 0) {
+        fw_kill_fota();
+        unlink(FOTA_BIN); unlink(FOTA_MD5); unlink(FOTA_TOTAL);
+        g_fota_state = FS_IDLE;
+        static const char r[] = "{\"errCode\":0}";
+        http_send_response(client_fd, 200, "OK",
+            "application/json; charset=utf-8", r, sizeof(r) - 1);
+        return 1;
+    }
+
+    /* ── POST /api/firmware/apply?keep=1|0 ───────────────────── */
+    if (strcmp(action, "apply") == 0) {
+        struct stat st;
+        if (stat(FOTA_BIN, &st) != 0 || st.st_size < 1000000) {
+            http_send_error(client_fd, 400, "Firmware not ready");
+            return 1;
+        }
+        /* Validate image: fwtool checks magic + CRC32, sysupgrade -T checks platform */
+        if (system("fwtool -q -i /dev/null " FOTA_BIN " 2>/dev/null") != 0 ||
+            system("sysupgrade -T " FOTA_BIN " >/dev/null 2>&1") != 0) {
+            http_send_error(client_fd, 400, "Image validation failed");
+            return 1;
+        }
+        int keep = 1;
+        const char *qk = strstr(req->query, "keep=");
+        if (qk && qk[5] == '0') keep = 0;
+
+        g_fota_state = FS_APPLYING;
+        static const char r[] = "{\"errCode\":0}";
+        http_send_response(client_fd, 200, "OK",
+            "application/json; charset=utf-8", r, sizeof(r) - 1);
+
+        pid_t pid = fork();
+        if (pid == 0) {
+            sleep(1);
+            int dn = open("/dev/null", O_WRONLY);
+            if (dn >= 0) { dup2(dn, STDOUT_FILENO); dup2(dn, STDERR_FILENO); close(dn); }
+            if (keep)
+                execl("/sbin/sysupgrade", "sysupgrade", FOTA_BIN, (char *)NULL);
+            else
+                execl("/sbin/sysupgrade", "sysupgrade", "-n", FOTA_BIN, (char *)NULL);
+            _exit(1);
+        }
+        return 1;
+    }
+
+    /* ── POST /api/firmware/upload?keep=1|0 ──────────────────── */
+    if (strcmp(action, "upload") == 0) {
+        const char *ct = http_get_header(req, "Content-Type");
+        if (!ct || !strstr(ct, "multipart/form-data")) {
+            http_send_error(client_fd, 400, "Expected multipart/form-data");
+            return 1;
+        }
+        const char *bp = strstr(ct, "boundary=");
+        if (!bp) { http_send_error(client_fd, 400, "No boundary"); return 1; }
+        char boundary[128] = {0};
+        strncpy(boundary, bp + 9, sizeof(boundary) - 1);
+        for (int i = 0; boundary[i]; i++) {
+            if (boundary[i] == ';' || boundary[i] == ' ' ||
+                boundary[i] == '\r' || boundary[i] == '\n') {
+                boundary[i] = '\0'; break;
+            }
+        }
+
+        int keep = 1;
+        const char *qk = strstr(req->query, "keep=");
+        if (qk && qk[5] == '0') keep = 0;
+
+        /* Extend timeout for large upload (5 min) */
+        struct timeval tv = { .tv_sec = 300, .tv_usec = 0 };
+        setsockopt(client_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
+        if (fw_save_upload(client_fd, req->content_length, boundary,
+                           FW_UPLOAD_TMP) < 0) {
+            http_send_error(client_fd, 500, "Upload failed");
+            return 1;
+        }
+
+        struct stat st;
+        if (stat(FW_UPLOAD_TMP, &st) != 0 || st.st_size < 1000000) {
+            unlink(FW_UPLOAD_TMP);
+            http_send_error(client_fd, 400, "Invalid firmware file");
+            return 1;
+        }
+        /* Validate image: fwtool checks magic + CRC32, sysupgrade -T checks platform */
+        if (system("fwtool -q -i /dev/null " FW_UPLOAD_TMP " 2>/dev/null") != 0 ||
+            system("sysupgrade -T " FW_UPLOAD_TMP " >/dev/null 2>&1") != 0) {
+            unlink(FW_UPLOAD_TMP);
+            http_send_error(client_fd, 400, "Image validation failed");
+            return 1;
+        }
+
+        g_fota_state = FS_APPLYING;
+        static const char r[] = "{\"errCode\":0}";
+        http_send_response(client_fd, 200, "OK",
+            "application/json; charset=utf-8", r, sizeof(r) - 1);
+
+        pid_t pid = fork();
+        if (pid == 0) {
+            sleep(1);
+            int dn = open("/dev/null", O_WRONLY);
+            if (dn >= 0) { dup2(dn, STDOUT_FILENO); dup2(dn, STDERR_FILENO); close(dn); }
+            if (keep)
+                execl("/sbin/sysupgrade", "sysupgrade", FW_UPLOAD_TMP, (char *)NULL);
+            else
+                execl("/sbin/sysupgrade", "sysupgrade", "-n", FW_UPLOAD_TMP, (char *)NULL);
+            _exit(1);
+        }
+        return 1;
+    }
+
+    http_send_error(client_fd, 404, "Not found");
+    return 1;
+}
+
+/* ------------------------------------------------------------------ */
 /* Handler table                                                        */
 /* ------------------------------------------------------------------ */
 static handler_t handlers[] = {
@@ -1557,8 +2049,8 @@ static handler_t handlers[] = {
     { "/api/system/language",  handle_system_language },
     { "/api/dhcp/leases",      handle_dhcp_leases     },
     { "/api/arp",              handle_arp             },
-    { "/api/wifi",             handle_wifi            },
     { "/api/action/",          handle_action          },
+    { "/api/firmware/",        handle_firmware        },
 };
 
 static const int num_handlers = (int)(sizeof(handlers) / sizeof(handlers[0]));

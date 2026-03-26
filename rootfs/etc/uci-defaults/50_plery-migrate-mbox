@@ -1,0 +1,29 @@
+#!/bin/sh
+# Migrate legacy mbox UCI config to standard paths:
+#   mbox.workmode.workmode  →  network.workmode (section type)
+#   mbox.management.password  →  management.admin.password
+
+need_commit_network=0
+need_commit_management=0
+
+# --- workmode ---
+if ! uci -q get network.workmode >/dev/null 2>&1; then
+    old=$(uci -q get mbox.workmode.workmode)
+    uci set "network.workmode=${old:-router}"
+    need_commit_network=1
+fi
+
+# --- admin password ---
+if ! uci -q get management.admin >/dev/null 2>&1; then
+    old=$(uci -q get mbox.management.password)
+    uci -q batch <<EOF
+set management.admin=management
+set management.admin.password=${old:-admin}
+EOF
+    need_commit_management=1
+fi
+
+[ "$need_commit_network"    = "1" ] && uci commit network
+[ "$need_commit_management" = "1" ] && uci commit management
+
+exit 0

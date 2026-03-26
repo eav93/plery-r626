@@ -54,5 +54,10 @@ export function useApi() {
     await fetch('/api/auth/logout', { method: 'POST' })
   }
 
-  return { get, post, uciGet, uciSet, apiAction, authLogin, authLogout }
+  /** POST /api/auth/logout-all — invalidates all active sessions */
+  async function authLogoutAll(): Promise<void> {
+    await fetch('/api/auth/logout-all', { method: 'POST' })
+  }
+
+  return { get, post, uciGet, uciSet, apiAction, authLogin, authLogout, authLogoutAll }
 }

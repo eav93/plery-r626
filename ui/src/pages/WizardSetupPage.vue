@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4">
+  <div class="w-full md:w-1/2 mx-auto">
 
     <!-- Step progress bar -->
     <div class="box mb-4">
@@ -342,7 +342,7 @@ import { useApi } from '@/composables/useApi'
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-const { uciGet, uciSet, apiAction, get, post } = useApi()
+const { uciGet, uciSet, apiAction } = useApi()
 
 const mode = computed(() => (route.params.mode as string) || 'router')
 
@@ -422,10 +422,12 @@ const wanProtoLabel = computed(() =>
 
 onMounted(async () => {
   try {
-    const [data, wifiData] = await Promise.all([
-      uciGet(['network.wan', 'network.lan']),
-      get<{ radio0: { ssid: string; key: string; encryption: string; hidden: boolean };
-             radio1: { ssid: string; key: string; encryption: string; hidden: boolean } }>('/api/wifi'),
+    const data = await uciGet([
+      'network.wan', 'network.lan',
+      'wireless.@wifi-iface[0].ssid',
+      'wireless.@wifi-iface[0].key', 'wireless.@wifi-iface[0].encryption', 'wireless.@wifi-iface[0].hidden',
+      'wireless.@wifi-iface[8].ssid',
+      'wireless.@wifi-iface[8].key', 'wireless.@wifi-iface[8].encryption', 'wireless.@wifi-iface[8].hidden',
     ])
 
     form.wan.proto       = data['network.wan.proto']    || 'qmi'
@@ -445,15 +447,15 @@ onMounted(async () => {
     form.lan.ipaddr  = data['network.lan.ipaddr']  || '192.168.0.1'
     form.lan.netmask = data['network.lan.netmask'] || '255.255.255.0'
 
-    form.wifi24.ssid       = wifiData.radio0?.ssid       || ''
-    form.wifi24.key        = wifiData.radio0?.key        || ''
-    form.wifi24.encryption = wifiData.radio0?.encryption || 'psk2'
-    form.wifi24.hidden     = wifiData.radio0?.hidden     ?? false
+    form.wifi24.ssid       = data['wireless.@wifi-iface[0].ssid']        || ''
+    form.wifi24.key        = data['wireless.@wifi-iface[0].key']        || ''
+    form.wifi24.encryption = data['wireless.@wifi-iface[0].encryption'] || 'psk2'
+    form.wifi24.hidden     = data['wireless.@wifi-iface[0].hidden']     === '1'
 
-    form.wifi5g.ssid       = wifiData.radio1?.ssid       || ''
-    form.wifi5g.key        = wifiData.radio1?.key        || ''
-    form.wifi5g.encryption = wifiData.radio1?.encryption || 'psk2'
-    form.wifi5g.hidden     = wifiData.radio1?.hidden     ?? false
+    form.wifi5g.ssid       = data['wireless.@wifi-iface[8].ssid']        || ''
+    form.wifi5g.key        = data['wireless.@wifi-iface[8].key']        || ''
+    form.wifi5g.encryption = data['wireless.@wifi-iface[8].encryption'] || 'psk2'
+    form.wifi5g.hidden     = data['wireless.@wifi-iface[8].hidden']     === '1'
   } catch { /* ignore */ }
 })
 
@@ -487,18 +489,20 @@ function applySettings() {
   obj['network.lan.ipaddr']  = form.lan.ipaddr
   obj['network.lan.netmask'] = form.lan.netmask
 
-  /* WiFi saved via /api/wifi (writes to Mediatek DAT files + UCI) */
+  obj['wireless.@wifi-iface[0].ssid']        = form.wifi24.ssid
+  obj['wireless.@wifi-iface[0].encryption'] = form.wifi24.encryption
+  obj['wireless.@wifi-iface[0].key']        = form.wifi24.key
+  obj['wireless.@wifi-iface[0].hidden']     = form.wifi24.hidden ? '1' : '0'
 
-  obj['mbox.workmode.workmode'] = mode.value
+  obj['wireless.@wifi-iface[8].ssid']        = form.wifi5g.ssid
+  obj['wireless.@wifi-iface[8].encryption'] = form.wifi5g.encryption
+  obj['wireless.@wifi-iface[8].key']        = form.wifi5g.key
+  obj['wireless.@wifi-iface[8].hidden']     = form.wifi5g.hidden ? '1' : '0'
+
+  obj['network.workmode'] = mode.value
 
   // Write UCI, then trigger apply — all fire-and-forget.
   // Network service reload drops the connection, so we must not await.
-  post('/api/wifi', {
-    radio0: { ssid: form.wifi24.ssid, encryption: form.wifi24.encryption,
-              key: form.wifi24.key, hidden: form.wifi24.hidden },
-    radio1: { ssid: form.wifi5g.ssid, encryption: form.wifi5g.encryption,
-              key: form.wifi5g.key, hidden: form.wifi5g.hidden },
-  }).catch(() => {})
 
   uciSet(obj)
     .then(() => {

@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 grid grid-cols-4 gap-4">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
     <!-- Текущее состояние -->
     <div class="box">
@@ -25,7 +25,7 @@
     </div>
 
     <!-- 4 статистики -->
-    <div class="col-span-2 grid grid-cols-2 gap-4">
+    <div class="col-span-1 sm:col-span-2 grid grid-cols-2 gap-4">
       <div class="box">
         <div class="section-title">{{ t('totalup') }}</div>
         <div class="flex items-center">
@@ -65,7 +65,7 @@
     </div>
 
     <!-- Информация об устройстве -->
-    <div class="box col-span-2">
+    <div class="box col-span-1 sm:col-span-2">
       <div class="section-title">{{ t('deviceinfo') }}</div>
       <ul>
         <li class="info-row"><label class="info-label">MAC</label><span class="font-mono">{{
@@ -111,7 +111,7 @@
 
 
     <!-- Информация о WAN -->
-    <div class="box col-span-2">
+    <div class="box col-span-1 sm:col-span-2">
       <div class="section-title">{{ t('waninfo') }}</div>
       <ul>
         <li class="info-row"><label class="info-label">{{ t('access') }}</label><span>{{ wanProtoName }}</span></li>
@@ -122,7 +122,7 @@
     </div>
 
     <!-- WiFi -->
-    <div class="box col-span-2">
+    <div class="box col-span-1 sm:col-span-2">
       <div class="section-title">{{ t('wifiinfo') }}</div>
       <ul>
         <li v-if="wifiSsid" class="info-row"><label class="info-label">{{ t('ssid_name_24g') }}</label><span>{{
@@ -136,7 +136,7 @@
     </div>
 
     <!-- Мониторинг трафика -->
-    <div class="box col-span-4">
+    <div class="box col-span-1 sm:col-span-2 lg:col-span-4">
       <div class="section-title">{{ t('traffic_bytes') }}</div>
       <div class="flex gap-5 text-xs mb-1.5 px-1">
         <span class="text-[#9b59b6]">▲ {{ t('totalup') }}: {{ txSpeedStr }}</span>
@@ -280,20 +280,19 @@ const wanProtoName = computed(() => protoNames[wanProto.value] ?? wanProto.value
 
 async function loadUci() {
   try {
-    const [d, w] = await Promise.all([
-      uciGet([
-        'mbox.workmode.workmode',
-        'network.wan.proto', 'network.wan.ipaddr',
-        'network.lan.ipaddr',
-      ]),
-      get<{ radio0: { ssid: string }; radio1: { ssid: string } }>('/api/wifi'),
+    const d = await uciGet([
+      'network.workmode',
+      'network.wan.proto', 'network.wan.ipaddr',
+      'network.lan.ipaddr',
+      'wireless.@wifi-iface[0].ssid',
+      'wireless.@wifi-iface[8].ssid',
     ])
-    workmode.value = d['mbox.workmode.workmode'] || 'router'
+    workmode.value = d['network.workmode'] || 'router'
     wanProto.value = d['network.wan.proto'] || 'dhcp'
     wanIp.value = d['network.wan.ipaddr'] || ''
     lanIp.value = d['network.lan.ipaddr'] || ''
-    wifiSsid.value = w.radio0?.ssid || ''
-    wifi5gSsid.value = w.radio1?.ssid || ''
+    wifiSsid.value = d['wireless.@wifi-iface[0].ssid'] || ''
+    wifi5gSsid.value = d['wireless.@wifi-iface[8].ssid'] || ''
   } catch { /* ignore */ }
 }
 

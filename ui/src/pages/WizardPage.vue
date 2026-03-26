@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 grid grid-cols-2 gap-4">
+  <div class="w-full md:w-1/2 mx-auto grid grid-cols-2 gap-4">
 
     <RouterLink
       v-for="m in modes" :key="m.id"
@@ -40,8 +40,8 @@ const currentMode = ref('router')
 
 onMounted(async () => {
   try {
-    const d = await uciGet('mbox.workmode.workmode')
-    currentMode.value = d['mbox.workmode.workmode'] || 'router'
+    const d = await uciGet('network.workmode')
+    currentMode.value = d['network.workmode'] || 'router'
   } catch { /* ignore */ }
 })
 </script>

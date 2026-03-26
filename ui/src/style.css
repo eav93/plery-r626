@@ -58,7 +58,7 @@
 
   /* Page container for form pages */
   .page-form {
-    @apply px-4 py-2 pb-8 max-w-[700px];
+    @apply max-w-[700px];
   }
 
   /* Form rows */

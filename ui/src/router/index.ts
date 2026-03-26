@@ -30,9 +30,19 @@ const router = createRouter({
       component: () => import('@/pages/WifiPage.vue'),
     },
     {
+      path: '/system/firmware',
+      name: 'firmware',
+      component: () => import('@/pages/FirmwarePage.vue'),
+    },
+    {
       path: '/system/reboot',
       name: 'reboot',
       component: () => import('@/pages/RebootPage.vue'),
+    },
+    {
+      path: '/system/password',
+      name: 'password',
+      component: () => import('@/pages/PasswordPage.vue'),
     },
     {
       path: '/wizard',

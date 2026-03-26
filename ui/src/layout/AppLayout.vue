@@ -72,7 +72,7 @@
         <img v-if="isMobile" :src="logoUrl" alt="Plery" class="h-[30px] w-auto brightness-0 invert" />
       </header>
 
-      <main class="flex-1 overflow-y-auto bg-[#f5f5f5]">
+      <main class="flex-1 overflow-y-auto bg-[#f5f5f5] px-4 pt-6 pb-8">
         <RouterView />
       </main>
     </div>
@@ -184,7 +184,9 @@ const navItems: NavItem[] = [
   {
     id: 'system', labelKey: 'system', icon: 'system',
     children: [
-      { id: 'reboot', labelKey: 'reboot', icon: 'system',  to: '/system/reboot' },
+      { id: 'firmware', labelKey: 'upgrade',         icon: 'faarrowdown', to: '/system/firmware' },
+      { id: 'password', labelKey: 'change_password', icon: 'yonghuzu',    to: '/system/password' },
+      { id: 'reboot',   labelKey: 'reboot',          icon: 'system',      to: '/system/reboot' },
     ],
   },
 ]
