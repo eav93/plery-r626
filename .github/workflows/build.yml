@@ -104,6 +104,7 @@ jobs:
       - name: Install OpenSSL into SDK staging_dir
         run: |
           TARGET_DIR=${{ github.workspace }}/${{ env.SDK_NAME }}/staging_dir/target-mipsel_24kc_musl-1.1.16
+          mkdir -p $TARGET_DIR/usr/include $TARGET_DIR/usr/lib
           cp -r openssl-mips/include/openssl $TARGET_DIR/usr/include/
           cp openssl-mips/lib/libssl.so      $TARGET_DIR/usr/lib/
           cp openssl-mips/lib/libcrypto.so   $TARGET_DIR/usr/lib/
