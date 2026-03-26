@@ -31,7 +31,7 @@ cross: $(LIBUCI_A)
 	$(CC_CROSS) $(CFLAGS) \
 	    -I./include \
 	    -s -o $(TARGET) $(SRCS) $(LIBUCI_A) \
-	    -L../rootfs/usr/lib -l:libssl.so.1.0.0 -l:libcrypto.so.1.0.0
+	    -L./lib -lssl -lcrypto
 
 clean:
 	rm -f $(TARGET)

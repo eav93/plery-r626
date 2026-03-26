@@ -86,6 +86,12 @@ jobs:
           cp -rL include/openssl ../webserver/include/
           cd .. && rm -rf openssl-src
 
+      - name: Prepare OpenSSL libs for linking
+        run: |
+          mkdir -p webserver/lib
+          cp rootfs/usr/lib/libssl.so.1.0.0    webserver/lib/libssl.so
+          cp rootfs/usr/lib/libcrypto.so.1.0.0 webserver/lib/libcrypto.so
+
       # ---- Build wbsrv ----
       - name: Build wbsrv (MIPS)
         env:
