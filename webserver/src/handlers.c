@@ -1864,6 +1864,10 @@ static int handle_firmware(int client_fd, const http_request_t *req)
 
     /* ── POST /api/firmware/check ─────────────────────────────── */
     if (strcmp(action, "check") == 0) {
+        if (g_fota_state == FS_DOWNLOADING || g_fota_state == FS_APPLYING) {
+            http_send_error(client_fd, 409, "Update in progress");
+            return 1;
+        }
         fw_kill_fota();
         unlink(FOTA_BIN);
         unlink(FOTA_VERSION); unlink(FOTA_URL_FILE); unlink(FOTA_APPLYING);
@@ -1877,6 +1881,10 @@ static int handle_firmware(int client_fd, const http_request_t *req)
 
     /* ── POST /api/firmware/update?keep=1|0 ───────────────────── */
     if (strcmp(action, "update") == 0) {
+        if (g_fota_state == FS_DOWNLOADING || g_fota_state == FS_APPLYING) {
+            http_send_error(client_fd, 409, "Update in progress");
+            return 1;
+        }
         struct stat st;
         if (stat(FOTA_URL_FILE, &st) != 0) {
             http_send_error(client_fd, 400, "No update available, check first");
@@ -1898,6 +1906,10 @@ static int handle_firmware(int client_fd, const http_request_t *req)
 
     /* ── POST /api/firmware/cancel ────────────────────────────── */
     if (strcmp(action, "cancel") == 0) {
+        if (g_fota_state != FS_DOWNLOADING) {
+            http_send_error(client_fd, 409, "Nothing to cancel");
+            return 1;
+        }
         fw_kill_fota();
         unlink(FOTA_BIN); unlink(FOTA_APPLYING);
         g_fota_state = FS_IDLE;
