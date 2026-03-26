@@ -1398,8 +1398,6 @@ static int handle_system_ports(int client_fd, const http_request_t *req)
 #define FOTA_DIR        "/tmp/fota"
 #define FOTA_BIN        FOTA_DIR "/firmware.bin"
 #define FOTA_VERSION    FOTA_DIR "/version"
-#define FOTA_TOTAL      FOTA_DIR "/total_length"
-#define FOTA_MD5        FOTA_DIR "/md5sum"
 #define FOTA_URL_FILE   FOTA_DIR "/download_url"
 #define FOTA_APPLYING   FOTA_DIR "/applying"
 #define FW_VERSION_FILE "/etc/defconfig/cf-plery/version"
@@ -1410,7 +1408,6 @@ typedef enum {
     FS_CHECKING,
     FS_CHECKED,
     FS_DOWNLOADING,
-    FS_READY,
     FS_ERROR,
     FS_APPLYING,
 } fw_state_t;
@@ -1441,16 +1438,9 @@ static fw_state_t fw_state_from_files(void)
 
     if (stat(FOTA_APPLYING, &st) == 0) return FS_APPLYING;
 
-    char total[32] = {0};
-    fw_read_str(FOTA_TOTAL, total, sizeof(total));
-    if (strcmp(total, "ERROR") == 0) return FS_ERROR;
-
-    int has_bin = (stat(FOTA_BIN, &st) == 0 && st.st_size > 1000000);
-    int has_md5 = (stat(FOTA_MD5, &st) == 0 && st.st_size > 0);
     int has_url = (stat(FOTA_URL_FILE, &st) == 0 && st.st_size > 0);
 
-    if (has_bin && has_md5) return FS_READY;
-    if (has_url && !has_bin) return FS_CHECKED;
+    if (has_url) return FS_CHECKED;
 
     return FS_IDLE;
 }
@@ -1475,25 +1465,16 @@ static const char *fw_get_state_str(void)
         case FS_CHECKING:    return "checking";
         case FS_CHECKED:     return "checked";
         case FS_DOWNLOADING: return "downloading";
-        case FS_READY:       return "ready";
         case FS_ERROR:       return "error";
         case FS_APPLYING:    return "applying";
         default:             return "idle";
     }
 }
 
-/* Download progress 0-100. */
+/* Download progress 0-100. Total size is no longer tracked on disk. */
 static int fw_download_pct(void)
 {
-    char total_str[32] = {0};
-    fw_read_str(FOTA_TOTAL, total_str, sizeof(total_str));
-    long long total = atoll(total_str);
-    if (total <= 0) return 0;
-    struct stat st;
-    if (stat(FOTA_BIN, &st) != 0) return 0;
-    long long cur = (long long)st.st_size;
-    if (cur >= total) return 99;
-    return (int)(cur * 100LL / total);
+    return 0;
 }
 
 /* ---- HTTPS via openssl s_client ----------------------------------------- */
@@ -1661,32 +1642,21 @@ static void fw_task_check(void)
 {
     char *body = fw_https_get_body(GITHUB_API_HOST,
         "/repos/" GITHUB_REPO "/releases/latest");
-    if (!body) {
-        /* Write ERROR marker */
-        FILE *f = fopen(FOTA_TOTAL, "w"); if (f) { fputs("ERROR\n", f); fclose(f); }
-        _exit(1);
-    }
+    if (!body) _exit(1);
 
     char tag[64] = {0}, dl_url[512] = {0};
     fw_json_str(body, "tag_name", tag, sizeof(tag));
     /* browser_download_url is inside assets[0] */
     fw_json_str(body, "browser_download_url", dl_url, sizeof(dl_url));
-    long long size = fw_json_num(body, "size");
     free(body);
 
-    if (!tag[0] || !dl_url[0]) {
-        FILE *f = fopen(FOTA_TOTAL, "w"); if (f) { fputs("ERROR\n", f); fclose(f); }
-        _exit(1);
-    }
+    if (!tag[0] || !dl_url[0]) _exit(1);
 
     /* Write cached info — always allow download, comparison is UI-side only */
     mkdir(FOTA_DIR, 0755);
     FILE *f;
     f = fopen(FOTA_VERSION, "w"); if (f) { fputs(tag, f); fputc('\n', f); fclose(f); }
     f = fopen(FOTA_URL_FILE, "w"); if (f) { fputs(dl_url, f); fputc('\n', f); fclose(f); }
-    char sz_str[32];
-    snprintf(sz_str, sizeof(sz_str), "%lld\n", size > 0 ? size : 0);
-    f = fopen(FOTA_TOTAL, "w"); if (f) { fputs(sz_str, f); fclose(f); }
     _exit(0);
 }
 
@@ -1721,12 +1691,6 @@ static int fw_do_download(void)
 
         if (c == '\n') {
             hdr_line[hpos] = '\0';
-            if (strncasecmp(hdr_line, "content-length:", 15) == 0) {
-                long long cl = atoll(hdr_line + 15);
-                char sz[32]; snprintf(sz, sizeof(sz), "%lld\n", cl);
-                FILE *tf = fopen(FOTA_TOTAL, "w");
-                if (tf) { fputs(sz, tf); fclose(tf); }
-            }
             hpos = 0;
         } else if (c != '\r' && hpos < (int)sizeof(hdr_line) - 1) {
             hdr_line[hpos++] = (char)c;
@@ -1748,11 +1712,9 @@ static int fw_do_download(void)
 
     if (written < 1000000) {
         unlink(FOTA_BIN);
-        FILE *f = fopen(FOTA_TOTAL, "w"); if (f) { fputs("ERROR\n", f); fclose(f); }
         return 1;
     }
 
-    system("md5sum " FOTA_BIN " | awk '{print $1}' > " FOTA_MD5);
     return 0;
 }
 
@@ -1767,7 +1729,6 @@ static void fw_task_update(void)
     if (system("fwtool -q -i /dev/null " FOTA_BIN " 2>/dev/null") != 0 ||
         system("sysupgrade -T " FOTA_BIN " >/dev/null 2>&1") != 0) {
         unlink(FOTA_BIN);
-        FILE *f = fopen(FOTA_TOTAL, "w"); if (f) { fputs("ERROR\n", f); fclose(f); }
         _exit(1);
     }
 
@@ -1904,7 +1865,7 @@ static int handle_firmware(int client_fd, const http_request_t *req)
     /* ── POST /api/firmware/check ─────────────────────────────── */
     if (strcmp(action, "check") == 0) {
         fw_kill_fota();
-        unlink(FOTA_TOTAL); unlink(FOTA_MD5); unlink(FOTA_BIN);
+        unlink(FOTA_BIN);
         unlink(FOTA_VERSION); unlink(FOTA_URL_FILE); unlink(FOTA_APPLYING);
         g_fota_pid   = fw_fork_task(fw_task_check);
         g_fota_state = FS_CHECKING;
@@ -1926,7 +1887,7 @@ static int handle_firmware(int client_fd, const http_request_t *req)
         if (qk && qk[5] == '0') keep = 0;
         g_fota_keep = keep;
         fw_kill_fota();
-        unlink(FOTA_BIN); unlink(FOTA_MD5); unlink(FOTA_APPLYING);
+        unlink(FOTA_BIN); unlink(FOTA_APPLYING);
         g_fota_pid   = fw_fork_task(fw_task_update);
         g_fota_state = FS_DOWNLOADING;
         static const char r[] = "{\"errCode\":0}";
@@ -1938,8 +1899,7 @@ static int handle_firmware(int client_fd, const http_request_t *req)
     /* ── POST /api/firmware/cancel ────────────────────────────── */
     if (strcmp(action, "cancel") == 0) {
         fw_kill_fota();
-        unlink(FOTA_BIN); unlink(FOTA_MD5); unlink(FOTA_TOTAL);
-        unlink(FOTA_APPLYING);
+        unlink(FOTA_BIN); unlink(FOTA_APPLYING);
         g_fota_state = FS_IDLE;
         static const char r[] = "{\"errCode\":0}";
         http_send_response(client_fd, 200, "OK",
