@@ -69,6 +69,44 @@ jobs:
           printf '#ifndef _UCI_CONFIG_H\n#define _UCI_CONFIG_H\n#define UCI_PREFIX "/usr"\n#endif\n' \
             > libuci/uci_config.h
 
+      # ---- OpenSSL headers + libs for cross-compile ----
+      - name: Cache OpenSSL for MIPS
+        uses: actions/cache@v5
+        id: openssl-cache
+        with:
+          path: openssl-mips
+          key: openssl-mips-1.0.2t
+
+      - name: Fetch OpenSSL headers and libs
+        if: steps.openssl-cache.outputs.cache-hit != 'true'
+        run: |
+          TARGET_DIR=${{ github.workspace }}/${{ env.SDK_NAME }}/staging_dir/target-mipsel_24kc_musl-1.1.16
+          mkdir -p openssl-mips/include openssl-mips/lib
+
+          # Headers: clone OpenSSL 1.0.2 source, run Configure to get opensslconf.h
+          git clone -q --depth=1 -b OpenSSL_1_0_2t https://github.com/openssl/openssl.git openssl-src
+          cd openssl-src
+          ./Configure linux-generic32 --prefix=/usr no-shared 2>/dev/null | tail -3
+          cp -r include/openssl ../openssl-mips/include/
+          cd ..
+          rm -rf openssl-src
+
+          # Runtime libs: extract from LEDE mipsel package for linker stubs
+          wget -q "https://archive.openwrt.org/releases/17.01.7/packages/mipsel_24kc/base/libopenssl_1.0.2t-1_mipsel_24kc.ipk"
+          mkdir -p ipk-tmp && cd ipk-tmp
+          ar x ../libopenssl_1.0.2t-1_mipsel_24kc.ipk
+          tar xzf data.tar.gz
+          cp usr/lib/libssl.so.1.0.0    ../openssl-mips/lib/libssl.so
+          cp usr/lib/libcrypto.so.1.0.0 ../openssl-mips/lib/libcrypto.so
+          cd .. && rm -rf ipk-tmp libopenssl_1.0.2t-1_mipsel_24kc.ipk
+
+      - name: Install OpenSSL into SDK staging_dir
+        run: |
+          TARGET_DIR=${{ github.workspace }}/${{ env.SDK_NAME }}/staging_dir/target-mipsel_24kc_musl-1.1.16
+          cp -r openssl-mips/include/openssl $TARGET_DIR/usr/include/
+          cp openssl-mips/lib/libssl.so      $TARGET_DIR/usr/lib/
+          cp openssl-mips/lib/libcrypto.so   $TARGET_DIR/usr/lib/
+
       # ---- Build wbsrv ----
       - name: Build wbsrv (MIPS)
         env:
