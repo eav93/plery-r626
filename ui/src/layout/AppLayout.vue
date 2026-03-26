@@ -38,7 +38,7 @@
             v-else
             :to="item.to!"
             class="flex items-center gap-3 px-5 h-12 cursor-pointer text-[15px] text-[#eaeefe] transition-colors border-l-4 border-l-transparent no-underline w-full hover:bg-[rgba(67,67,72,0.4)]"
-            active-class="!text-[#ffc510] !border-l-[#ffc510] !bg-[#434348]"
+            :class="isNavActive(item.to!) ? '!text-[#ffc510] !border-l-[#ffc510] !bg-[#434348]' : ''"
           >
             <AppIcon :name="item.icon" :size="16" class="w-[18px] shrink-0" />
             <span class="flex-1 text-[15px]">{{ t(item.labelKey) }}</span>
@@ -105,7 +105,7 @@
                     :key="child.id"
                     :to="child.to"
                     class="flex items-center gap-3 pl-11 h-10 cursor-pointer text-[14px] text-[#eaeefe] transition-colors border-l-4 border-l-transparent no-underline w-full hover:bg-[rgba(67,67,72,0.4)]"
-                    active-class="!text-[#ffc510] !border-l-[#ffc510] !bg-[#434348]"
+                    :class="isNavActive(child.to) ? '!text-[#ffc510] !border-l-[#ffc510] !bg-[#434348]' : ''"
                     @click="mobileMenuOpen = false"
                   >
                     {{ t(child.labelKey) }}
@@ -144,14 +144,19 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useApi } from '@/composables/useApi'
 import AppIcon, { type AppIconName } from '@/components/AppIcon.vue'
 import logoUrl from '@/assets/logo.png'
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const { authLogout } = useApi()
+
+function isNavActive(to: string) {
+  return route.path === to || route.path.startsWith(to + '/')
+}
 
 // ── Responsive ───────────────────────────────────────────────────────────────
 const isMobile = ref(window.innerWidth < 768)
@@ -167,6 +172,7 @@ type NavItem = NavLeaf | NavGroup
 
 const navItems: NavItem[] = [
   { id: 'dashboard', labelKey: 'home',    icon: 'hemo',    to: '/dashboard' },
+  { id: 'wizard',    labelKey: 'wizard',  icon: 'wizard',  to: '/wizard' },
   {
     id: 'network', labelKey: 'network', icon: 'network',
     children: [

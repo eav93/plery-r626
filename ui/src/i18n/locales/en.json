@@ -299,6 +299,8 @@
   "repeater_set": "Repeater Settings",
   "bridge_set": "Bridge Settings",
   "finish": "Finish",
+  "applying": "Applying…",
+  "auto_ip_hint": "IP address is obtained automatically.",
   "netmask": "Subnet Mask",
   "gateway": "Gateway",
   "ssid": "WiFi Name",

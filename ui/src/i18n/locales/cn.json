@@ -299,6 +299,8 @@
   "repeater_set": "中继设置",
   "bridge_set": "网桥设置",
   "finish": "完成",
+  "applying": "应用中…",
+  "auto_ip_hint": "IP地址自动获取。",
   "netmask": "子网掩码",
   "gateway": "网关",
   "ssid": "WiFi名称",

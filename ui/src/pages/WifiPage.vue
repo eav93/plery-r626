@@ -78,7 +78,7 @@ import { useNotify } from '@/composables/useNotify'
 import FormField from '@/components/FormField.vue'
 
 const { t } = useI18n()
-const { uciGet, uciSet, apiAction } = useApi()
+const { uciGet, uciSet, apiAction, get, post } = useApi()
 const { success, error } = useNotify()
 const saving = ref(false)
 
@@ -105,25 +105,32 @@ const radios: Radio[] = reactive([
 const activeRadio = ref('24g')
 const showPwd = reactive<Record<string, boolean>>({ '24g': false, '5g': false })
 
+interface WifiApiRadio {
+  ssid: string; encryption: string; key: string; hidden: boolean
+}
+
 onMounted(async () => {
   try {
-    const keys: string[] = []
-    for (const r of radios) {
-      keys.push(
+    const [uciData, wifiData] = await Promise.all([
+      uciGet(radios.flatMap(r => [
         `${r.radioKey}.channel`, `${r.radioKey}.disabled`,
-        `${r.wifiKey}.ssid`, `${r.wifiKey}.key`,
-        `${r.wifiKey}.encryption`, `${r.wifiKey}.hidden`, `${r.wifiKey}.disabled`,
-      )
+        `${r.wifiKey}.disabled`,
+      ])),
+      get<{ radio0: WifiApiRadio; radio1: WifiApiRadio }>('/api/wifi'),
+    ])
+    const wMap: Record<string, WifiApiRadio> = {
+      '24g': wifiData.radio0,
+      '5g':  wifiData.radio1,
     }
-    const data = await uciGet(keys)
     for (const r of radios) {
-      r.form.channel    = data[`${r.radioKey}.channel`]   || 'auto'
-      r.form.ssid       = data[`${r.wifiKey}.ssid`]       || ''
-      r.form.key        = data[`${r.wifiKey}.key`]        || ''
-      r.form.encryption = data[`${r.wifiKey}.encryption`] || 'psk2'
-      r.form.hidden     = data[`${r.wifiKey}.hidden`]     === '1'
-      r.form.enabled    = data[`${r.wifiKey}.disabled`]   !== '1'
-        && data[`${r.radioKey}.disabled`] !== '1'
+      const w = wMap[r.id]
+      r.form.channel    = uciData[`${r.radioKey}.channel`] || 'auto'
+      r.form.ssid       = w?.ssid       || ''
+      r.form.key        = w?.key        || ''
+      r.form.encryption = w?.encryption || 'psk2'
+      r.form.hidden     = w?.hidden     ?? false
+      r.form.enabled    = uciData[`${r.wifiKey}.disabled`]  !== '1'
+        && uciData[`${r.radioKey}.disabled`] !== '1'
     }
   } catch { /* ignore */ }
 })
@@ -132,14 +139,19 @@ async function save(r: Radio) {
   if (saving.value) return
   saving.value = true
   try {
+    const radioKey = r.id === '24g' ? 'radio0' : 'radio1'
+    await post('/api/wifi', {
+      [radioKey]: {
+        ssid:       r.form.ssid,
+        encryption: r.form.encryption,
+        key:        r.form.key,
+        hidden:     r.form.hidden,
+      },
+    })
     await uciSet({
-      [`${r.radioKey}.channel`]:   r.form.channel,
-      [`${r.radioKey}.disabled`]:  r.form.enabled ? '0' : '1',
-      [`${r.wifiKey}.ssid`]:       r.form.ssid,
-      [`${r.wifiKey}.key`]:        r.form.key,
-      [`${r.wifiKey}.encryption`]: r.form.encryption,
-      [`${r.wifiKey}.hidden`]:     r.form.hidden ? '1' : '0',
-      [`${r.wifiKey}.disabled`]:   r.form.enabled ? '0' : '1',
+      [`${r.radioKey}.channel`]:  r.form.channel,
+      [`${r.radioKey}.disabled`]: r.form.enabled ? '0' : '1',
+      [`${r.wifiKey}.disabled`]:  r.form.enabled ? '0' : '1',
     })
     await apiAction('apply', { service: 'wireless' })
     success(t('set_ok') || 'Saved')

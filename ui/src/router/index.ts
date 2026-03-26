@@ -34,6 +34,16 @@ const router = createRouter({
       name: 'reboot',
       component: () => import('@/pages/RebootPage.vue'),
     },
+    {
+      path: '/wizard',
+      name: 'wizard',
+      component: () => import('@/pages/WizardPage.vue'),
+    },
+    {
+      path: '/wizard/:mode',
+      name: 'wizard-setup',
+      component: () => import('@/pages/WizardSetupPage.vue'),
+    },
   ],
 })
 

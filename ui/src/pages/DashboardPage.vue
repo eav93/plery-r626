@@ -5,8 +5,8 @@
     <div class="box">
       <div class="section-title">{{ t('current_state') }}</div>
       <div class="flex flex-col items-center py-2 gap-2">
-        <img :src="modeImg" class="h-32 object-contain"/>
-        <p class="text-sm text-[#888]">{{ modeName }}</p>
+        <img :src="modeImg" class="h-40 object-contain"/>
+        <p class="text-sm text-[#16191c]">{{ modeName }}</p>
       </div>
     </div>
     <!-- Состояние интерфейсов -->
@@ -17,7 +17,7 @@
             :class="['flex flex-col items-center gap-1',
               p.up ? (p.wan_enable ? 'text-[#0068ff]' : 'text-[#ff6f08]') : 'text-[#adadad]']">
           <AppIcon name="wangkou" :size="32"/>
-          <span class="text-[11px] text-[#888]">{{
+          <span class="text-[11px] text-[#16191c]">{{
               p.wan_enable ? 'WAN' : ('LAN' + (lanIdx(i) > 1 ? lanIdx(i) : ''))
             }}</span>
         </li>
@@ -280,21 +280,21 @@ const wanProtoName = computed(() => protoNames[wanProto.value] ?? wanProto.value
 
 async function loadUci() {
   try {
-    const d = await uciGet([
-      'mbox.workmode.workmode',
-      'network.wan.proto', 'network.wan.ipaddr',
-      'network.lan.ipaddr',
-      'wireless.mbox.ssid',
-      'wireless.mbox5g.ssid',
+    const [d, w] = await Promise.all([
+      uciGet([
+        'mbox.workmode.workmode',
+        'network.wan.proto', 'network.wan.ipaddr',
+        'network.lan.ipaddr',
+      ]),
+      get<{ radio0: { ssid: string }; radio1: { ssid: string } }>('/api/wifi'),
     ])
     workmode.value = d['mbox.workmode.workmode'] || 'router'
     wanProto.value = d['network.wan.proto'] || 'dhcp'
     wanIp.value = d['network.wan.ipaddr'] || ''
     lanIp.value = d['network.lan.ipaddr'] || ''
-    wifiSsid.value = d['wireless.mbox.ssid'] || ''
-    wifi5gSsid.value = d['wireless.mbox5g.ssid'] || ''
-  } catch { /* ignore */
-  }
+    wifiSsid.value = w.radio0?.ssid || ''
+    wifi5gSsid.value = w.radio1?.ssid || ''
+  } catch { /* ignore */ }
 }
 
 interface PortEntry {
