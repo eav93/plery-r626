@@ -1,4 +1,5 @@
 dist/
+build.sh
 webserver/src/uci.h
 fwtool/
 *.squashfs
