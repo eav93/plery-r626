@@ -5,6 +5,11 @@
     <div class="box">
       <div class="section-title">{{ t('onlineupg') }}</div>
 
+      <div class="form-row">
+        <label class="form-row__label">{{ t('current_ver') }}</label>
+        <div class="form-row__value font-mono text-sm">{{ currentVersion || '—' }}</div>
+      </div>
+
       <div v-if="status.new_version && status.new_version !== currentVersion" class="form-row">
         <label class="form-row__label">{{ t('BestNewVersion') }}</label>
         <div class="form-row__value font-mono text-sm text-[#ed6c00] font-semibold">{{ status.new_version }}</div>
