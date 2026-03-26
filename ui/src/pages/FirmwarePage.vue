@@ -15,6 +15,7 @@
         <div class="form-row__value font-mono text-sm flex items-center gap-2">
           <span>{{ status.new_version }}</span>
           <span v-if="isNewer" class="text-[#ed6c00] font-semibold text-xs">▲ {{ t('newer') }}</span>
+          <span v-else-if="isUpToDate" class="text-[#5cb85c] text-xs">✓ {{ t('AlreadyNewVersion') }}</span>
         </div>
       </div>
 
@@ -157,6 +158,11 @@ const isNewer = computed(() => {
   const cur = currentVersion.value
   const nv  = status.value.new_version
   return DATE_VERSION_RE.test(cur) && DATE_VERSION_RE.test(nv) && nv > cur
+})
+const isUpToDate = computed(() => {
+  const cur = currentVersion.value
+  const nv  = status.value.new_version
+  return DATE_VERSION_RE.test(cur) && DATE_VERSION_RE.test(nv) && nv === cur
 })
 
 const onlineKeep = ref(true)
