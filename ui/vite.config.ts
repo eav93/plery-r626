@@ -25,7 +25,7 @@ export default defineConfig({
     strictPort: true,
     open: '/',
     proxy: {
-      '/api':     { target: routerTarget, changeOrigin: true, secure: false },
+      '/api':     { target: routerTarget, changeOrigin: true, secure: false, timeout: 30000, proxyTimeout: 30000 },
       '/cgi-bin': { target: routerTarget, changeOrigin: true, secure: false },
     },
   },

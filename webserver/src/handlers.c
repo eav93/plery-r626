@@ -1506,7 +1506,7 @@ static FILE *fw_https_open(const char *host, const char *path)
     snprintf(cmd, sizeof(cmd),
         "printf 'GET %s HTTP/1.0\\r\\nHost: %s\\r\\n"
         "User-Agent: wbsrv/1.0\\r\\nConnection: close\\r\\n\\r\\n' "
-        "| openssl s_client -quiet -connect '%s:443' 2>/dev/null",
+        "| timeout 15 openssl s_client -quiet -connect '%s:443' 2>/dev/null",
         path, host, host);
     return popen(cmd, "r");
 }
