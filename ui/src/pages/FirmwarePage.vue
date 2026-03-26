@@ -10,9 +10,12 @@
         <div class="form-row__value font-mono text-sm">{{ currentVersion || '—' }}</div>
       </div>
 
-      <div v-if="status.new_version && status.new_version !== currentVersion" class="form-row">
+      <div v-if="status.new_version" class="form-row">
         <label class="form-row__label">{{ t('BestNewVersion') }}</label>
-        <div class="form-row__value font-mono text-sm text-[#ed6c00] font-semibold">{{ status.new_version }}</div>
+        <div class="form-row__value font-mono text-sm flex items-center gap-2">
+          <span>{{ status.new_version }}</span>
+          <span v-if="isNewer" class="text-[#ed6c00] font-semibold text-xs">▲ {{ t('newer') }}</span>
+        </div>
       </div>
 
       <!-- Progress bar (downloading) -->
@@ -48,7 +51,7 @@
 
     <!-- Online buttons -->
     <div class="form-actions">
-      <button v-if="state === 'idle' || state === 'up_to_date' || state === 'error'"
+      <button v-if="state === 'idle' || state === 'error' || state === 'ready'"
               class="btn btn-primary" :disabled="busy" @click="checkUpdate">
         {{ t('ManualCheck') }}
       </button>
@@ -148,6 +151,13 @@ const status = ref<FwStatus>({
 
 const currentVersion = computed(() => store.version?.version ?? '')
 const state = computed(() => status.value.state)
+
+const DATE_VERSION_RE = /^\d{8}-\d{4}$/
+const isNewer = computed(() => {
+  const cur = currentVersion.value
+  const nv  = status.value.new_version
+  return DATE_VERSION_RE.test(cur) && DATE_VERSION_RE.test(nv) && nv > cur
+})
 
 const onlineKeep = ref(true)
 const manualKeep = ref(true)
@@ -253,7 +263,6 @@ async function uploadFirmware() {
 const onlineStatusMsg = computed(() => {
   switch (state.value) {
     case 'checking':    return t('CheckVersion')
-    case 'up_to_date':  return t('AlreadyNewVersion')
     case 'downloading': return t('CheckNewVersion')
     case 'ready':       return t('NewVersionOK')
     case 'error':       return t('NetworkError')

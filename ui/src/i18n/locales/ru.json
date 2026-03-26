@@ -417,6 +417,7 @@
   "AutoUpgSwitch": "Автообновление",
   "current_ver": "Текущая версия",
   "BestNewVersion": "Доступно обновление",
+  "newer": "новее",
   "CheckVersion": "Проверка версии...",
   "ManualCheck": "Проверить",
   "CancelDown": "Отменить загрузку",

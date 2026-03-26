@@ -417,6 +417,7 @@
   "AutoUpgSwitch": "Auto update",
   "current_ver": "Current version",
   "BestNewVersion": "New version",
+  "newer": "newer",
   "CheckVersion": "Checking version",
   "ManualCheck": "Check for updates",
   "CancelDown": "Cancel download",
