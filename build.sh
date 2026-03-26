@@ -131,17 +131,6 @@ find "$ROOTFS_DIR" -name ".gitkeep" -delete 2>/dev/null
 SQUASHFS_TMP=$(mktemp /tmp/rootfs_XXXXXX.squashfs)
 trap "rm -f '$SQUASHFS_TMP' /tmp/firmware_raw_$$.bin; [ -n '$BUILD_ROOT' ] && rm -rf '$BUILD_ROOT'" EXIT
 
-# ---- Build Vue UI ----
-if [ -f "$SCRIPT_DIR/ui/package.json" ]; then
-    log "Building Vue UI..."
-    cd "$SCRIPT_DIR/ui"
-    npm install --prefer-offline --silent
-    npm run build
-    cd "$SCRIPT_DIR"
-else
-    warn "ui/package.json not found, skipping Vue build"
-fi
-
 # ---- Optional language pruning ----
 log "Pruning UI locales..."
 prune_locale_file "$LANG_JS"
