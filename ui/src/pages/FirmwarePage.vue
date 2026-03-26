@@ -213,6 +213,7 @@ function startCountdown(sec: number) {
 
 async function checkUpdate() {
   busy.value = true
+  status.value = { state: 'idle', new_version: '', download_pct: 0 }
   try { await post('/api/firmware/check') } catch { /* ignore */ }
   await fetchStatus()
   schedulePoll()
