@@ -159,11 +159,9 @@ const isNewer = computed(() => {
   const nv  = status.value.new_version
   return DATE_VERSION_RE.test(cur) && DATE_VERSION_RE.test(nv) && nv > cur
 })
-const isUpToDate = computed(() => {
-  const cur = currentVersion.value
-  const nv  = status.value.new_version
-  return DATE_VERSION_RE.test(cur) && DATE_VERSION_RE.test(nv) && nv === cur
-})
+const isUpToDate = computed(() =>
+  !!status.value.new_version && status.value.new_version === currentVersion.value
+)
 
 const onlineKeep = ref(true)
 const manualKeep = ref(true)
