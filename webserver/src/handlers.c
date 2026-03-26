@@ -1861,18 +1861,19 @@ static int handle_firmware(int client_fd, const http_request_t *req)
 
     /* ── POST /api/firmware/update?keep=1|0 ───────────────────── */
     if (strcmp(action, "update") == 0) {
-        if (g_fw && (g_fw->state == FS_DOWNLOADING || g_fw->state == FS_APPLYING)) {
-            http_send_error(client_fd, 409, "Update in progress");
-            return 1;
-        }
         if (!g_fw || !g_fw->dl_url[0]) {
             http_send_error(client_fd, 400, "No update available, check first");
+            return 1;
+        }
+        /* Atomic CAS: only one process can transition CHECKED→DOWNLOADING */
+        if (!__sync_bool_compare_and_swap(&g_fw->state, FS_CHECKED, FS_DOWNLOADING)) {
+            http_send_error(client_fd, 409, "Update in progress");
             return 1;
         }
         int keep = 1;
         const char *qk = strstr(req->query, "keep=");
         if (qk && qk[5] == '0') keep = 0;
-        if (g_fw) { g_fw->keep = keep; g_fw->state = FS_DOWNLOADING; g_fw->task_pid = 0; }
+        g_fw->keep = keep; g_fw->task_pid = 0;
         unlink(FOTA_BIN);
         pid_t pid = fork();
         if (pid == 0) { fw_task_update(); _exit(1); }
