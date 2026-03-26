@@ -77,7 +77,8 @@ jobs:
           cd webserver
           make cross \
             SDK_DIR=${{ github.workspace }}/${{ env.SDK_NAME }} \
-            LIBUCI_DIR=${{ github.workspace }}/libuci
+            LIBUCI_DIR=${{ github.workspace }}/libuci \
+            TARGET_DIR=${{ github.workspace }}/${{ env.SDK_NAME }}/staging_dir/target-mipsel_24kc_musl-1.1.16
           cp wbsrv ../rootfs/usr/sbin/wbsrv
           file ../rootfs/usr/sbin/wbsrv
 

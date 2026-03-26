@@ -12,11 +12,16 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <netdb.h>
+#include <arpa/inet.h>
 #include <sys/mman.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 
 /* ------------------------------------------------------------------ */
 /* FastCGI backend address (set once at startup)                       */
@@ -1480,7 +1485,7 @@ static int fw_download_pct(void)
     return pct < 0 ? 0 : (pct > 99 ? 99 : pct);  /* cap at 99 until state=applying */
 }
 
-/* ---- HTTPS via openssl s_client ----------------------------------------- */
+/* ---- Native TLS HTTPS client (OpenSSL API, no subprocess) --------------- */
 #define GITHUB_API_HOST "api.github.com"
 #define GITHUB_REPO     "eav93/plery-r626"
 
@@ -1503,68 +1508,132 @@ static int fw_parse_url(const char *url, char *host, size_t hlen,
     return 0;
 }
 
-/* Open HTTPS GET stream via openssl s_client.
- * timeout_sec=0 → no timeout wrapper (for large downloads).
- * Returns popen FILE* reading the raw HTTP response.  Caller must pclose(). */
-static FILE *fw_https_open(const char *host, const char *path, int timeout_sec)
+/* TLS connection handle. */
+typedef struct { int fd; SSL *ssl; SSL_CTX *ctx; } fw_tls_t;
+
+/* Open TCP+TLS connection to host:443.
+ * connect_timeout_sec: max seconds for TCP connect + TLS handshake.
+ * io_timeout_sec:      per-read/write socket timeout (0 = no limit). */
+static fw_tls_t fw_tls_open(const char *host,
+                              int connect_timeout_sec, int io_timeout_sec)
 {
-    char cmd[1024];
-    char tprefix[32] = {0};
-    if (timeout_sec > 0)
-        snprintf(tprefix, sizeof(tprefix), "timeout %d ", timeout_sec);
-    snprintf(cmd, sizeof(cmd),
-        "printf 'GET %s HTTP/1.0\\r\\nHost: %s\\r\\n"
-        "User-Agent: wbsrv/1.0\\r\\nConnection: close\\r\\n\\r\\n' "
-        "| %sopenssl s_client -quiet -connect '%s:443' 2>/dev/null",
-        path, host, tprefix, host);
-    return popen(cmd, "r");
+    fw_tls_t t = { -1, NULL, NULL };
+
+    /* --- TCP connect --- */
+    struct addrinfo hints, *res = NULL;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family   = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    if (getaddrinfo(host, "443", &hints, &res) != 0 || !res) return t;
+
+    t.fd = socket(res->ai_family, res->ai_socktype, 0);
+    if (t.fd < 0) { freeaddrinfo(res); return t; }
+
+    /* Non-blocking connect for timeout */
+    int flags = fcntl(t.fd, F_GETFL, 0);
+    fcntl(t.fd, F_SETFL, flags | O_NONBLOCK);
+    int r = connect(t.fd, res->ai_addr, res->ai_addrlen);
+    freeaddrinfo(res);
+
+    if (r < 0 && errno == EINPROGRESS) {
+        struct timeval tv = { .tv_sec = connect_timeout_sec, .tv_usec = 0 };
+        fd_set wfds; FD_ZERO(&wfds); FD_SET(t.fd, &wfds);
+        if (select(t.fd + 1, NULL, &wfds, NULL, &tv) <= 0)
+            goto fail;
+        int e = 0; socklen_t el = sizeof(e);
+        getsockopt(t.fd, SOL_SOCKET, SO_ERROR, &e, &el);
+        if (e) goto fail;
+    } else if (r < 0) goto fail;
+
+    /* Restore blocking + per-operation I/O timeout */
+    fcntl(t.fd, F_SETFL, flags);
+    if (io_timeout_sec > 0) {
+        struct timeval tv = { .tv_sec = io_timeout_sec, .tv_usec = 0 };
+        setsockopt(t.fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+        setsockopt(t.fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+    }
+
+    /* --- TLS handshake --- */
+    t.ctx = SSL_CTX_new(SSLv23_client_method());
+    if (!t.ctx) goto fail;
+    SSL_CTX_set_verify(t.ctx, SSL_VERIFY_NONE, NULL);
+
+    t.ssl = SSL_new(t.ctx);
+    if (!t.ssl) goto fail;
+    SSL_set_fd(t.ssl, t.fd);
+    SSL_set_tlsext_host_name(t.ssl, (char *)host);
+
+    if (SSL_connect(t.ssl) != 1) goto fail;
+    return t;
+
+fail:
+    if (t.ssl) { SSL_free(t.ssl); t.ssl = NULL; }
+    if (t.ctx) { SSL_CTX_free(t.ctx); t.ctx = NULL; }
+    if (t.fd >= 0) { close(t.fd); t.fd = -1; }
+    return t;
 }
 
-/* Fetch small text response body (headers + body → strip headers in C).
- * Returns malloc'd NUL-terminated body string, or NULL.  Caller frees. */
-static char *fw_https_get_body(const char *host, const char *path)
+static void fw_tls_close(fw_tls_t *t)
 {
-    FILE *f = fw_https_open(host, path, 15);
-    if (!f) return NULL;
+    if (t->ssl) { SSL_shutdown(t->ssl); SSL_free(t->ssl); t->ssl = NULL; }
+    if (t->ctx) { SSL_CTX_free(t->ctx); t->ctx = NULL; }
+    if (t->fd >= 0) { close(t->fd); t->fd = -1; }
+}
 
-    /* Read entire response (up to 64 KB) */
-    char *buf = malloc(65536);
-    if (!buf) { pclose(f); return NULL; }
+/* Send HTTP request, read full response (up to max_bytes).
+ * Returns malloc'd buffer with complete response, sets *out_len. Caller frees. */
+static char *fw_tls_request(fw_tls_t *t, const char *method,
+                              const char *host, const char *path,
+                              size_t max_bytes, size_t *out_len)
+{
+    char req[512];
+    int rlen = snprintf(req, sizeof(req),
+        "%s %s HTTP/1.0\r\nHost: %s\r\n"
+        "User-Agent: wbsrv/1.0\r\nConnection: close\r\n\r\n",
+        method, path, host);
+    if (SSL_write(t->ssl, req, rlen) <= 0) return NULL;
+
+    char *buf = malloc(max_bytes + 1);
+    if (!buf) return NULL;
     size_t off = 0;
-    size_t cap = 65536;
-    while (off < cap - 1) {
-        size_t n = fread(buf + off, 1, cap - 1 - off, f);
-        if (n == 0) break;
-        off += n;
-    }
+    int n;
+    while (off < max_bytes &&
+           (n = SSL_read(t->ssl, buf + off, (int)(max_bytes - off))) > 0)
+        off += (size_t)n;
     buf[off] = '\0';
-    pclose(f);
+    if (out_len) *out_len = off;
+    return off > 0 ? buf : (free(buf), NULL);
+}
 
-    /* Find body after \r\n\r\n */
-    char *body = strstr(buf, "\r\n\r\n");
-    if (!body) { free(buf); return NULL; }
-    body += 4;
-    char *result = strdup(body);
-    free(buf);
+/* GET small response — returns malloc'd body (after \r\n\r\n). Caller frees. */
+static char *fw_tls_get_body(const char *host, const char *path)
+{
+    fw_tls_t t = fw_tls_open(host, 10, 15);
+    if (t.fd < 0) return NULL;
+
+    size_t len = 0;
+    char *resp = fw_tls_request(&t, "GET", host, path, 65536, &len);
+    fw_tls_close(&t);
+    if (!resp) return NULL;
+
+    char *body = strstr(resp, "\r\n\r\n");
+    if (!body) { free(resp); return NULL; }
+    char *result = strdup(body + 4);
+    free(resp);
     return result;
 }
 
-/* Do a HEAD request, return HTTP status and Location header value. */
-static int fw_https_head(const char *host, const char *path,
-                          char *location, size_t llen)
+/* HEAD → HTTP status + optional Location header. */
+static int fw_tls_head(const char *host, const char *path,
+                        char *location, size_t llen)
 {
-    char cmd[1024];
-    snprintf(cmd, sizeof(cmd),
-        "printf 'HEAD %s HTTP/1.0\\r\\nHost: %s\\r\\n"
-        "User-Agent: wbsrv/1.0\\r\\nConnection: close\\r\\n\\r\\n' "
-        "| timeout 15 openssl s_client -quiet -connect '%s:443' 2>/dev/null",
-        path, host, host);
-    FILE *f = popen(cmd, "r");
-    if (!f) return 0;
+    fw_tls_t t = fw_tls_open(host, 10, 15);
+    if (t.fd < 0) return 0;
 
-    char resp[4096] = {0};
-    fread(resp, 1, sizeof(resp) - 1, f);
-    pclose(f);
+    size_t len = 0;
+    char *resp = fw_tls_request(&t, "HEAD", host, path, 4096, &len);
+    fw_tls_close(&t);
+    if (!resp) return 0;
 
     int status = 0;
     sscanf(resp, "HTTP/1.%*d %d", &status);
@@ -1585,10 +1654,11 @@ static int fw_https_head(const char *host, const char *path,
             p++;
         }
     }
+    free(resp);
     return status;
 }
 
-/* Follow redirects up to 5 hops.  Writes final URL to *out (must be ≥512). */
+/* Follow up to 5 redirect hops. Writes final URL to out (≥512 bytes). */
 static int fw_resolve_url(const char *url, char *out)
 {
     char cur[512];
@@ -1598,7 +1668,7 @@ static int fw_resolve_url(const char *url, char *out)
         if (fw_parse_url(cur, host, sizeof(host), path, sizeof(path)) < 0)
             return -1;
         char location[512] = {0};
-        int st = fw_https_head(host, path, location, sizeof(location));
+        int st = fw_tls_head(host, path, location, sizeof(location));
         if (st / 100 == 3 && location[0])
             strncpy(cur, location, sizeof(cur) - 1);
         else {
@@ -1648,7 +1718,7 @@ static long long fw_json_num(const char *json, const char *key)
 static int fw_do_check(void)
 {
     if (!g_fw) return 1;
-    char *body = fw_https_get_body(GITHUB_API_HOST,
+    char *body = fw_tls_get_body(GITHUB_API_HOST,
         "/repos/" GITHUB_REPO "/releases/latest");
     if (!body) return 1;
 
@@ -1668,27 +1738,39 @@ static int fw_do_check(void)
 static int fw_do_download(void)
 {
     if (!g_fw || !g_fw->dl_url[0]) return 1;
-    char dl_url[512] = {0};
-    strncpy(dl_url, g_fw->dl_url, sizeof(dl_url) - 1);
 
-    char final_url[512] = {0};
-    if (fw_resolve_url(dl_url, final_url) < 0)
-        strncpy(final_url, dl_url, sizeof(final_url) - 1);
+    /* Follow redirects to get final URL */
+    char url[512] = {0};
+    strncpy(url, g_fw->dl_url, sizeof(url) - 1);
+    if (fw_resolve_url(url, url) < 0) {
+        /* resolve failed — try original URL directly */
+        strncpy(url, g_fw->dl_url, sizeof(url) - 1);
+    }
 
     char host[128] = {0}, path[256] = {0};
-    if (fw_parse_url(final_url, host, sizeof(host), path, sizeof(path)) < 0)
+    if (fw_parse_url(url, host, sizeof(host), path, sizeof(path)) < 0)
         return 1;
 
-    FILE *stream = fw_https_open(host, path, 300);  /* 5 min for ~15 MB firmware */
-    if (!stream) return 1;
+    /* Connect: 10s TCP timeout, 60s per-read I/O timeout */
+    fw_tls_t t = fw_tls_open(host, 10, 60);
+    if (t.fd < 0) return 1;
 
-    /* Parse response headers, extract Content-Length */
-    int hstate = 0;
+    /* Send GET request */
+    char req[512];
+    int rlen = snprintf(req, sizeof(req),
+        "GET %s HTTP/1.0\r\nHost: %s\r\n"
+        "User-Agent: wbsrv/1.0\r\nConnection: close\r\n\r\n",
+        path, host);
+    if (SSL_write(t.ssl, req, rlen) <= 0) { fw_tls_close(&t); return 1; }
+
+    /* Read response headers, extract Content-Length */
+    int hstate = 0, hpos = 0;
     char hdr_line[512] = {0};
-    int hpos = 0;
     long long content_length = 0;
+    unsigned char cb;
     int c;
-    while ((c = fgetc(stream)) != EOF) {
+    while (SSL_read(t.ssl, &cb, 1) == 1) {
+        c = (int)cb;
         if      (hstate == 0 && c == '\r') hstate = 1;
         else if (hstate == 1 && c == '\n') hstate = 2;
         else if (hstate == 2 && c == '\r') hstate = 3;
@@ -1707,25 +1789,22 @@ static int fw_do_download(void)
 
     if (g_fw) { g_fw->dl_total = content_length; g_fw->dl_done = 0; }
 
+    /* Stream body to file */
     FILE *out = fopen(FOTA_BIN, "wb");
-    if (!out) { pclose(stream); return 1; }
+    if (!out) { fw_tls_close(&t); return 1; }
 
     char buf[8192];
     long long written = 0;
-    size_t n;
-    while ((n = fread(buf, 1, sizeof(buf), stream)) > 0) {
-        fwrite(buf, 1, n, out);
-        written += (long long)n;
+    int n;
+    while ((n = SSL_read(t.ssl, buf, (int)sizeof(buf))) > 0) {
+        fwrite(buf, 1, (size_t)n, out);
+        written += n;
         if (g_fw) g_fw->dl_done = written;
     }
     fclose(out);
-    pclose(stream);
+    fw_tls_close(&t);
 
-    if (written < 1000000) {
-        unlink(FOTA_BIN);
-        return 1;
-    }
-
+    if (written < 1000000) { unlink(FOTA_BIN); return 1; }
     return 0;
 }
 
