@@ -1,9 +1,6 @@
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+@import "tailwindcss";
 
+/* ── CSS variables (unlayered — always available) ─────────────────────────── */
 :root {
   --color-bg:           #f5f5f5;
   --color-surface:      #ffffff;
@@ -26,25 +23,84 @@
   --shadow:             0 1px 4px rgba(0,0,0,.12);
 }
 
-html, body, #app {
-  height: 100%;
-  font-family: "Microsoft Yahei", Tahoma, Arial, Roboto, "Droid Sans", "Helvetica Neue",
-               "Droid Sans Fallback", "Heiti SC", "Hiragino Sans GB", Simsun, sans-serif;
-  font-size: 14px;
-  color: var(--color-text);
-  background: var(--color-bg);
+/* ── Base / Reset (in @layer base so Tailwind utilities override it) ───────── */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body, #app {
+    height: 100%;
+    font-family: "Microsoft Yahei", Tahoma, Arial, Roboto, "Droid Sans", "Helvetica Neue",
+                 "Droid Sans Fallback", "Heiti SC", "Hiragino Sans GB", Simsun, sans-serif;
+    font-size: 14px;
+    color: var(--color-text);
+    background: var(--color-bg);
+  }
+
+  a     { color: inherit; text-decoration: none; }
+  ul    { list-style: none; }
+  button { cursor: pointer; border: none; background: none; font: inherit; }
 }
 
-a { color: inherit; text-decoration: none; }
-ul { list-style: none; }
-button {
-  cursor: pointer;
-  border: none;
-  background: none;
-  font: inherit;
+/* ── Components (in @layer components so Tailwind utilities still override) ── */
+@layer components {
+  .box {
+    @apply relative border border-[#9eb9c2] rounded bg-white px-4 pt-6 pb-4;
+  }
+
+  /* Floating label on border */
+  .section-title {
+    @apply absolute left-2 -top-2.5 bg-[#f5f5f5] px-1.5 text-[#9eb9c2] text-[13px] whitespace-nowrap;
+  }
+
+  /* Page container for form pages */
+  .page-form {
+    @apply px-4 py-2 pb-8 max-w-[700px];
+  }
+
+  /* Form rows */
+  .form-row {
+    @apply flex items-center min-h-9 py-1;
+  }
+  .form-row + .form-row {
+    @apply border-t border-[#f0f0f0];
+  }
+  .form-row__label {
+    @apply w-2/5 shrink-0 text-right pr-5 text-sm leading-snug;
+  }
+  .form-row__value {
+    @apply w-3/5 flex items-center gap-2 flex-wrap;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center gap-1.5 px-4 py-1.5 rounded text-sm border border-transparent cursor-pointer transition-colors leading-snug whitespace-nowrap select-none;
+  }
+  .btn-primary {
+    @apply bg-[#1d1e1f] text-white border-[#1d1e1f] hover:bg-[#333] hover:border-[#333] disabled:bg-[#aaa] disabled:border-[#aaa] disabled:cursor-not-allowed;
+  }
+  .btn-ghost {
+    @apply bg-transparent border-[#9eb9c2] text-[#16191c] hover:bg-[#eee];
+  }
+  .btn-danger {
+    @apply bg-[#d9534f] text-white border-[#d9534f] hover:bg-[#c0392b] hover:border-[#c0392b];
+  }
+
+  /* Form actions */
+  .form-actions {
+    @apply flex gap-2 pt-3 pb-1;
+  }
+
+  /* Field hint */
+  .field-hint {
+    @apply text-xs text-[#888] w-full;
+  }
 }
 
-/* ── Card = shbox_border ─────────────────────────────────────────────────── */
+/* ── Legacy .card (kept for backward compat, not in a layer) ──────────────── */
 .card {
   position: relative;
   border: 1px solid var(--color-border);
@@ -54,104 +110,7 @@ button {
   padding: 20px 16px 12px;
 }
 
-/* Floating label on border — sits on top of the card border */
-.section-title {
-  position: absolute;
-  left: 8px;
-  top: -10px;
-  background: var(--color-bg);
-  padding: 0 6px;
-  color: var(--color-border);
-  font-size: 13px;
-  font-weight: normal;
-  text-transform: none;
-  letter-spacing: normal;
-  white-space: nowrap;
-}
-
-/* ── Page layout ─────────────────────────────────────────────────────────── */
-.page-form {
-  padding: 8px 16px 32px;
-  max-width: 700px;
-}
-
-/* ── Form rows (.list style) ─────────────────────────────────────────────── */
-.form-row {
-  display: flex;
-  align-items: center;
-  min-height: 36px;
-  padding: 4px 0;
-}
-
-.form-row + .form-row {
-  border-top: 1px solid #f0f0f0;
-}
-
-.form-row__label {
-  width: 40%;
-  flex-shrink: 0;
-  text-align: right;
-  padding-right: 20px;
-  color: var(--color-text);
-  font-size: 14px;
-  line-height: 1.4;
-}
-
-.form-row__value {
-  width: 60%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-/* ── Buttons ─────────────────────────────────────────────────────────────── */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 16px;
-  border-radius: var(--radius);
-  font-size: 14px;
-  font-weight: normal;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: background .15s;
-  line-height: 1.4;
-  white-space: nowrap;
-  user-select: none;
-}
-
-.btn-primary {
-  background: var(--color-primary);
-  color: #fff;
-  border-color: var(--color-primary);
-}
-.btn-primary:hover { background: var(--color-primary-hover); border-color: var(--color-primary-hover); }
-.btn-primary:disabled { background: #aaa; border-color: #aaa; cursor: not-allowed; }
-
-.btn-ghost {
-  background: transparent;
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-}
-.btn-ghost:hover { background: #eee; }
-
-.btn-danger {
-  background: var(--color-danger);
-  color: #fff;
-  border-color: var(--color-danger);
-}
-.btn-danger:hover { background: #c0392b; border-color: #c0392b; }
-
-/* ── Form actions row ────────────────────────────────────────────────────── */
-.form-actions {
-  display: flex;
-  gap: 8px;
-  padding: 12px 0 4px;
-}
-
-/* ── Inputs ──────────────────────────────────────────────────────────────── */
+/* ── Inputs (element selectors — low specificity, fine unlayered) ─────────── */
 input[type="text"],
 input[type="password"],
 input[type="number"],
@@ -209,11 +168,3 @@ textarea { height: auto; line-height: 1.4; padding: 6px 8px; }
   box-shadow: 0 1px 3px rgba(0,0,0,.2);
 }
 .toggle input:checked ~ .toggle__track .toggle__thumb { left: 18px; }
-
-
-/* ── Hint text ───────────────────────────────────────────────────────────── */
-.field-hint {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  width: 100%;
-}

@@ -147,7 +147,7 @@ static int check_auth(int client_fd, const http_request_t *req)
     if (fcgi_check_auth(cookie ? cookie : "", g_fcgi_host, g_fcgi_port))
         return 1;
 
-    static const char body[] = "{\"errCode\":-32002,\"errMsg\":\"Not authenticated\"}";
+    static const char body[] = "{\"errCode\":-32002,\"errKey\":\"not_authenticated\",\"errMsg\":\"Not authenticated\"}";
     http_send_response(client_fd, 401, "Unauthorized",
                        "application/json; charset=utf-8",
                        body, sizeof(body) - 1);
@@ -723,18 +723,54 @@ static int handle_system_stats(int client_fd, const http_request_t *req)
         if (uf) { fscanf(uf, "%lu", &uptime_sec); fclose(uf); }
     }
 
-    /* TCP/UDP connection count from nf_conntrack */
+    /* TCP/UDP connection count — try nf_conntrack_count, fall back to counting
+       lines in /proc/net/nf_conntrack */
     unsigned long conntrack = 0;
     {
         FILE *cf = fopen("/proc/sys/net/netfilter/nf_conntrack_count", "r");
-        if (cf) { fscanf(cf, "%lu", &conntrack); fclose(cf); }
+        if (cf) {
+            fscanf(cf, "%lu", &conntrack);
+            fclose(cf);
+        } else {
+            /* fallback: count lines in /proc/net/nf_conntrack */
+            FILE *nf = fopen("/proc/net/nf_conntrack", "r");
+            if (nf) {
+                char line[256];
+                while (fgets(line, sizeof(line), nf)) conntrack++;
+                fclose(nf);
+            }
+        }
+    }
+
+    /* Connected WiFi clients — count ARP entries on wireless interfaces.
+       popen() was removed from this hot path as it blocked the single-threaded
+       server on every poll.  We count /proc/net/arp lines whose iface starts
+       with "wlan" and flags == 0x2 (complete/reachable). */
+    unsigned long user_count = 0;
+    {
+        FILE *af = fopen("/proc/net/arp", "r");
+        if (af) {
+            char line[128];
+            fgets(line, sizeof(line), af); /* skip header */
+            while (fgets(line, sizeof(line), af)) {
+                /* IP HW Flags HW addr Mask Iface */
+                char iface[16]; unsigned int flags = 0;
+                if (sscanf(line, "%*s %*s %x %*s %*s %15s", &flags, iface) == 2
+                    && strncmp(iface, "wlan", 4) == 0
+                    && flags == 0x2)
+                    user_count++;
+            }
+            fclose(af);
+        }
     }
 
     char body[512];
     int blen = snprintf(body, sizeof(body),
         "{\"cpu_pct\":%d,\"mem_pct\":%d,\"mem_total\":%lu,\"mem_avail\":%lu,"
-        "\"rx_bytes\":%llu,\"tx_bytes\":%llu,\"uptime\":%lu,\"conntrack\":%lu}",
-        cpu_pct, mem_pct, mem_total, mem_avail, rx, tx, uptime_sec, conntrack);
+        "\"rx_bytes\":%llu,\"tx_bytes\":%llu,\"uptime\":%lu,"
+        "\"conntrack\":%lu,\"user_count\":%lu}",
+        cpu_pct, mem_pct, mem_total, mem_avail, rx, tx, uptime_sec,
+        conntrack, user_count);
 
     http_send_response(client_fd, 200, "OK",
                        "application/json; charset=utf-8",
@@ -1200,7 +1236,7 @@ static int handle_auth(int client_fd, const http_request_t *req)
 
         if (strcmp(submitted, stored) != 0) {
             static const char bad[] =
-                "{\"errCode\":-1,\"errMsg\":\"Wrong password\"}";
+                "{\"errCode\":-1,\"errKey\":\"password_error\",\"errMsg\":\"Wrong password\"}";
             http_send_response(client_fd, 401, "Unauthorized",
                                "application/json; charset=utf-8",
                                bad, sizeof(bad) - 1);

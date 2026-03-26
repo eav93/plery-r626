@@ -1,7 +1,7 @@
 <template>
   <div class="page-form">
 
-    <div class="card">
+    <div class="box">
       <div class="section-title">{{ t('reboot') }}</div>
       <div class="form-row">
         <label class="form-row__label"></label>
@@ -17,11 +17,11 @@
     </div>
 
     <Teleport to="body">
-      <div v-if="countdown > 0" class="reboot-overlay">
-        <div class="reboot-card">
-          <p style="font-size:16px;font-weight:500">{{ t('tip') || 'Rebooting…' }}</p>
-          <p class="countdown">{{ countdown }}s</p>
-          <p style="font-size:12px;color:var(--color-text-muted)">Page will reload automatically</p>
+      <div v-if="countdown > 0" class="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]">
+        <div class="bg-white border border-[#9eb9c2] rounded px-14 py-10 flex flex-col items-center gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
+          <p class="text-[16px] font-medium">{{ t('tip') || 'Rebooting…' }}</p>
+          <p class="text-[52px] font-bold text-[#ed6c00] leading-none">{{ countdown }}s</p>
+          <p class="text-[12px] text-[#888]">Page will reload automatically</p>
         </div>
       </div>
     </Teleport>
@@ -51,18 +51,3 @@ async function doReboot() {
 }
 </script>
 
-<style scoped>
-.reboot-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.5);
-  display: flex; align-items: center; justify-content: center; z-index: 1000;
-}
-.reboot-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 40px 56px;
-  display: flex; flex-direction: column; align-items: center; gap: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,.2);
-}
-.countdown { font-size: 52px; font-weight: 700; color: #ed6c00; line-height: 1; }
-</style>

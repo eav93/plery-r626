@@ -1,14 +1,15 @@
 <template>
   <div class="page-form">
-    <div class="card">
+    <div class="box">
       <div class="section-title">{{ t('wan_set') || 'WAN' }}</div>
 
       <div class="form-row">
         <label class="form-row__label">{{ t('wan_type') || 'Connection Type' }}</label>
         <div class="form-row__value">
-          <ul class="htabs">
+          <ul class="flex list-none m-0 p-0">
             <li v-for="p in protos" :key="p.value"
-                :class="{ active: form.proto === p.value }"
+                class="cursor-pointer px-4 leading-8 text-white border-r border-r-[rgba(255,255,255,0.3)] text-[13px] select-none first:rounded-l last:rounded-r last:border-r-0"
+                :class="form.proto === p.value ? 'bg-[#ed6c00]' : 'bg-[#ed994d] hover:bg-[#e08540]'"
                 @click="form.proto = p.value">{{ p.label }}</li>
           </ul>
         </div>
@@ -122,20 +123,3 @@ async function save() {
 }
 </script>
 
-<style scoped>
-.htabs { display: flex; list-style: none; margin: 0; padding: 0; }
-.htabs li {
-  cursor: pointer;
-  padding: 0 16px;
-  line-height: 32px;
-  color: #fff;
-  background: #ed994d;
-  border-right: 1px solid rgba(255,255,255,.3);
-  font-size: 13px;
-  user-select: none;
-}
-.htabs li:first-child { border-radius: 2px 0 0 2px; }
-.htabs li:last-child  { border-radius: 0 2px 2px 0; border-right: none; }
-.htabs li.active      { background: #ed6c00; }
-.htabs li:hover:not(.active) { background: #e08540; }
-</style>

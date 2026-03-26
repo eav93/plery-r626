@@ -40,7 +40,7 @@ export function useApi() {
   }
 
   /** POST /api/auth/login — native wbsrv auth, sets 'slt' cookie */
-  async function authLogin(password: string): Promise<{ errCode: number; errMsg?: string }> {
+  async function authLogin(password: string): Promise<{ errCode: number; errKey?: string; errMsg?: string }> {
     const r = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

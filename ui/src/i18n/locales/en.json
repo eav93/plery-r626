@@ -422,6 +422,10 @@
   "DownloadNote1": "Download progress < ",
   "DownloadNote2": ">",
   "uptime": "Uptime",
+  "traffic_bytes": "Traffic Monitor (bytes)",
+  "uptime_d": "d",
+  "uptime_h": "h",
+  "uptime_m": "m",
   "hostname": "Hostname",
   "firmware_version": "Firmware Version",
   "portstatus": "Port Status",
@@ -443,5 +447,6 @@
   "dhcp_auto": "IP address is obtained automatically from the provider.",
   "reboot_tip": "The device will restart. Connection will be lost for ~30 seconds.",
   "password_error": "Wrong password",
-  "network_err": "Network error"
+  "network_err": "Network error",
+  "not_authenticated": "Not authenticated"
 }

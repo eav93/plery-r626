@@ -19,6 +19,8 @@ GET http://{{host}}/api/sysinfo
 HTTP 401
 [Asserts]
 jsonpath "$.errCode" == -32002
+jsonpath "$.errKey"  == "not_authenticated"
+jsonpath "$.errMsg"  exists
 
 
 GET http://{{host}}/api/system/stats

@@ -1,12 +1,12 @@
 <template>
-  <div class="login-page">
-    <div class="login-card">
+  <div class="min-h-screen flex items-center justify-center bg-[#f5f5f5] px-4 pt-0 max-[500px]:items-start max-[500px]:pt-10">
+    <div class="w-full max-w-[460px] bg-white border border-[#9eb9c2] rounded">
 
-      <div class="login-brand">
-        <img :src="logoUrl" alt="Plery" class="login-logo" />
+      <div class="bg-[#ffc510] flex items-center justify-center h-[70px] rounded-t">
+        <img :src="logoUrl" alt="Plery" class="h-[38px] w-auto" />
       </div>
 
-      <form @submit.prevent="doLogin" class="login-form">
+      <form @submit.prevent="doLogin" class="px-4 pt-5 pb-4">
         <div class="form-row">
           <label class="form-row__label">{{ t('language') }}</label>
           <div class="form-row__value">
@@ -24,10 +24,10 @@
           </div>
         </div>
 
-        <p v-if="errorMsg" class="login-error">{{ errorMsg }}</p>
+        <p v-if="errorMsg" class="text-[12px] text-[#d9534f] px-[10px] py-[6px] bg-[rgba(209,52,56,0.08)] rounded my-1">{{ errorMsg }}</p>
 
-        <div class="form-actions" style="justify-content:center">
-          <button type="submit" class="btn btn-primary login-btn" :disabled="loading">
+        <div class="flex gap-2 pt-3 pb-1 justify-center">
+          <button type="submit" class="btn btn-primary min-w-[120px] justify-center" :disabled="loading">
             {{ loading ? '…' : t('login') }}
           </button>
         </div>
@@ -57,6 +57,10 @@ function changeLang(e: Event) {
   locale.value = (e.target as HTMLSelectElement).value as 'en' | 'ru' | 'cn'
 }
 
+function errText(errKey?: string, errMsg?: string) {
+  return (errKey ? t(errKey) : '') || errMsg || ''
+}
+
 async function doLogin() {
   loading.value = true
   errorMsg.value = ''
@@ -66,59 +70,14 @@ async function doLogin() {
       const redirect = (route.query.redirect as string) || '/dashboard'
       router.push(redirect)
     } else {
-      errorMsg.value = res.errMsg || t('password_error') || 'Wrong password'
+      errorMsg.value = errText(res.errKey, res.errMsg) || t('password_error')
     }
-  } catch {
-    errorMsg.value = t('network_err') || 'Network error'
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : ''
+    errorMsg.value = t('network_err') + (detail ? ': ' + detail : '')
   } finally {
     loading.value = false
   }
 }
 </script>
 
-<style scoped>
-.login-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-bg);
-}
-
-.login-card {
-  width: 100%;
-  max-width: 460px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  box-sizing: border-box;
-}
-
-@media (max-width: 500px) {
-  .login-page { padding: 16px; align-items: flex-start; padding-top: 40px; }
-  .login-card { max-width: 100%; }
-}
-
-.login-brand {
-  background: var(--color-accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 70px;
-  border-radius: var(--radius) var(--radius) 0 0;
-}
-.login-logo { height: 38px; width: auto; }
-
-.login-form { padding: 20px 16px 16px; }
-
-.login-error {
-  font-size: 12px;
-  color: var(--color-danger);
-  padding: 6px 10px;
-  background: rgba(209,52,56,.08);
-  border-radius: var(--radius);
-  margin: 4px 0;
-}
-
-.login-btn { min-width: 120px; justify-content: center; }
-</style>

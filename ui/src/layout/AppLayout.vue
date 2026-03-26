@@ -1,30 +1,33 @@
 <template>
-  <div class="layout" :class="isMobile ? 'layout--mobile' : 'layout--desktop'">
+  <div class="flex h-screen overflow-hidden" :class="isMobile ? 'flex-col' : 'flex-row'">
 
     <!-- Desktop sidebar -->
-    <aside v-if="!isMobile" class="sidebar">
-      <div class="sidebar__brand">
-        <img :src="logoUrl" alt="Plery" class="sidebar__logo" />
+    <aside v-if="!isMobile" class="w-[230px] min-w-[230px] bg-[#1d1e1f] text-[#eaeefe] flex flex-col overflow-y-auto">
+      <div class="h-[60px] bg-[#ffc510] flex items-center justify-center shrink-0">
+        <img :src="logoUrl" alt="Plery" class="h-9 w-auto" />
       </div>
-      <nav class="sidebar__nav">
+      <nav class="flex-1">
         <template v-for="item in navItems" :key="item.id">
-          <div v-if="item.children" class="nav-group">
-            <div
-              class="nav-item nav-item--parent"
-              :class="{ 'is-open': openGroups.has(item.id) }"
+          <div v-if="item.children">
+            <button
+              class="flex items-center gap-3 px-5 h-12 cursor-pointer text-[15px] text-[#eaeefe] transition-colors border-l-4 border-l-transparent no-underline w-full text-left bg-transparent hover:bg-[rgba(67,67,72,0.4)]"
               @click="toggleGroup(item.id)"
             >
-              <AppIcon :name="item.icon" :size="16" class="nav-item__icon" />
-              <span class="nav-item__label">{{ t(item.labelKey) }}</span>
-              <svg class="nav-item__arrow" viewBox="0 0 10 10" fill="currentColor" width="10" height="10"><path d="M2 3 L5 7 L8 3z"/></svg>
-            </div>
-            <div v-show="openGroups.has(item.id)" class="nav-children">
+              <AppIcon :name="item.icon" :size="16" class="w-[18px] shrink-0" />
+              <span class="flex-1 text-[15px]">{{ t(item.labelKey) }}</span>
+              <svg
+                viewBox="0 0 10 10" width="10" height="10" fill="currentColor"
+                class="shrink-0 transition-transform"
+                :class="openGroups.has(item.id) ? 'rotate-180' : ''"
+              ><path d="M2 3 L5 7 L8 3z"/></svg>
+            </button>
+            <div v-show="openGroups.has(item.id)">
               <RouterLink
                 v-for="child in item.children"
                 :key="child.id"
                 :to="child.to"
-                class="nav-item nav-item--child"
-                active-class="is-active"
+                class="flex items-center gap-3 pl-11 h-10 cursor-pointer text-[14px] text-[#eaeefe] transition-colors border-l-4 border-l-transparent no-underline w-full hover:bg-[rgba(67,67,72,0.4)]"
+                active-class="!text-[#ffc510] !border-l-[#ffc510] !bg-[#434348]"
               >
                 {{ t(child.labelKey) }}
               </RouterLink>
@@ -34,66 +37,75 @@
           <RouterLink
             v-else
             :to="item.to!"
-            class="nav-item"
-            active-class="is-active"
+            class="flex items-center gap-3 px-5 h-12 cursor-pointer text-[15px] text-[#eaeefe] transition-colors border-l-4 border-l-transparent no-underline w-full hover:bg-[rgba(67,67,72,0.4)]"
+            active-class="!text-[#ffc510] !border-l-[#ffc510] !bg-[#434348]"
           >
-            <AppIcon :name="item.icon" :size="16" class="nav-item__icon" />
-            <span class="nav-item__label">{{ t(item.labelKey) }}</span>
+            <AppIcon :name="item.icon" :size="16" class="w-[18px] shrink-0" />
+            <span class="flex-1 text-[15px]">{{ t(item.labelKey) }}</span>
           </RouterLink>
         </template>
       </nav>
-      <div class="sidebar__footer">
-        <button class="nav-item nav-item--logout" @click="logout">
-          <AppIcon name="tuichu" :size="16" class="nav-item__icon" />
-          <span class="nav-item__label">{{ t('logout') }}</span>
+      <div class="py-1 border-t border-[rgba(255,255,255,0.08)]">
+        <button
+          class="flex items-center gap-3 px-5 h-12 cursor-pointer text-[15px] text-[#eaeefe] transition-colors border-l-4 border-l-transparent no-underline w-full text-left bg-transparent hover:bg-[rgba(67,67,72,0.4)]"
+          @click="logout"
+        >
+          <AppIcon name="tuichu" :size="16" class="w-[18px] shrink-0" />
+          <span class="flex-1 text-[15px]">{{ t('logout') }}</span>
         </button>
       </div>
     </aside>
 
     <!-- Content area -->
-    <div class="content">
-      <!-- Desktop topbar (decorative black bar, matches original) -->
-      <div v-if="!isMobile" class="topbar topbar--desktop"></div>
-
-      <!-- Mobile topbar with hamburger -->
-      <header v-if="isMobile" class="topbar topbar--mobile">
-        <button class="hamburger" @click="mobileMenuOpen = !mobileMenuOpen">
-          <span /><span /><span />
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Topbar: shared for desktop and mobile -->
+      <header class="h-[60px] bg-[#1d1e1f] flex items-center px-4 gap-4 shrink-0">
+        <button
+          v-if="isMobile"
+          class="flex flex-col gap-[5px] p-1 cursor-pointer bg-transparent border-0"
+          @click="mobileMenuOpen = !mobileMenuOpen"
+        >
+          <span class="block w-[22px] h-[2px] bg-white rounded-[1px]" />
+          <span class="block w-[22px] h-[2px] bg-white rounded-[1px]" />
+          <span class="block w-[22px] h-[2px] bg-white rounded-[1px]" />
         </button>
-        <img :src="logoUrl" alt="Plery" class="topbar__logo" />
+        <img v-if="isMobile" :src="logoUrl" alt="Plery" class="h-[30px] w-auto brightness-0 invert" />
       </header>
 
-      <main class="main">
+      <main class="flex-1 overflow-y-auto bg-[#f5f5f5]">
         <RouterView />
       </main>
     </div>
 
     <!-- Mobile slide-out menu overlay -->
     <Teleport to="body">
-      <div v-if="isMobile && mobileMenuOpen" class="mobile-overlay" @click.self="mobileMenuOpen = false">
-        <aside class="mobile-drawer">
-          <div class="sidebar__brand">
-            <img :src="logoUrl" alt="Plery" class="sidebar__logo" />
+      <div v-if="isMobile && mobileMenuOpen" class="fixed inset-0 bg-black/50 z-[1000] flex" @click.self="mobileMenuOpen = false">
+        <aside class="w-[230px] min-w-[230px] bg-[#1d1e1f] text-[#eaeefe] flex flex-col overflow-y-auto h-full shrink-0">
+          <div class="h-[60px] bg-[#ffc510] flex items-center justify-center shrink-0">
+            <img :src="logoUrl" alt="Plery" class="h-9 w-auto" />
           </div>
-          <nav class="sidebar__nav">
+          <nav class="flex-1">
             <template v-for="item in navItems" :key="item.id">
-              <div v-if="item.children" class="nav-group">
-                <div
-                  class="nav-item nav-item--parent"
-                  :class="{ 'is-open': openGroups.has(item.id) }"
+              <div v-if="item.children">
+                <button
+                  class="flex items-center gap-3 px-5 h-12 cursor-pointer text-[15px] text-[#eaeefe] transition-colors border-l-4 border-l-transparent no-underline w-full text-left bg-transparent hover:bg-[rgba(67,67,72,0.4)]"
                   @click="toggleGroup(item.id)"
                 >
-                  <AppIcon :name="item.icon" :size="16" class="nav-item__icon" />
-                  <span class="nav-item__label">{{ t(item.labelKey) }}</span>
-                  <svg class="nav-item__arrow" viewBox="0 0 10 10" fill="currentColor" width="10" height="10"><path d="M2 3 L5 7 L8 3z"/></svg>
-                </div>
-                <div v-show="openGroups.has(item.id)" class="nav-children">
+                  <AppIcon :name="item.icon" :size="16" class="w-[18px] shrink-0" />
+                  <span class="flex-1 text-[15px]">{{ t(item.labelKey) }}</span>
+                  <svg
+                    viewBox="0 0 10 10" width="10" height="10" fill="currentColor"
+                    class="shrink-0 transition-transform"
+                    :class="openGroups.has(item.id) ? 'rotate-180' : ''"
+                  ><path d="M2 3 L5 7 L8 3z"/></svg>
+                </button>
+                <div v-show="openGroups.has(item.id)">
                   <RouterLink
                     v-for="child in item.children"
                     :key="child.id"
                     :to="child.to"
-                    class="nav-item nav-item--child"
-                    active-class="is-active"
+                    class="flex items-center gap-3 pl-11 h-10 cursor-pointer text-[14px] text-[#eaeefe] transition-colors border-l-4 border-l-transparent no-underline w-full hover:bg-[rgba(67,67,72,0.4)]"
+                    active-class="!text-[#ffc510] !border-l-[#ffc510] !bg-[#434348]"
                     @click="mobileMenuOpen = false"
                   >
                     {{ t(child.labelKey) }}
@@ -104,19 +116,22 @@
               <RouterLink
                 v-else
                 :to="item.to!"
-                class="nav-item"
-                active-class="is-active"
+                class="flex items-center gap-3 px-5 h-12 cursor-pointer text-[15px] text-[#eaeefe] transition-colors border-l-4 border-l-transparent no-underline w-full hover:bg-[rgba(67,67,72,0.4)]"
+                active-class="!text-[#ffc510] !border-l-[#ffc510] !bg-[#434348]"
                 @click="mobileMenuOpen = false"
               >
-                <AppIcon :name="item.icon" :size="16" class="nav-item__icon" />
-                <span class="nav-item__label">{{ t(item.labelKey) }}</span>
+                <AppIcon :name="item.icon" :size="16" class="w-[18px] shrink-0" />
+                <span class="flex-1 text-[15px]">{{ t(item.labelKey) }}</span>
               </RouterLink>
             </template>
           </nav>
-          <div class="sidebar__footer">
-            <button class="nav-item nav-item--logout" @click="logout">
-              <AppIcon name="tuichu" :size="16" class="nav-item__icon" />
-              <span class="nav-item__label">{{ t('logout') }}</span>
+          <div class="py-1 border-t border-[rgba(255,255,255,0.08)]">
+            <button
+              class="flex items-center gap-3 px-5 h-12 cursor-pointer text-[15px] text-[#eaeefe] transition-colors border-l-4 border-l-transparent no-underline w-full text-left bg-transparent hover:bg-[rgba(67,67,72,0.4)]"
+              @click="logout"
+            >
+              <AppIcon name="tuichu" :size="16" class="w-[18px] shrink-0" />
+              <span class="flex-1 text-[15px]">{{ t('logout') }}</span>
             </button>
           </div>
         </aside>
@@ -181,124 +196,3 @@ async function logout() {
 }
 </script>
 
-<style scoped>
-/* ── Shell ───────────────────────────────────────────────────────────────── */
-.layout { display: flex; height: 100vh; overflow: hidden; }
-.layout--desktop { flex-direction: row; }
-.layout--mobile  { flex-direction: column; }
-
-/* ── Sidebar ─────────────────────────────────────────────────────────────── */
-.sidebar, .mobile-drawer {
-  width: var(--sidebar-width);
-  min-width: var(--sidebar-width);
-  background: var(--sidebar-bg);
-  color: var(--sidebar-text);
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  height: 100%;
-}
-
-.sidebar__brand {
-  height: var(--header-height);
-  background: var(--color-accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.sidebar__logo { height: 36px; width: auto; }
-.sidebar__nav  { flex: 1; padding: 0; }
-.sidebar__footer {
-  padding: 4px 0 8px;
-  border-top: 1px solid rgba(255,255,255,.08);
-}
-
-/* ── Nav items ───────────────────────────────────────────────────────────── */
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 20px;
-  height: 48px;
-  line-height: 48px;
-  cursor: pointer;
-  font-size: 15px;
-  color: var(--sidebar-text);
-  transition: background .2s, color .2s;
-  border: none;
-  border-left: 4px solid transparent;
-  background: none;
-  width: 100%;
-  text-align: left;
-  box-sizing: border-box;
-  white-space: nowrap;
-  text-decoration: none;
-}
-.nav-item:hover { background: var(--sidebar-hover-bg); }
-.nav-item.is-active {
-  color: var(--color-accent);
-  border-left-color: var(--color-accent);
-  background: var(--sidebar-active-bg);
-}
-.nav-item__icon { width: 18px; flex-shrink: 0; }
-.nav-item__label { flex: 1; font-size: 15px; }
-.nav-item__arrow { transition: transform .2s; flex-shrink: 0; }
-.nav-item--parent.is-open .nav-item__arrow { transform: rotate(180deg); }
-.nav-item--child { padding-left: 44px; font-size: 14px; font-weight: 400; height: 40px; line-height: 40px; }
-.nav-item--logout { color: var(--sidebar-text); }
-.nav-item--logout:hover { color: #ff8c00; }
-
-/* ── Content ─────────────────────────────────────────────────────────────── */
-.content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-.main { flex: 1; overflow-y: auto; background: var(--color-bg); }
-
-/* ── Desktop topbar ──────────────────────────────────────────────────────── */
-.topbar--desktop {
-  height: var(--header-height);
-  background: var(--sidebar-bg);
-  flex-shrink: 0;
-}
-
-/* ── Mobile topbar ───────────────────────────────────────────────────────── */
-.topbar--mobile {
-  height: var(--header-height);
-  background: var(--sidebar-bg);
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 16px;
-  flex-shrink: 0;
-}
-.topbar__logo { height: 30px; width: auto; filter: brightness(0) invert(1); }
-
-.hamburger {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 4px;
-  cursor: pointer;
-  background: none;
-  border: none;
-}
-.hamburger span {
-  display: block;
-  width: 22px;
-  height: 2px;
-  background: #fff;
-  border-radius: 1px;
-}
-
-/* ── Mobile overlay + drawer ─────────────────────────────────────────────── */
-.mobile-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.5);
-  z-index: 1000;
-  display: flex;
-}
-.mobile-drawer {
-  height: 100vh;
-  flex-shrink: 0;
-}
-</style>

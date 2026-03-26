@@ -1,11 +1,15 @@
 <template>
   <Teleport to="body">
-    <div class="toast-container">
+    <div class="fixed bottom-6 right-6 flex flex-col gap-2 z-[9999]">
       <div
         v-for="n in notifications"
         :key="n.id"
-        class="toast"
-        :class="`toast--${n.type}`"
+        class="px-4 py-[10px] rounded text-[13px] font-medium text-white shadow-[0_4px_12px_rgba(0,0,0,0.2)] toast-slide-in"
+        :class="{
+          'bg-[#2ecc71]': n.type === 'success',
+          'bg-[#d9534f]': n.type === 'error',
+          'bg-[#1d1e1f]': n.type === 'info',
+        }"
       >{{ n.message }}</div>
     </div>
   </Teleport>
@@ -17,30 +21,9 @@ const { notifications } = useNotify()
 </script>
 
 <style scoped>
-.toast-container {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  z-index: 9999;
-}
-.toast {
-  padding: 10px 16px;
-  border-radius: var(--radius);
-  font-size: 13px;
-  font-weight: 500;
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(0,0,0,.2);
-  animation: slide-in .2s ease;
-}
-.toast--success { background: var(--color-success); }
-.toast--error   { background: var(--color-danger); }
-.toast--info    { background: var(--color-primary); }
-
 @keyframes slide-in {
   from { transform: translateX(20px); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
 }
+.toast-slide-in { animation: slide-in .2s ease; }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <div class="page-form">
 
-    <div class="card">
+    <div class="box">
       <div class="section-title">{{ t('lan_set') || 'LAN' }}</div>
 
       <FormField :label="t('ip_addr') || 'IP Address'">
@@ -19,7 +19,7 @@
       </FormField>
     </div>
 
-    <div class="card">
+    <div class="box">
       <div class="section-title">DHCP</div>
 
       <FormField :label="t('dhcp_server') || 'DHCP Server'">

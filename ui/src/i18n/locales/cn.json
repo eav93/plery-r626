@@ -422,6 +422,10 @@
   "DownloadNote1": "下载进度 < ",
   "DownloadNote2": ">",
   "uptime": "运行时间",
+  "traffic_bytes": "流量监控（字节）",
+  "uptime_d": "天",
+  "uptime_h": "时",
+  "uptime_m": "分",
   "hostname": "主机名",
   "firmware_version": "固件版本",
   "portstatus": "端口状态",
@@ -443,5 +447,6 @@
   "dhcp_auto": "IP地址将自动从运营商获取。",
   "reboot_tip": "设备将重启，连接将中断约30秒。",
   "password_error": "密码错误",
-  "network_err": "网络错误"
+  "network_err": "网络错误",
+  "not_authenticated": "未经授权"
 }

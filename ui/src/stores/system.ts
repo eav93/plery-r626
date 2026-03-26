@@ -11,6 +11,7 @@ interface SystemStats {
   tx_bytes: number
   uptime: number
   conntrack: number
+  user_count: number
 }
 
 interface SystemVersion {

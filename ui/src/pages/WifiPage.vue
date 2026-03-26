@@ -1,15 +1,16 @@
 <template>
   <div class="page-form">
 
-    <ul class="wire-tabs">
+    <ul class="flex list-none m-0 p-0">
       <li v-for="r in radios" :key="r.id"
-          :class="{ active: activeRadio === r.id }"
+          class="flex-1 text-center leading-9 cursor-pointer text-white border-r border-r-[rgba(255,255,255,0.25)] text-[14px] select-none last:border-r-0"
+          :class="activeRadio === r.id ? 'bg-[#ed6c00]' : 'bg-[#ed994d] hover:bg-[#e08540]'"
           @click="activeRadio = r.id">{{ r.label }}</li>
     </ul>
 
     <template v-for="r in radios" :key="r.id">
       <div v-show="activeRadio === r.id">
-        <div class="card">
+        <div class="box">
           <div class="section-title">{{ r.label }}</div>
 
           <FormField :label="t('ssid') || 'SSID'">
@@ -20,7 +21,7 @@
             <input v-model="r.form.key"
                    :type="showPwd[r.id] ? 'text' : 'password'"
                    maxlength="63" />
-            <button class="btn-eye" @click="showPwd[r.id] = !showPwd[r.id]">
+            <button class="px-2 h-[30px] border border-[#9eb9c2] rounded-[2px] bg-white cursor-pointer text-[14px] leading-none shrink-0" @click="showPwd[r.id] = !showPwd[r.id]">
               {{ showPwd[r.id] ? '🙈' : '👁' }}
             </button>
           </FormField>
@@ -147,37 +148,3 @@ async function save(r: Radio) {
 }
 </script>
 
-<style scoped>
-.wire-tabs {
-  display: flex;
-  list-style: none;
-  margin: 0 0 0 0;
-  padding: 0;
-}
-.wire-tabs li {
-  flex: 1;
-  text-align: center;
-  line-height: 36px;
-  cursor: pointer;
-  color: #fff;
-  background: #ed994d;
-  border-right: 1px solid rgba(255,255,255,.25);
-  font-size: 14px;
-  user-select: none;
-}
-.wire-tabs li:last-child { border-right: none; }
-.wire-tabs li.active     { background: #ed6c00; }
-.wire-tabs li:hover:not(.active) { background: #e08540; }
-
-.btn-eye {
-  padding: 0 8px;
-  height: 30px;
-  border: 1px solid var(--color-border);
-  border-radius: 2px;
-  background: var(--color-surface);
-  cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-</style>

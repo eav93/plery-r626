@@ -8,7 +8,8 @@ Content-Type: application/json
 HTTP 401
 [Asserts]
 jsonpath "$.errCode" == -1
-jsonpath "$.errMsg" exists
+jsonpath "$.errKey"  == "password_error"
+jsonpath "$.errMsg"  exists
 
 
 # Correct password → 200, sets slt cookie
