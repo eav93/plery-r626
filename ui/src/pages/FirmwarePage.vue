@@ -214,7 +214,13 @@ function startCountdown(sec: number) {
 async function checkUpdate() {
   busy.value = true
   status.value = { state: 'idle', new_version: '', download_pct: 0 }
-  try { await post('/api/firmware/check') } catch { /* ignore */ }
+  try {
+    await post('/api/firmware/check')
+  } catch {
+    error(t('NetworkError'))
+    busy.value = false
+    return
+  }
   await fetchStatus()
   schedulePoll()
   busy.value = false
@@ -227,7 +233,12 @@ async function cancelDownload() {
 
 async function startUpdate() {
   const keep = onlineKeep.value ? 1 : 0
-  try { await post(`/api/firmware/update?keep=${keep}`) } catch { /* ignore */ }
+  try {
+    await post(`/api/firmware/update?keep=${keep}`)
+  } catch {
+    error(t('set_err'))
+    return
+  }
   await fetchStatus()
   schedulePoll()
 }

@@ -19,6 +19,7 @@ export function useApi() {
       body: JSON.stringify(data ?? {}),
     })
     authGuard(r)
+    if (!r.ok) throw new Error(`HTTP ${r.status}`)
     return r.json()
   }
 
