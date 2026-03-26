@@ -42,6 +42,8 @@ typedef struct {
     int        keep;
     char       new_version[64];
     char       dl_url[512];
+    long long  dl_total;   /* Content-Length from download response, 0 if unknown */
+    long long  dl_done;    /* bytes written to FOTA_BIN so far */
 } fw_shared_t;
 
 static fw_shared_t *g_fw = NULL;
@@ -1470,10 +1472,12 @@ static const char *fw_get_state_str(void)
     }
 }
 
-/* Download progress 0-100. Total size is no longer tracked on disk. */
+/* Download progress 0-100 from shared memory counters. */
 static int fw_download_pct(void)
 {
-    return 0;
+    if (!g_fw || g_fw->dl_total <= 0) return 0;
+    int pct = (int)(g_fw->dl_done * 100 / g_fw->dl_total);
+    return pct < 0 ? 0 : (pct > 99 ? 99 : pct);  /* cap at 99 until state=applying */
 }
 
 /* ---- HTTPS via openssl s_client ----------------------------------------- */
@@ -1678,9 +1682,11 @@ static int fw_do_download(void)
     FILE *stream = fw_https_open(host, path, 300);  /* 5 min for ~15 MB firmware */
     if (!stream) return 1;
 
+    /* Parse response headers, extract Content-Length */
     int hstate = 0;
     char hdr_line[512] = {0};
     int hpos = 0;
+    long long content_length = 0;
     int c;
     while ((c = fgetc(stream)) != EOF) {
         if      (hstate == 0 && c == '\r') hstate = 1;
@@ -1691,11 +1697,15 @@ static int fw_do_download(void)
 
         if (c == '\n') {
             hdr_line[hpos] = '\0';
+            if (strncasecmp(hdr_line, "content-length:", 15) == 0)
+                content_length = atoll(hdr_line + 15);
             hpos = 0;
         } else if (c != '\r' && hpos < (int)sizeof(hdr_line) - 1) {
             hdr_line[hpos++] = (char)c;
         }
     }
+
+    if (g_fw) { g_fw->dl_total = content_length; g_fw->dl_done = 0; }
 
     FILE *out = fopen(FOTA_BIN, "wb");
     if (!out) { pclose(stream); return 1; }
@@ -1706,6 +1716,7 @@ static int fw_do_download(void)
     while ((n = fread(buf, 1, sizeof(buf), stream)) > 0) {
         fwrite(buf, 1, n, out);
         written += (long long)n;
+        if (g_fw) g_fw->dl_done = written;
     }
     fclose(out);
     pclose(stream);
@@ -1880,7 +1891,7 @@ static int handle_firmware(int client_fd, const http_request_t *req)
         int keep = 1;
         const char *qk = strstr(req->query, "keep=");
         if (qk && qk[5] == '0') keep = 0;
-        g_fw->keep = keep; g_fw->task_pid = 0;
+        g_fw->keep = keep; g_fw->task_pid = 0; g_fw->dl_total = 0; g_fw->dl_done = 0;
         unlink(FOTA_BIN);
         pid_t pid = fork();
         if (pid == 0) { fw_task_update(); _exit(1); }
