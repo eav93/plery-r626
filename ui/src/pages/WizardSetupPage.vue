@@ -40,7 +40,7 @@
             :key="p.value"
             class="inline-flex items-center gap-1.5 cursor-pointer select-none"
           >
-            <input type="radio" v-model="form.wan.proto" :value="p.value" class="accent-[#ed6c00]" />
+            <input type="radio" v-model="form.wan.proto" :value="p.value" class="accent-[#ffc510]" />
             <span class="text-[13px]">{{ p.label }}</span>
           </label>
         </div>
@@ -166,170 +166,7 @@
     </div>
 
     <!-- Step: WiFi -->
-    <template v-if="steps[currentStep]?.key === 'wifi'">
-
-      <!-- Band Steering toggle -->
-      <div class="box">
-        <div class="form-row">
-          <label class="form-row__label">{{ t('band_steering') }}</label>
-          <div class="form-row__value flex items-center gap-3">
-            <label class="toggle">
-              <input type="checkbox" v-model="bandSteering" />
-              <span class="toggle__track"><span class="toggle__thumb"></span></span>
-            </label>
-            <span class="text-xs text-[#888]">
-              {{ bandSteering ? t('band_steering_on_hint') : t('band_steering_off_hint') }}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Band Steering ON: shared settings + per-radio grid -->
-      <template v-if="bandSteering">
-        <div class="box">
-          <div class="section-title">{{ t('wifi_network') }}</div>
-
-          <FormField :label="t('ssid') || 'SSID'">
-            <input v-model="wifiShared.ssid" type="text" maxlength="32" />
-          </FormField>
-
-          <FormField :label="t('encrypt') || 'Шифрование'">
-            <select v-model="wifiShared.encryption">
-              <option value="psk2">WPA2-PSK</option>
-              <option value="psk-mixed">WPA/WPA2-PSK</option>
-              <option value="psk">WPA-PSK</option>
-              <option value="none">{{ t('none') || 'Открытая' }}</option>
-            </select>
-          </FormField>
-
-          <FormField v-if="wifiShared.encryption !== 'none'" :label="t('wifi_passwd') || 'Пароль'">
-            <input v-model="wifiShared.key" :type="showSharedPwd ? 'text' : 'password'" maxlength="63" />
-            <button class="pwd-toggle" @click="showSharedPwd = !showSharedPwd">{{ showSharedPwd ? '🙈' : '👁' }}</button>
-          </FormField>
-
-          <FormField :label="t('hidden') || 'Скрыть SSID'">
-            <label class="toggle">
-              <input type="checkbox" v-model="wifiShared.hidden" />
-              <span class="toggle__track"><span class="toggle__thumb"></span></span>
-            </label>
-          </FormField>
-        </div>
-
-        <div class="radio-grid">
-          <div class="box">
-            <div class="section-title">2.4 GHz</div>
-            <FormField :label="t('channels') || 'Канал'">
-              <select v-model="form.wifi24.channel">
-                <option value="auto">{{ t('auto') || 'Авто' }}</option>
-                <option v-for="ch in channels24" :key="ch" :value="String(ch)">{{ ch }}</option>
-              </select>
-            </FormField>
-            <FormField :label="t('wifi_enable') || 'Радио'">
-              <label class="toggle">
-                <input type="checkbox" v-model="form.wifi24.enabled" />
-                <span class="toggle__track"><span class="toggle__thumb"></span></span>
-                <span class="ml-2 text-sm">{{ form.wifi24.enabled ? (t('enable') || 'Вкл') : (t('disable') || 'Выкл') }}</span>
-              </label>
-            </FormField>
-          </div>
-          <div class="box">
-            <div class="section-title">5 GHz</div>
-            <FormField :label="t('channels') || 'Канал'">
-              <select v-model="form.wifi5g.channel">
-                <option value="auto">{{ t('auto') || 'Авто' }}</option>
-                <option v-for="ch in channels5g" :key="ch" :value="String(ch)">{{ ch }}</option>
-              </select>
-            </FormField>
-            <FormField :label="t('wifi_enable') || 'Радио'">
-              <label class="toggle">
-                <input type="checkbox" v-model="form.wifi5g.enabled" />
-                <span class="toggle__track"><span class="toggle__thumb"></span></span>
-                <span class="ml-2 text-sm">{{ form.wifi5g.enabled ? (t('enable') || 'Вкл') : (t('disable') || 'Выкл') }}</span>
-              </label>
-            </FormField>
-          </div>
-        </div>
-      </template>
-
-      <!-- Band Steering OFF: two independent columns -->
-      <div v-else class="radio-grid">
-        <div class="box">
-          <div class="section-title">2.4 GHz</div>
-          <FormField :label="t('ssid') || 'SSID'">
-            <input v-model="form.wifi24.ssid" type="text" maxlength="32" />
-          </FormField>
-          <FormField :label="t('encrypt') || 'Шифрование'">
-            <select v-model="form.wifi24.encryption">
-              <option value="psk2">WPA2-PSK</option>
-              <option value="psk-mixed">WPA/WPA2-PSK</option>
-              <option value="psk">WPA-PSK</option>
-              <option value="none">{{ t('none') || 'Открытая' }}</option>
-            </select>
-          </FormField>
-          <FormField v-if="form.wifi24.encryption !== 'none'" :label="t('wifi_passwd') || 'Пароль'">
-            <input v-model="form.wifi24.key" :type="showPwd['24g'] ? 'text' : 'password'" maxlength="63" />
-            <button class="pwd-toggle" @click="showPwd['24g'] = !showPwd['24g']">{{ showPwd['24g'] ? '🙈' : '👁' }}</button>
-          </FormField>
-          <FormField :label="t('channels') || 'Канал'">
-            <select v-model="form.wifi24.channel">
-              <option value="auto">{{ t('auto') || 'Авто' }}</option>
-              <option v-for="ch in channels24" :key="ch" :value="String(ch)">{{ ch }}</option>
-            </select>
-          </FormField>
-          <FormField :label="t('hidden') || 'Скрыть SSID'">
-            <label class="toggle">
-              <input type="checkbox" v-model="form.wifi24.hidden" />
-              <span class="toggle__track"><span class="toggle__thumb"></span></span>
-            </label>
-          </FormField>
-          <FormField :label="t('wifi_enable') || 'Радио'">
-            <label class="toggle">
-              <input type="checkbox" v-model="form.wifi24.enabled" />
-              <span class="toggle__track"><span class="toggle__thumb"></span></span>
-              <span class="ml-2 text-sm">{{ form.wifi24.enabled ? (t('enable') || 'Вкл') : (t('disable') || 'Выкл') }}</span>
-            </label>
-          </FormField>
-        </div>
-        <div class="box">
-          <div class="section-title">5 GHz</div>
-          <FormField :label="t('ssid') || 'SSID'">
-            <input v-model="form.wifi5g.ssid" type="text" maxlength="32" />
-          </FormField>
-          <FormField :label="t('encrypt') || 'Шифрование'">
-            <select v-model="form.wifi5g.encryption">
-              <option value="psk2">WPA2-PSK</option>
-              <option value="psk-mixed">WPA/WPA2-PSK</option>
-              <option value="psk">WPA-PSK</option>
-              <option value="none">{{ t('none') || 'Открытая' }}</option>
-            </select>
-          </FormField>
-          <FormField v-if="form.wifi5g.encryption !== 'none'" :label="t('wifi_passwd') || 'Пароль'">
-            <input v-model="form.wifi5g.key" :type="showPwd['5g'] ? 'text' : 'password'" maxlength="63" />
-            <button class="pwd-toggle" @click="showPwd['5g'] = !showPwd['5g']">{{ showPwd['5g'] ? '🙈' : '👁' }}</button>
-          </FormField>
-          <FormField :label="t('channels') || 'Канал'">
-            <select v-model="form.wifi5g.channel">
-              <option value="auto">{{ t('auto') || 'Авто' }}</option>
-              <option v-for="ch in channels5g" :key="ch" :value="String(ch)">{{ ch }}</option>
-            </select>
-          </FormField>
-          <FormField :label="t('hidden') || 'Скрыть SSID'">
-            <label class="toggle">
-              <input type="checkbox" v-model="form.wifi5g.hidden" />
-              <span class="toggle__track"><span class="toggle__thumb"></span></span>
-            </label>
-          </FormField>
-          <FormField :label="t('wifi_enable') || 'Радио'">
-            <label class="toggle">
-              <input type="checkbox" v-model="form.wifi5g.enabled" />
-              <span class="toggle__track"><span class="toggle__thumb"></span></span>
-              <span class="ml-2 text-sm">{{ form.wifi5g.enabled ? (t('enable') || 'Вкл') : (t('disable') || 'Выкл') }}</span>
-            </label>
-          </FormField>
-        </div>
-      </div>
-
-    </template>
+    <WifiSettings v-if="steps[currentStep]?.key === 'wifi'" v-model="wifiModel" />
 
     <!-- Step: Confirm -->
     <div v-if="steps[currentStep]?.key === 'confirm'" class="box">
@@ -387,11 +224,11 @@
       <div class="section-title" style="font-size:13px;margin-top:8px">{{ t('wireless') || 'WiFi' }}</div>
       <div class="form-row">
         <label class="form-row__label">{{ t('ssid_name_24g') || '2.4G SSID' }}</label>
-        <div class="form-row__value">{{ form.wifi24.ssid || '—' }}</div>
+        <div class="form-row__value">{{ (wifiModel.bandSteering ? wifiModel.shared.ssid : wifiModel.radios[0].ssid) || '—' }}</div>
       </div>
       <div class="form-row">
         <label class="form-row__label">{{ t('ssid_name_58g') || '5G SSID' }}</label>
-        <div class="form-row__value">{{ form.wifi5g.ssid || '—' }}</div>
+        <div class="form-row__value">{{ (wifiModel.bandSteering ? wifiModel.shared.ssid : wifiModel.radios[1].ssid) || '—' }}</div>
       </div>
     </div>
 
@@ -433,11 +270,12 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed, watch, onMounted } from 'vue'
+import { reactive, ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useApi } from '@/composables/useApi'
 import FormField from '@/components/FormField.vue'
+import WifiSettings, { type WifiSettingsValue } from '@/components/WifiSettings.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -461,25 +299,21 @@ const currentStep = ref(0)
 const applying = ref(false)
 const countdown = ref(0)
 
-const bandSteering = ref(false)
-const wifiShared = reactive({ ssid: '', key: '', encryption: 'psk2', hidden: false })
-const showSharedPwd = ref(false)
-const showPwd = reactive<Record<string, boolean>>({ '24g': false, '5g': false })
-
-const channels24 = [1,2,3,4,5,6,7,8,9,10,11,12,13]
-const channels5g  = [36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140,149,153,157,161,165]
-
-watch(bandSteering, (on) => {
-  if (!on) {
-    form.wifi24.ssid = wifiShared.ssid
-    form.wifi24.key  = wifiShared.key
-    form.wifi24.encryption = wifiShared.encryption
-    form.wifi24.hidden = wifiShared.hidden
-    form.wifi5g.ssid = wifiShared.ssid
-    form.wifi5g.key  = wifiShared.key
-    form.wifi5g.encryption = wifiShared.encryption
-    form.wifi5g.hidden = wifiShared.hidden
-  }
+const wifiModel = reactive<WifiSettingsValue>({
+  bandSteering: false,
+  shared: { ssid: '', key: '', encryption: 'psk2', hidden: false },
+  radios: [
+    {
+      id: '24g', label: '2.4 GHz',
+      channels: [1,2,3,4,5,6,7,8,9,10,11,12,13],
+      ssid: '', key: '', encryption: 'psk2', hidden: false, channel: 'auto', enabled: true,
+    },
+    {
+      id: '5g', label: '5 GHz',
+      channels: [36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140,149,153,157,161,165],
+      ssid: '', key: '', encryption: 'psk2', hidden: false, channel: 'auto', enabled: true,
+    },
+  ],
 })
 
 const netmaskOptions = [
@@ -523,14 +357,6 @@ const form = reactive({
     ipaddr: '192.168.0.1',
     netmask: '255.255.255.0',
   },
-  wifi24: {
-    ssid: '', key: '', encryption: 'psk2', hidden: false,
-    channel: 'auto', enabled: true,
-  },
-  wifi5g: {
-    ssid: '', key: '', encryption: 'psk2', hidden: false,
-    channel: 'auto', enabled: true,
-  },
 })
 
 const wanProtoLabel = computed(() =>
@@ -568,30 +394,30 @@ onMounted(async () => {
     form.lan.ipaddr  = data['network.lan.ipaddr']  || '192.168.0.1'
     form.lan.netmask = data['network.lan.netmask'] || '255.255.255.0'
 
-    form.wifi24.ssid       = data['wireless.@wifi-iface[0].ssid']       || ''
-    form.wifi24.key        = data['wireless.@wifi-iface[0].key']        || ''
-    form.wifi24.encryption = data['wireless.@wifi-iface[0].encryption'] || 'psk2'
-    form.wifi24.hidden     = data['wireless.@wifi-iface[0].hidden']     === '1'
-    form.wifi24.channel    = data['wireless.radio0.channel']            || 'auto'
-    form.wifi24.enabled    = data['wireless.@wifi-iface[0].disabled']   !== '1'
-                          && data['wireless.radio0.disabled']           !== '1'
+    const [r24, r5] = wifiModel.radios
+    r24.ssid       = data['wireless.@wifi-iface[0].ssid']       || ''
+    r24.key        = data['wireless.@wifi-iface[0].key']        || ''
+    r24.encryption = data['wireless.@wifi-iface[0].encryption'] || 'psk2'
+    r24.hidden     = data['wireless.@wifi-iface[0].hidden']     === '1'
+    r24.channel    = data['wireless.radio0.channel']            || 'auto'
+    r24.enabled    = data['wireless.@wifi-iface[0].disabled']   !== '1'
+                  && data['wireless.radio0.disabled']           !== '1'
 
-    form.wifi5g.ssid       = data['wireless.@wifi-iface[8].ssid']       || ''
-    form.wifi5g.key        = data['wireless.@wifi-iface[8].key']        || ''
-    form.wifi5g.encryption = data['wireless.@wifi-iface[8].encryption'] || 'psk2'
-    form.wifi5g.hidden     = data['wireless.@wifi-iface[8].hidden']     === '1'
-    form.wifi5g.channel    = data['wireless.radio1.channel']            || 'auto'
-    form.wifi5g.enabled    = data['wireless.@wifi-iface[8].disabled']   !== '1'
-                          && data['wireless.radio1.disabled']           !== '1'
+    r5.ssid        = data['wireless.@wifi-iface[8].ssid']       || ''
+    r5.key         = data['wireless.@wifi-iface[8].key']        || ''
+    r5.encryption  = data['wireless.@wifi-iface[8].encryption'] || 'psk2'
+    r5.hidden      = data['wireless.@wifi-iface[8].hidden']     === '1'
+    r5.channel     = data['wireless.radio1.channel']            || 'auto'
+    r5.enabled     = data['wireless.@wifi-iface[8].disabled']   !== '1'
+                  && data['wireless.radio1.disabled']           !== '1'
 
     // Auto-detect band steering
-    if (form.wifi24.ssid && form.wifi24.ssid === form.wifi5g.ssid
-        && form.wifi24.key === form.wifi5g.key) {
-      bandSteering.value     = true
-      wifiShared.ssid        = form.wifi24.ssid
-      wifiShared.key         = form.wifi24.key
-      wifiShared.encryption  = form.wifi24.encryption
-      wifiShared.hidden      = form.wifi24.hidden
+    if (r24.ssid && r24.ssid === r5.ssid && r24.key === r5.key) {
+      wifiModel.bandSteering     = true
+      wifiModel.shared.ssid      = r24.ssid
+      wifiModel.shared.key       = r24.key
+      wifiModel.shared.encryption = r24.encryption
+      wifiModel.shared.hidden    = r24.hidden
     }
   } catch { /* ignore */ }
 })
@@ -626,30 +452,24 @@ function applySettings() {
   obj['network.lan.ipaddr']  = form.lan.ipaddr
   obj['network.lan.netmask'] = form.lan.netmask
 
-  const w24ssid  = bandSteering.value ? wifiShared.ssid       : form.wifi24.ssid
-  const w24key   = bandSteering.value ? wifiShared.key        : form.wifi24.key
-  const w24enc   = bandSteering.value ? wifiShared.encryption : form.wifi24.encryption
-  const w24hid   = bandSteering.value ? wifiShared.hidden     : form.wifi24.hidden
-  const w5ssid   = bandSteering.value ? wifiShared.ssid       : form.wifi5g.ssid
-  const w5key    = bandSteering.value ? wifiShared.key        : form.wifi5g.key
-  const w5enc    = bandSteering.value ? wifiShared.encryption : form.wifi5g.encryption
-  const w5hid    = bandSteering.value ? wifiShared.hidden     : form.wifi5g.hidden
+  const ifaces = [
+    { iface: 'wireless.@wifi-iface[0]', radio: 'wireless.radio0', r: wifiModel.radios[0] },
+    { iface: 'wireless.@wifi-iface[8]', radio: 'wireless.radio1', r: wifiModel.radios[1] },
+  ]
+  for (const { iface, radio, r } of ifaces) {
+    const ssid       = wifiModel.bandSteering ? wifiModel.shared.ssid       : r.ssid
+    const key        = wifiModel.bandSteering ? wifiModel.shared.key        : r.key
+    const encryption = wifiModel.bandSteering ? wifiModel.shared.encryption : r.encryption
+    const hidden     = wifiModel.bandSteering ? wifiModel.shared.hidden     : r.hidden
 
-  obj['wireless.@wifi-iface[0].ssid']       = w24ssid
-  obj['wireless.@wifi-iface[0].encryption'] = w24enc
-  obj['wireless.@wifi-iface[0].key']        = w24enc === 'none' ? '' : w24key
-  obj['wireless.@wifi-iface[0].hidden']     = w24hid ? '1' : '0'
-  obj['wireless.@wifi-iface[0].disabled']   = form.wifi24.enabled ? '0' : '1'
-  obj['wireless.radio0.channel']            = form.wifi24.channel
-  obj['wireless.radio0.disabled']           = form.wifi24.enabled ? '0' : '1'
-
-  obj['wireless.@wifi-iface[8].ssid']       = w5ssid
-  obj['wireless.@wifi-iface[8].encryption'] = w5enc
-  obj['wireless.@wifi-iface[8].key']        = w5enc === 'none' ? '' : w5key
-  obj['wireless.@wifi-iface[8].hidden']     = w5hid ? '1' : '0'
-  obj['wireless.@wifi-iface[8].disabled']   = form.wifi5g.enabled ? '0' : '1'
-  obj['wireless.radio1.channel']            = form.wifi5g.channel
-  obj['wireless.radio1.disabled']           = form.wifi5g.enabled ? '0' : '1'
+    obj[`${iface}.ssid`]       = ssid
+    obj[`${iface}.encryption`] = encryption
+    obj[`${iface}.key`]        = encryption === 'none' ? '' : key
+    obj[`${iface}.hidden`]     = hidden ? '1' : '0'
+    obj[`${iface}.disabled`]   = r.enabled ? '0' : '1'
+    obj[`${radio}.channel`]    = r.channel
+    obj[`${radio}.disabled`]   = r.enabled ? '0' : '1'
+  }
 
   obj['network.workmode'] = mode.value
 
@@ -674,24 +494,3 @@ function applySettings() {
 }
 </script>
 
-<style scoped>
-.radio-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-@media (max-width: 600px) {
-  .radio-grid { grid-template-columns: 1fr; }
-}
-.pwd-toggle {
-  padding: 0 8px;
-  height: 30px;
-  border: 1px solid #9eb9c2;
-  border-radius: 2px;
-  background: white;
-  cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-</style>
