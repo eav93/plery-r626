@@ -49,6 +49,7 @@ typedef struct {
     char       dl_url[512];
     long long  dl_total;   /* Content-Length from download response, 0 if unknown */
     long long  dl_done;    /* bytes written to FOTA_BIN so far */
+    char       err_msg[128]; /* last error description */
 } fw_shared_t;
 
 static fw_shared_t *g_fw = NULL;
@@ -1514,9 +1515,11 @@ typedef struct { int fd; SSL *ssl; SSL_CTX *ctx; } fw_tls_t;
 
 /* Open TCP+TLS connection to host:443.
  * connect_timeout_sec: max seconds for TCP connect + TLS handshake.
- * io_timeout_sec:      per-read/write socket timeout (0 = no limit). */
+ * io_timeout_sec:      per-read/write socket timeout (0 = no limit).
+ * err: optional buffer to receive failure description. */
 static fw_tls_t fw_tls_open(const char *host,
-                              int connect_timeout_sec, int io_timeout_sec)
+                              int connect_timeout_sec, int io_timeout_sec,
+                              char *err, size_t errsz)
 {
     fw_tls_t t = { -1, NULL, NULL };
 
@@ -1525,10 +1528,19 @@ static fw_tls_t fw_tls_open(const char *host,
     memset(&hints, 0, sizeof(hints));
     hints.ai_family   = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
-    if (getaddrinfo(host, "443", &hints, &res) != 0 || !res) return t;
+    int gai = getaddrinfo(host, "443", &hints, &res);
+    if (gai != 0 || !res) {
+        if (err) snprintf(err, errsz, "DNS: %s", gai_strerror(gai));
+        dprintf(STDERR_FILENO, "wbsrv fw: getaddrinfo(%s): %s\n",
+                host, gai_strerror(gai));
+        return t;
+    }
 
     t.fd = socket(res->ai_family, res->ai_socktype, 0);
-    if (t.fd < 0) { freeaddrinfo(res); return t; }
+    if (t.fd < 0) {
+        if (err) snprintf(err, errsz, "socket: %s", strerror(errno));
+        freeaddrinfo(res); return t;
+    }
 
     /* Non-blocking connect for timeout */
     int flags = fcntl(t.fd, F_GETFL, 0);
@@ -1539,12 +1551,24 @@ static fw_tls_t fw_tls_open(const char *host,
     if (r < 0 && errno == EINPROGRESS) {
         struct timeval tv = { .tv_sec = connect_timeout_sec, .tv_usec = 0 };
         fd_set wfds; FD_ZERO(&wfds); FD_SET(t.fd, &wfds);
-        if (select(t.fd + 1, NULL, &wfds, NULL, &tv) <= 0)
+        int sel = select(t.fd + 1, NULL, &wfds, NULL, &tv);
+        if (sel <= 0) {
+            if (err) snprintf(err, errsz, "TCP connect timeout (%ds)", connect_timeout_sec);
+            dprintf(STDERR_FILENO, "wbsrv fw: TCP connect to %s:443 timeout\n", host);
             goto fail;
+        }
         int e = 0; socklen_t el = sizeof(e);
         getsockopt(t.fd, SOL_SOCKET, SO_ERROR, &e, &el);
-        if (e) goto fail;
-    } else if (r < 0) goto fail;
+        if (e) {
+            if (err) snprintf(err, errsz, "TCP connect: %s", strerror(e));
+            dprintf(STDERR_FILENO, "wbsrv fw: TCP connect to %s:443: %s\n", host, strerror(e));
+            goto fail;
+        }
+    } else if (r < 0) {
+        if (err) snprintf(err, errsz, "TCP connect: %s", strerror(errno));
+        dprintf(STDERR_FILENO, "wbsrv fw: connect(%s:443): %s\n", host, strerror(errno));
+        goto fail;
+    }
 
     /* Restore blocking + per-operation I/O timeout */
     fcntl(t.fd, F_SETFL, flags);
@@ -1556,15 +1580,29 @@ static fw_tls_t fw_tls_open(const char *host,
 
     /* --- TLS handshake --- */
     t.ctx = SSL_CTX_new(SSLv23_client_method());
-    if (!t.ctx) goto fail;
+    if (!t.ctx) {
+        if (err) snprintf(err, errsz, "SSL_CTX_new failed");
+        goto fail;
+    }
     SSL_CTX_set_verify(t.ctx, SSL_VERIFY_NONE, NULL);
 
     t.ssl = SSL_new(t.ctx);
-    if (!t.ssl) goto fail;
+    if (!t.ssl) {
+        if (err) snprintf(err, errsz, "SSL_new failed");
+        goto fail;
+    }
     SSL_set_fd(t.ssl, t.fd);
     SSL_set_tlsext_host_name(t.ssl, (char *)host);
 
-    if (SSL_connect(t.ssl) != 1) goto fail;
+    if (SSL_connect(t.ssl) != 1) {
+        unsigned long ssl_err = ERR_get_error();
+        char ssl_buf[128] = "unknown";
+        if (ssl_err) ERR_error_string_n(ssl_err, ssl_buf, sizeof(ssl_buf));
+        if (err) snprintf(err, errsz, "TLS: %s", ssl_buf);
+        dprintf(STDERR_FILENO, "wbsrv fw: SSL_connect(%s): %s\n", host, ssl_buf);
+        goto fail;
+    }
+    dprintf(STDERR_FILENO, "wbsrv fw: TLS connected to %s\n", host);
     return t;
 
 fail:
@@ -1609,7 +1647,7 @@ static char *fw_tls_request(fw_tls_t *t, const char *method,
 /* GET small response — returns malloc'd body (after \r\n\r\n). Caller frees. */
 static char *fw_tls_get_body(const char *host, const char *path)
 {
-    fw_tls_t t = fw_tls_open(host, 10, 15);
+    fw_tls_t t = fw_tls_open(host, 10, 15, NULL, 0);
     if (t.fd < 0) return NULL;
 
     size_t len = 0;
@@ -1628,7 +1666,7 @@ static char *fw_tls_get_body(const char *host, const char *path)
 static int fw_tls_head(const char *host, const char *path,
                         char *location, size_t llen)
 {
-    fw_tls_t t = fw_tls_open(host, 10, 15);
+    fw_tls_t t = fw_tls_open(host, 10, 15, NULL, 0);
     if (t.fd < 0) return 0;
 
     size_t len = 0;
@@ -1719,19 +1757,60 @@ static long long fw_json_num(const char *json, const char *key)
 static int fw_do_check(void)
 {
     if (!g_fw) return 1;
-    char *body = fw_tls_get_body(GITHUB_API_HOST,
-        "/repos/" GITHUB_REPO "/releases/latest");
-    if (!body) return 1;
+
+    char err[128] = {0};
+    dprintf(STDERR_FILENO, "wbsrv fw: check: connecting to " GITHUB_API_HOST "\n");
+
+    fw_tls_t t = fw_tls_open(GITHUB_API_HOST, 10, 15, err, sizeof(err));
+    if (t.fd < 0) {
+        if (g_fw) snprintf(g_fw->err_msg, sizeof(g_fw->err_msg), "%s", err[0] ? err : "TLS connect failed");
+        return 1;
+    }
+
+    dprintf(STDERR_FILENO, "wbsrv fw: check: requesting /repos/" GITHUB_REPO "/releases/latest\n");
+    size_t len = 0;
+    char *resp = fw_tls_request(&t, "GET", GITHUB_API_HOST,
+        "/repos/" GITHUB_REPO "/releases/latest", 65536, &len);
+    fw_tls_close(&t);
+
+    if (!resp) {
+        if (g_fw) snprintf(g_fw->err_msg, sizeof(g_fw->err_msg), "No response from GitHub API");
+        dprintf(STDERR_FILENO, "wbsrv fw: check: no response from GitHub API\n");
+        return 1;
+    }
+
+    /* Log first line of response (HTTP status) */
+    char status_line[64] = {0};
+    const char *nl = memchr(resp, '\n', len < 63 ? len : 63);
+    if (nl) { size_t sl = (size_t)(nl - resp); if (sl < 63) { memcpy(status_line, resp, sl); status_line[sl] = 0; } }
+    dprintf(STDERR_FILENO, "wbsrv fw: check: response: %s\n", status_line);
+
+    char *body = strstr(resp, "\r\n\r\n");
+    if (!body) {
+        if (g_fw) snprintf(g_fw->err_msg, sizeof(g_fw->err_msg), "Malformed HTTP response");
+        dprintf(STDERR_FILENO, "wbsrv fw: check: no body separator in response\n");
+        free(resp);
+        return 1;
+    }
+    body += 4;
 
     char tag[64] = {0}, dl_url[512] = {0};
     fw_json_str(body, "tag_name", tag, sizeof(tag));
     fw_json_str(body, "browser_download_url", dl_url, sizeof(dl_url));
-    free(body);
+    dprintf(STDERR_FILENO, "wbsrv fw: check: tag=%s dl_url=%.80s\n", tag, dl_url);
+    free(resp);
 
-    if (!tag[0] || !dl_url[0]) return 1;
+    if (!tag[0] || !dl_url[0]) {
+        if (g_fw) snprintf(g_fw->err_msg, sizeof(g_fw->err_msg),
+            "JSON missing tag_name/url (tag=%s url=%s)", tag, dl_url[0] ? "ok" : "empty");
+        dprintf(STDERR_FILENO, "wbsrv fw: check: JSON parse failed tag=%s dl_url=%s\n", tag, dl_url);
+        return 1;
+    }
 
     strncpy(g_fw->new_version, tag,    sizeof(g_fw->new_version) - 1);
     strncpy(g_fw->dl_url,      dl_url, sizeof(g_fw->dl_url)      - 1);
+    g_fw->err_msg[0] = '\0';
+    dprintf(STDERR_FILENO, "wbsrv fw: check: OK version=%s\n", tag);
     return 0;
 }
 
@@ -1753,7 +1832,7 @@ static int fw_do_download(void)
         return 1;
 
     /* Connect: 10s TCP timeout, 60s per-read I/O timeout */
-    fw_tls_t t = fw_tls_open(host, 10, 60);
+    fw_tls_t t = fw_tls_open(host, 10, 60, NULL, 0);
     if (t.fd < 0) return 1;
 
     /* Send GET request */
@@ -1918,15 +1997,16 @@ static int handle_firmware(int client_fd, const http_request_t *req)
         char cur_ver[64] = {0};
         fw_read_str(FW_VERSION_FILE, cur_ver, sizeof(cur_ver));
         const char *new_ver = (g_fw && g_fw->new_version[0]) ? g_fw->new_version : "";
+        const char *err_msg = (g_fw && g_fw->err_msg[0]) ? g_fw->err_msg : "";
         fw_state_t cur_state = g_fw ? g_fw->state : FS_IDLE;
         int pct = (cur_state == FS_DOWNLOADING) ? fw_download_pct() : 0;
 
-        char body[256];
+        char body[384];
         int len = snprintf(body, sizeof(body),
             "{\"errCode\":0,\"state\":\"%s\","
             "\"current_version\":\"%s\",\"new_version\":\"%s\","
-            "\"download_pct\":%d}",
-            state, cur_ver, new_ver, pct);
+            "\"download_pct\":%d,\"err_msg\":\"%s\"}",
+            state, cur_ver, new_ver, pct, err_msg);
         http_send_response(client_fd, 200, "OK",
             "application/json; charset=utf-8", body, (size_t)len);
         return 1;
@@ -1941,7 +2021,7 @@ static int handle_firmware(int client_fd, const http_request_t *req)
             return 1;
         }
         unlink(FOTA_BIN);
-        if (g_fw) { g_fw->state = FS_CHECKING; g_fw->new_version[0] = '\0'; g_fw->dl_url[0] = '\0'; g_fw->task_pid = 0; }
+        if (g_fw) { g_fw->state = FS_CHECKING; g_fw->new_version[0] = '\0'; g_fw->dl_url[0] = '\0'; g_fw->task_pid = 0; g_fw->err_msg[0] = '\0'; }
 
         /* Fork background check task — respond immediately to avoid proxy timeout */
         pid_t pid = fork();

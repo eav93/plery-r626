@@ -152,10 +152,11 @@ interface FwStatus {
   state: string
   new_version: string
   download_pct: number
+  err_msg?: string
 }
 
 const status = ref<FwStatus>({
-  state: 'idle', new_version: '', download_pct: 0,
+  state: 'idle', new_version: '', download_pct: 0, err_msg: '',
 })
 
 const currentVersion = computed(() => store.version?.version ?? '')
@@ -290,7 +291,7 @@ const onlineStatusMsg = computed(() => {
     case 'checking':    return t('CheckVersion')
     case 'checked':     return ''
     case 'downloading': return t('CheckNewVersion')
-    case 'error':       return t('NetworkError')
+    case 'error':       return status.value.err_msg || t('NetworkError')
     default:            return ''
   }
 })
