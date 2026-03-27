@@ -62,8 +62,7 @@
 
           <FormField :label="t('wifi_enable') || 'Радио'">
             <label class="toggle">
-              <input type="checkbox" :checked="r.form.enabled"
-                @change="(e) => { const v = (e.target as HTMLInputElement).checked; radios.forEach(x => x.form.enabled = v) }" />
+              <input type="checkbox" v-model="r.form.enabled" />
               <span class="toggle__track"><span class="toggle__thumb"></span></span>
               <span class="ml-2 text-sm">{{ r.form.enabled ? (t('enable') || 'Вкл') : (t('disable') || 'Выкл') }}</span>
             </label>
