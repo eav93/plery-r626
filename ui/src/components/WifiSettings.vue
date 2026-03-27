@@ -140,13 +140,13 @@ const radios = reactive<RadioConfig[]>([
   {
     id: '24g', label: '2.4 GHz',
     channels: [1,2,3,4,5,6,7,8,9,10,11,12,13],
-    iface: 'wireless.@wifi-iface[0]', radio: 'wireless.radio0',
+    iface: 'wireless.@wifi-iface[0]', radio: 'wireless.mt7628',
     ssid: '', key: '', encryption: 'psk2', hidden: false, channel: 'auto', enabled: true,
   },
   {
     id: '5g', label: '5 GHz',
     channels: [36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140,149,153,157,161,165],
-    iface: 'wireless.@wifi-iface[8]', radio: 'wireless.radio1',
+    iface: 'wireless.@wifi-iface[8]', radio: 'wireless.mt7663e',
     ssid: '', key: '', encryption: 'psk2', hidden: false, channel: 'auto', enabled: true,
   },
 ])
