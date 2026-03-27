@@ -130,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useApi } from '@/composables/useApi'
 import { useNotify } from '@/composables/useNotify'
@@ -210,11 +210,24 @@ onMounted(async () => {
   } catch { /* ignore */ }
 })
 
-/** Ensure the 5 GHz SSID has a "5G" suffix when saving in independent mode */
+/** Ensure the 5 GHz SSID has a "5G" suffix */
 function ensureSuffix5g(ssid: string): string {
   if (!ssid) return ssid
   return /5G$/i.test(ssid) ? ssid : ssid + ' 5G'
 }
+
+// When switching from band steering to independent, pre-fill per-radio SSIDs
+watch(bandSteering, (on) => {
+  if (!on) {
+    for (const r of radios) {
+      if (!r.form.ssid) r.form.ssid = shared.ssid
+      if (r.suffix5g) r.form.ssid = ensureSuffix5g(r.form.ssid)
+      r.form.key        = shared.key
+      r.form.encryption = shared.encryption
+      r.form.hidden     = shared.hidden
+    }
+  }
+})
 
 async function saveAll() {
   if (saving.value) return
@@ -228,9 +241,6 @@ async function saveAll() {
       const key        = bandSteering.value ? shared.key        : r.form.key
       const encryption = bandSteering.value ? shared.encryption : r.form.encryption
       const hidden     = bandSteering.value ? shared.hidden     : r.form.hidden
-
-      // In independent mode, append "5G" to 5 GHz SSID if missing
-      if (!bandSteering.value && r.suffix5g) ssid = ensureSuffix5g(ssid)
 
       uci[`${r.ifaceKey}.ssid`]       = ssid
       uci[`${r.ifaceKey}.encryption`] = encryption
