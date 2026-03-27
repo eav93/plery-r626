@@ -110,20 +110,30 @@
   padding: 20px 16px 12px;
 }
 
-/* ── Radio buttons ───────────────────────────────────────────────────────── */
-input[type="radio"] {
+/* ── Radio & Checkbox ────────────────────────────────────────────────────── */
+input[type="radio"],
+input[type="checkbox"] {
   appearance: none;
   width: 14px;
   height: 14px;
   border: 2px solid #9eb9c2;
-  border-radius: 50%;
   cursor: pointer;
   flex-shrink: 0;
-  transition: border-color .15s;
+  transition: border-color .15s, background .15s;
+}
+input[type="radio"] {
+  border-radius: 50%;
+}
+input[type="checkbox"] {
+  border-radius: 3px;
 }
 input[type="radio"]:checked {
   border-color: #ffc510;
   background: radial-gradient(circle, #ffc510 40%, transparent 45%);
+}
+input[type="checkbox"]:checked {
+  border-color: #ffc510;
+  background: #ffc510 url("data:image/svg+xml,%3Csvg viewBox='0 0 10 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 4l3 3 5-6' stroke='%23fff' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/10px no-repeat;
 }
 
 /* ── Inputs (element selectors — low specificity, fine unlayered) ─────────── */
