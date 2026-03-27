@@ -239,6 +239,8 @@ int main(int argc, char *argv[])
                       remote_addr, sizeof(remote_addr));
             handle_connection(client_fd, webroot, fcgi_host, fcgi_port,
                               listen_port, remote_addr);
+            /* Drain any unread request data so close() sends FIN not RST */
+            { char buf[256]; while (recv(client_fd, buf, sizeof(buf), MSG_DONTWAIT) > 0) {} }
             close(client_fd);
             _exit(0);
         }
