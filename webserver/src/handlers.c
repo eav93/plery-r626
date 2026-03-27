@@ -1460,7 +1460,8 @@ static const char *fw_get_state_str(void)
         pid_t r = waitpid(g_fw->task_pid, &wst, WNOHANG);
         if (r > 0 || (r < 0 && errno == ECHILD)) {
             /* Task exited — if not yet in applying state, it failed */
-            if (g_fw->state == FS_DOWNLOADING || g_fw->state == FS_APPLYING)
+            if (g_fw->state == FS_CHECKING ||
+                g_fw->state == FS_DOWNLOADING || g_fw->state == FS_APPLYING)
                 g_fw->state = FS_ERROR;
             g_fw->task_pid = 0;
         }
@@ -1939,18 +1940,22 @@ static int handle_firmware(int client_fd, const http_request_t *req)
             http_send_error(client_fd, 409, "Update in progress");
             return 1;
         }
-        /* Synchronous check — blocks ~1-2s in this connection handler fork */
         unlink(FOTA_BIN);
-        if (g_fw) { g_fw->state = FS_CHECKING; g_fw->new_version[0] = '\0'; g_fw->dl_url[0] = '\0'; }
-        int err = fw_do_check();
-        if (g_fw) g_fw->state = err ? FS_ERROR : FS_CHECKED;
+        if (g_fw) { g_fw->state = FS_CHECKING; g_fw->new_version[0] = '\0'; g_fw->dl_url[0] = '\0'; g_fw->task_pid = 0; }
 
-        const char *new_ver = (g_fw && g_fw->new_version[0]) ? g_fw->new_version : "";
-        const char *st_str  = fw_get_state_str();
-        char body[256];
-        int len = snprintf(body, sizeof(body),
-            "{\"errCode\":0,\"state\":\"%s\",\"new_version\":\"%s\",\"download_pct\":0}",
-            st_str, new_ver);
+        /* Fork background check task — respond immediately to avoid proxy timeout */
+        pid_t pid = fork();
+        if (pid == 0) {
+            close(client_fd);
+            int err = fw_do_check();
+            if (g_fw) { g_fw->state = err ? FS_ERROR : FS_CHECKED; g_fw->task_pid = 0; }
+            _exit(0);
+        } else if (pid > 0 && g_fw) {
+            g_fw->task_pid = pid;
+        }
+
+        char body[64];
+        int len = snprintf(body, sizeof(body), "{\"errCode\":0,\"state\":\"checking\"}");
         http_send_response(client_fd, 200, "OK",
             "application/json; charset=utf-8", body, (size_t)len);
         return 1;
