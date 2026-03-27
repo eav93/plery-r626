@@ -17,6 +17,9 @@
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
           </svg>
+          <template v-else-if="state === 'error'">
+            <span class="text-[#d9534f] font-normal">{{ status.err_msg || t('NetworkError') }}</span>
+          </template>
           <template v-else-if="status.new_version">
             <span v-if="isNewer" :title="t('newer')" class="text-[#ed6c00]">▲</span>
             <span v-else-if="isUpToDate" :title="t('AlreadyNewVersion')" class="text-[#5cb85c]">✓</span>
@@ -36,12 +39,10 @@
         </div>
       </div>
 
-      <!-- Status message -->
+      <!-- Status message (downloading only) -->
       <div v-if="onlineStatusMsg" class="form-row">
         <label class="form-row__label"></label>
-        <div class="form-row__value text-sm" :class="state === 'error' ? 'text-[#d9534f]' : 'text-[#888]'">
-          {{ onlineStatusMsg }}
-        </div>
+        <div class="form-row__value text-sm text-[#888]">{{ onlineStatusMsg }}</div>
       </div>
 
       <!-- Keep settings checkbox -->
