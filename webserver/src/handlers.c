@@ -1279,8 +1279,17 @@ static int handle_action(int client_fd, const http_request_t *req)
         }
         http_send_response(client_fd, 200, "OK",
                            "application/json", ok, sizeof(ok) - 1);
+        /*
+         * /etc/init.d/wireless does not exist on this device.
+         * For wireless: /sbin/reload_config wireless triggers a ubus
+         * config.change event which causes netifd to reload the wifi config.
+         * For all other services: standard init.d reload.
+         */
         char cmd[128];
-        snprintf(cmd, sizeof(cmd), "/etc/init.d/%s reload", service);
+        if (strcmp(service, "wireless") == 0)
+            snprintf(cmd, sizeof(cmd), "/sbin/reload_config wireless");
+        else
+            snprintf(cmd, sizeof(cmd), "/etc/init.d/%s reload", service);
         run_delayed(cmd);
         return 1;
     }
