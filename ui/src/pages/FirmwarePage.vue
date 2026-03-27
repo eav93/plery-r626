@@ -279,13 +279,8 @@ async function uploadFirmware() {
 }
 
 const onlineStatusMsg = computed(() => {
-  switch (state.value) {
-    case 'checking':    return ''
-    case 'checked':     return ''
-    case 'downloading': return t('CheckNewVersion')
-    case 'error':       return status.value.err_msg || t('NetworkError')
-    default:            return ''
-  }
+  if (state.value === 'downloading') return t('CheckNewVersion')
+  return ''
 })
 
 onMounted(async () => {

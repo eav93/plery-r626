@@ -455,5 +455,9 @@
   "reboot_tip": "Устройство перезагрузится. Соединение прервётся примерно на 30 секунд.",
   "password_error": "Неверный пароль",
   "network_err": "Ошибка сети",
-  "not_authenticated": "Необходима авторизация"
+  "not_authenticated": "Необходима авторизация",
+  "band_steering": "Умный Wi-Fi (Band Steering)",
+  "band_steering_on_hint": "Устройства автоматически выбирают лучший диапазон (2.4 или 5 ГГц)",
+  "band_steering_off_hint": "Раздельные настройки для 2.4 и 5 ГГц",
+  "wifi_network": "Сеть"
 }

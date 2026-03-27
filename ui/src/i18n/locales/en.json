@@ -455,5 +455,9 @@
   "reboot_tip": "The device will restart. Connection will be lost for ~30 seconds.",
   "password_error": "Wrong password",
   "network_err": "Network error",
-  "not_authenticated": "Not authenticated"
+  "not_authenticated": "Not authenticated",
+  "band_steering": "Smart Wi-Fi (Band Steering)",
+  "band_steering_on_hint": "Devices automatically switch to the best band (2.4 or 5 GHz)",
+  "band_steering_off_hint": "Separate settings for 2.4 GHz and 5 GHz",
+  "wifi_network": "Network"
 }

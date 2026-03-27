@@ -450,5 +450,9 @@
   "reboot_tip": "设备将重启，连接将中断约30秒。",
   "password_error": "密码错误",
   "network_err": "网络错误",
-  "not_authenticated": "未经授权"
+  "not_authenticated": "未经授权",
+  "band_steering": "智能 Wi-Fi（Band Steering）",
+  "band_steering_on_hint": "设备自动选择最佳频段（2.4GHz 或 5GHz）",
+  "band_steering_off_hint": "2.4GHz 和 5GHz 分别独立设置",
+  "wifi_network": "网络"
 }
