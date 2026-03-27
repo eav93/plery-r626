@@ -60,6 +60,11 @@ void handlers_init(const char *fcgi_host, int fcgi_port)
     g_fcgi_host[sizeof(g_fcgi_host) - 1] = '\0';
     g_fcgi_port = fcgi_port;
 
+    /* OpenSSL 1.0.x requires explicit initialization */
+    SSL_library_init();
+    SSL_load_error_strings();
+    OpenSSL_add_all_algorithms();
+
     g_fw = mmap(NULL, sizeof(fw_shared_t), PROT_READ | PROT_WRITE,
                 MAP_SHARED | MAP_ANONYMOUS, -1, 0);
     if (g_fw == MAP_FAILED) g_fw = NULL;
