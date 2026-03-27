@@ -4,13 +4,7 @@ START=25
 STOP=89
 
 reload_service() {
-	local driver_type
-	driver_type=$(cat /tmp/sysinfo/driver_tpye 2>/dev/null)
-	if [ "$driver_type" = "mtk" ]; then
-		/sbin/reload_config wireless
-	else
-		/sbin/wifi reload
-	fi
+	/sbin/reload_config wireless
 }
 
 start_service() {
