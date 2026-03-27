@@ -70,18 +70,11 @@
     <div class="box col-span-1 sm:col-span-2">
       <div class="section-title">{{ t('deviceinfo') }}</div>
       <ul>
-        <li class="info-row"><label class="info-label">MAC</label><span class="font-mono">{{
-            version?.macaddr ?? '—'
-          }}</span></li>
-        <li v-if="version?.model" class="info-row"><label class="info-label">{{
-            t('unit_type')
-          }}</label><span>{{ version.model }}</span></li>
-        <li class="info-row"><label class="info-label">{{ t('version') }}</label><span>{{
-            version?.version ?? '—'
-          }}</span></li>
-        <li class="info-row"><label class="info-label">{{ t('hostname') }}</label><span>{{
-            version?.hostname ?? '—'
-          }}</span></li>
+        <li class="info-row"><label class="info-label">{{ t('hostname') }}</label><span>{{ version?.hostname ?? '—' }}</span></li>
+        <li v-if="version?.model" class="info-row"><label class="info-label">{{ t('unit_type') }}</label><span>{{ version.model }}</span></li>
+        <li class="info-row"><label class="info-label">{{ t('version') }}</label><span>{{ version?.version ?? '—' }}</span></li>
+        <li class="info-row"><label class="info-label">MAC</label><span class="font-mono">{{ version?.macaddr ?? '—' }}</span></li>
+        <li class="info-row"><label class="info-label">{{ t('uptime') }}</label><span>{{ uptimeStr }}</span></li>
       </ul>
     </div>
 
@@ -112,28 +105,30 @@
     </div>
 
 
-    <!-- Информация о WAN -->
+    <!-- WAN -->
     <div class="box col-span-1 sm:col-span-2">
-      <div class="section-title">{{ t('waninfo') }}</div>
+      <div class="section-title">WAN</div>
       <ul>
         <li class="info-row"><label class="info-label">{{ t('access') }}</label><span>{{ wanProtoName }}</span></li>
-        <li class="info-row"><label class="info-label">{{ t('ip_addr') }}</label><span>{{ wanIp || '—' }}</span></li>
-        <li class="info-row"><label class="info-label">LAN IP</label><span>{{ lanIp || '—' }}</span></li>
-        <li class="info-row"><label class="info-label">{{ t('uptime') }}</label><span>{{ uptimeStr }}</span></li>
+        <li class="info-row"><label class="info-label">{{ t('ip_addr') }}</label><span class="font-mono">{{ stats?.wan_ip || wanIp || '—' }}</span></li>
+        <li v-if="wanGateway" class="info-row"><label class="info-label">{{ t('gateway') || 'Gateway' }}</label><span class="font-mono">{{ wanGateway }}</span></li>
+        <li v-if="wanDns" class="info-row"><label class="info-label">DNS</label><span class="font-mono">{{ wanDns }}</span></li>
+        <li class="info-row"><label class="info-label">LAN IP</label><span class="font-mono">{{ lanIp || '—' }}</span></li>
       </ul>
     </div>
 
-    <!-- WiFi -->
+    <!-- Wi-Fi -->
     <div class="box col-span-1 sm:col-span-2">
       <div class="section-title">{{ t('wifiinfo') }}</div>
       <ul>
-        <li v-if="wifiSsid" class="info-row"><label class="info-label">{{ t('ssid_name_24g') }}</label><span>{{
-            wifiSsid
-          }}</span></li>
-        <li v-if="wifi5gSsid" class="info-row"><label class="info-label">{{
-            t('ssid_name_58g')
-          }}</label><span>{{ wifi5gSsid }}</span></li>
-        <li v-if="!wifiSsid && !wifi5gSsid" class="info-row"><label class="info-label">SSID</label><span>—</span></li>
+        <li class="info-row">
+          <label class="info-label">{{ t('ssid_name_24g') }}</label>
+          <span>{{ wifiSsid || '—' }}<span v-if="wifiCh24" class="text-[#888] text-xs ml-1">(ch {{ wifiCh24 }})</span></span>
+        </li>
+        <li class="info-row">
+          <label class="info-label">{{ t('ssid_name_58g') }}</label>
+          <span>{{ wifi5gSsid || '—' }}<span v-if="wifiCh5" class="text-[#888] text-xs ml-1">(ch {{ wifiCh5 }})</span></span>
+        </li>
       </ul>
     </div>
 
@@ -259,9 +254,13 @@ const chartYMaxStr = computed(() => fmtBytes(chartYMax.value) + '/s')
 const workmode = ref('router')
 const wanProto = ref('dhcp')
 const wanIp = ref('')
+const wanGateway = ref('')
+const wanDns = ref('')
 const lanIp = ref('')
 const wifiSsid = ref('')
 const wifi5gSsid = ref('')
+const wifiCh24 = ref('')
+const wifiCh5 = ref('')
 
 const modeImgMap: Record<string, string> = {
   router: imgRouter, ap: imgAp, wisp: imgRepeater,
@@ -285,16 +284,23 @@ async function loadUci() {
     const d = await uciGet([
       'network.workmode',
       'network.wan.proto', 'network.wan.ipaddr',
+      'network.wan.gateway', 'network.wan.dns',
       'network.lan.ipaddr',
       'wireless.@wifi-iface[0].ssid',
       'wireless.@wifi-iface[8].ssid',
+      'wireless.radio0.channel',
+      'wireless.radio1.channel',
     ])
     workmode.value = d['network.workmode'] || 'router'
     wanProto.value = d['network.wan.proto'] || 'dhcp'
     wanIp.value = d['network.wan.ipaddr'] || ''
+    wanGateway.value = d['network.wan.gateway'] || ''
+    wanDns.value = d['network.wan.dns'] || ''
     lanIp.value = d['network.lan.ipaddr'] || ''
     wifiSsid.value = d['wireless.@wifi-iface[0].ssid'] || ''
     wifi5gSsid.value = d['wireless.@wifi-iface[8].ssid'] || ''
+    wifiCh24.value = d['wireless.radio0.channel'] || ''
+    wifiCh5.value = d['wireless.radio1.channel'] || ''
   } catch { /* ignore */ }
 }
 

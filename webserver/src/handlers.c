@@ -14,6 +14,8 @@
 #include <time.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <ifaddrs.h>
+#include <net/if.h>
 #include <sys/mman.h>
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -791,6 +793,23 @@ static int handle_system_stats(int client_fd, const http_request_t *req)
     unsigned long long rx = 0, tx = 0;
     read_netdev(wan_iface, &rx, &tx);
 
+    /* WAN IP — read from the actual network interface (works for DHCP too) */
+    char wan_ip[INET_ADDRSTRLEN] = "";
+    {
+        struct ifaddrs *ifa_list = NULL;
+        if (getifaddrs(&ifa_list) == 0) {
+            for (struct ifaddrs *ifa = ifa_list; ifa; ifa = ifa->ifa_next) {
+                if (!ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET) continue;
+                if (strcmp(ifa->ifa_name, wan_iface) != 0) continue;
+                inet_ntop(AF_INET,
+                    &((struct sockaddr_in *)ifa->ifa_addr)->sin_addr,
+                    wan_ip, sizeof(wan_ip));
+                break;
+            }
+            freeifaddrs(ifa_list);
+        }
+    }
+
     /* Uptime from /proc/uptime */
     unsigned long uptime_sec = 0;
     {
@@ -843,9 +862,9 @@ static int handle_system_stats(int client_fd, const http_request_t *req)
     int blen = snprintf(body, sizeof(body),
         "{\"cpu_pct\":%d,\"mem_pct\":%d,\"mem_total\":%lu,\"mem_avail\":%lu,"
         "\"rx_bytes\":%llu,\"tx_bytes\":%llu,\"uptime\":%lu,"
-        "\"conntrack\":%lu,\"user_count\":%lu}",
+        "\"conntrack\":%lu,\"user_count\":%lu,\"wan_ip\":\"%s\"}",
         cpu_pct, mem_pct, mem_total, mem_avail, rx, tx, uptime_sec,
-        conntrack, user_count);
+        conntrack, user_count, wan_ip);
 
     http_send_response(client_fd, 200, "OK",
                        "application/json; charset=utf-8",

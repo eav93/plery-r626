@@ -12,6 +12,7 @@ interface SystemStats {
   uptime: number
   conntrack: number
   user_count: number
+  wan_ip: string
 }
 
 interface SystemVersion {
