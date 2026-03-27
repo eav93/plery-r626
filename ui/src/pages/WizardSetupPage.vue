@@ -40,7 +40,7 @@
             :key="p.value"
             class="inline-flex items-center gap-1.5 cursor-pointer select-none"
           >
-            <input type="radio" v-model="form.wan.proto" :value="p.value" class="wan-radio" />
+            <input type="radio" v-model="form.wan.proto" :value="p.value" />
             <span class="text-[13px]">{{ p.label }}</span>
           </label>
         </div>
@@ -424,20 +424,4 @@ function applySettings() {
 }
 </script>
 
-<style scoped>
-.wan-radio {
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  border: 2px solid #9eb9c2;
-  border-radius: 50%;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: border-color .15s;
-}
-.wan-radio:checked {
-  border-color: #ffc510;
-  background: radial-gradient(circle, #ffc510 40%, transparent 45%);
-}
-</style>
 
