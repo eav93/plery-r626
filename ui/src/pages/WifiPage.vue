@@ -26,11 +26,6 @@
           <input v-model="shared.ssid" type="text" maxlength="32" />
         </FormField>
 
-        <FormField :label="t('wifi_passwd') || 'Пароль'">
-          <input v-model="shared.key" :type="showSharedPwd ? 'text' : 'password'" maxlength="63" />
-          <button class="pwd-toggle" @click="showSharedPwd = !showSharedPwd">{{ showSharedPwd ? '🙈' : '👁' }}</button>
-        </FormField>
-
         <FormField :label="t('encrypt') || 'Шифрование'">
           <select v-model="shared.encryption">
             <option value="psk2">WPA2-PSK</option>
@@ -38,6 +33,11 @@
             <option value="psk">WPA-PSK</option>
             <option value="none">{{ t('none') || 'Открытая' }}</option>
           </select>
+        </FormField>
+
+        <FormField v-if="shared.encryption !== 'none'" :label="t('wifi_passwd') || 'Пароль'">
+          <input v-model="shared.key" :type="showSharedPwd ? 'text' : 'password'" maxlength="63" />
+          <button class="pwd-toggle" @click="showSharedPwd = !showSharedPwd">{{ showSharedPwd ? '🙈' : '👁' }}</button>
         </FormField>
 
         <FormField :label="t('hidden') || 'Скрыть SSID'">
@@ -81,11 +81,6 @@
             <input v-model="r.form.ssid" type="text" maxlength="32" />
           </FormField>
 
-          <FormField :label="t('wifi_passwd') || 'Пароль'">
-            <input v-model="r.form.key" :type="showPwd[r.id] ? 'text' : 'password'" maxlength="63" />
-            <button class="pwd-toggle" @click="showPwd[r.id] = !showPwd[r.id]">{{ showPwd[r.id] ? '🙈' : '👁' }}</button>
-          </FormField>
-
           <FormField :label="t('encrypt') || 'Шифрование'">
             <select v-model="r.form.encryption">
               <option value="psk2">WPA2-PSK</option>
@@ -93,6 +88,11 @@
               <option value="psk">WPA-PSK</option>
               <option value="none">{{ t('none') || 'Открытая' }}</option>
             </select>
+          </FormField>
+
+          <FormField v-if="r.form.encryption !== 'none'" :label="t('wifi_passwd') || 'Пароль'">
+            <input v-model="r.form.key" :type="showPwd[r.id] ? 'text' : 'password'" maxlength="63" />
+            <button class="pwd-toggle" @click="showPwd[r.id] = !showPwd[r.id]">{{ showPwd[r.id] ? '🙈' : '👁' }}</button>
           </FormField>
 
           <FormField :label="t('channels') || 'Канал'">
@@ -146,7 +146,7 @@ interface RadioForm {
   channel: string; hidden: boolean; enabled: boolean
 }
 interface Radio {
-  id: string; label: string
+  id: string; label: string; suffix5g: boolean
   radioKey: string; ifaceKey: string
   channels: number[]
   form: RadioForm
@@ -158,13 +158,13 @@ const defaultForm = (): RadioForm => ({
 
 const radios: Radio[] = reactive([
   {
-    id: '24g', label: '2.4 GHz',
+    id: '24g', label: '2.4 GHz', suffix5g: false,
     radioKey: 'wireless.radio0', ifaceKey: 'wireless.@wifi-iface[0]',
     channels: [1,2,3,4,5,6,7,8,9,10,11,12,13],
     form: defaultForm(),
   },
   {
-    id: '5g', label: '5 GHz',
+    id: '5g', label: '5 GHz', suffix5g: true,
     radioKey: 'wireless.radio1', ifaceKey: 'wireless.@wifi-iface[8]',
     channels: [36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140,149,153,157,161,165],
     form: defaultForm(),
@@ -210,6 +210,12 @@ onMounted(async () => {
   } catch { /* ignore */ }
 })
 
+/** Ensure the 5 GHz SSID has a "5G" suffix when saving in independent mode */
+function ensureSuffix5g(ssid: string): string {
+  if (!ssid) return ssid
+  return /5G$/i.test(ssid) ? ssid : ssid + ' 5G'
+}
+
 async function saveAll() {
   if (saving.value) return
   saving.value = true
@@ -218,14 +224,17 @@ async function saveAll() {
 
     for (const r of radios) {
       // When band steering, sync shared fields to both radios
-      const ssid       = bandSteering.value ? shared.ssid       : r.form.ssid
+      let ssid       = bandSteering.value ? shared.ssid       : r.form.ssid
       const key        = bandSteering.value ? shared.key        : r.form.key
       const encryption = bandSteering.value ? shared.encryption : r.form.encryption
       const hidden     = bandSteering.value ? shared.hidden     : r.form.hidden
 
+      // In independent mode, append "5G" to 5 GHz SSID if missing
+      if (!bandSteering.value && r.suffix5g) ssid = ensureSuffix5g(ssid)
+
       uci[`${r.ifaceKey}.ssid`]       = ssid
       uci[`${r.ifaceKey}.encryption`] = encryption
-      uci[`${r.ifaceKey}.key`]        = key
+      uci[`${r.ifaceKey}.key`]        = encryption === 'none' ? '' : key
       uci[`${r.ifaceKey}.hidden`]     = hidden ? '1' : '0'
       uci[`${r.ifaceKey}.disabled`]   = r.form.enabled ? '0' : '1'
       uci[`${r.radioKey}.channel`]    = r.form.channel
