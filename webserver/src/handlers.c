@@ -615,13 +615,9 @@ static int json_obj_each(const char *json,
 }
 
 typedef struct {
-    struct uci_context *ctx;
     const char *errmsg;
     char errmsg_buf[256];   /* buffer for dynamic error messages */
     int bad_key;
-    /* track unique modified packages for a single commit after the loop */
-    struct uci_package *pkgs[16];
-    int npkgs;
 } set_ctx_t;
 
 static int set_one_cb(const char *key, const char *val, void *vctx)
@@ -642,33 +638,49 @@ static int set_one_cb(const char *key, const char *val, void *vctx)
     strncpy(val_buf, val, sizeof(val_buf) - 1);
     val_buf[sizeof(val_buf) - 1] = '\0';
 
-    struct uci_ptr ptr;
-    memset(&ptr, 0, sizeof(ptr));
-    if (uci_lookup_ptr(s->ctx, &ptr, key_buf, true) != UCI_OK) {
-        snprintf(s->errmsg_buf, sizeof(s->errmsg_buf),
-                 "Lookup failed: key=%s err=%d", key, s->ctx->err);
-        s->errmsg = s->errmsg_buf;
-        return -1;
-    }
-    ptr.value = val_buf;
-    if (uci_set(s->ctx, &ptr) != UCI_OK) {
-        snprintf(s->errmsg_buf, sizeof(s->errmsg_buf),
-                 "Set failed: key=%s err=%d flags=0x%x s=%s o=%s",
-                 key, s->ctx->err, ptr.flags,
-                 ptr.s ? ptr.s->e.name : "null",
-                 ptr.o ? ptr.o->e.name : "null");
-        s->errmsg = s->errmsg_buf;
+    /*
+     * Use a fresh UCI context per key to avoid cross-contamination when
+     * mixing anonymous sections (@wifi-iface[N]) with named sections
+     * (radio0, radio1). A shared context becomes unable to resolve named
+     * sections after processing anonymous ones in the same package.
+     */
+    struct uci_context *ctx = uci_alloc_context();
+    if (!ctx) {
+        s->errmsg = "UCI alloc failed";
         return -1;
     }
 
-    /* remember this package for commit after the full loop */
-    if (ptr.p) {
-        int found = 0;
-        for (int i = 0; i < s->npkgs; i++)
-            if (s->pkgs[i] == ptr.p) { found = 1; break; }
-        if (!found && s->npkgs < 16)
-            s->pkgs[s->npkgs++] = ptr.p;
+    struct uci_ptr ptr;
+    memset(&ptr, 0, sizeof(ptr));
+    if (uci_lookup_ptr(ctx, &ptr, key_buf, true) != UCI_OK) {
+        snprintf(s->errmsg_buf, sizeof(s->errmsg_buf),
+                 "Lookup failed: key=%s err=%d", key, ctx->err);
+        s->errmsg = s->errmsg_buf;
+        uci_free_context(ctx);
+        return -1;
     }
+    ptr.value = val_buf;
+    if (uci_set(ctx, &ptr) != UCI_OK) {
+        snprintf(s->errmsg_buf, sizeof(s->errmsg_buf),
+                 "Set failed: key=%s err=%d flags=0x%x s=%s o=%s",
+                 key, ctx->err, ptr.flags,
+                 ptr.s ? ptr.s->e.name : "null",
+                 ptr.o ? ptr.o->e.name : "null");
+        s->errmsg = s->errmsg_buf;
+        uci_free_context(ctx);
+        return -1;
+    }
+
+    /* commit immediately within this fresh context */
+    if (ptr.p && uci_commit(ctx, &ptr.p, false) != UCI_OK) {
+        snprintf(s->errmsg_buf, sizeof(s->errmsg_buf),
+                 "Commit failed: key=%s", key);
+        s->errmsg = s->errmsg_buf;
+        uci_free_context(ctx);
+        return -1;
+    }
+
+    uci_free_context(ctx);
     return 0;
 }
 
@@ -681,24 +693,9 @@ static int handle_uci_set(int client_fd, const http_request_t *req)
     char *body = read_body(client_fd, req);
     if (!body) { http_send_error(client_fd, 400, "Bad Request"); return 1; }
 
-    struct uci_context *ctx = uci_alloc_context();
-    if (!ctx) { free(body); http_send_error(client_fd, 500, "Internal Server Error"); return 1; }
-
-    set_ctx_t s = { ctx, NULL, {0}, 0, {NULL}, 0 };
+    set_ctx_t s = { NULL, {0}, 0 };
     json_obj_each(body, set_one_cb, &s);
     free(body);
-
-    /* commit all modified packages once, after all uci_set calls */
-    if (!s.errmsg) {
-        for (int i = 0; i < s.npkgs; i++) {
-            if (uci_commit(ctx, &s.pkgs[i], false) != UCI_OK) {
-                s.errmsg = "Commit failed";
-                break;
-            }
-        }
-    }
-
-    uci_free_context(ctx);
 
     if (s.errmsg) {
         int code = s.bad_key ? 400 : 500;

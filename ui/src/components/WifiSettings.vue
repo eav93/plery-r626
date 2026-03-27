@@ -192,11 +192,18 @@ onMounted(async () => {
 // ── Band steering switch: pre-fill per-radio fields from shared ───────────────
 
 watch(bandSteering, (on) => {
-  if (!on) {
+  if (on) {
+    // При включении — заполняем общие настройки из первого радио
+    shared.ssid       = radios[0].ssid
+    shared.key        = radios[0].key
+    shared.encryption = radios[0].encryption
+    shared.hidden     = radios[0].hidden
+  } else {
+    // При выключении — раскладываем общие настройки по радио
     for (const r of radios) {
       if (!r.ssid) r.ssid = shared.ssid
       if (r.id === '5g' && r.ssid && !/5G$/i.test(r.ssid)) r.ssid += ' 5G'
-      r.key        = shared.key
+      if (shared.key) r.key = shared.key   // не затираем если shared пустой
       r.encryption = shared.encryption
       r.hidden     = shared.hidden
     }
