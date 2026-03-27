@@ -176,8 +176,8 @@ const navItems: NavItem[] = [
   {
     id: 'network', labelKey: 'network', icon: 'network',
     children: [
-      { id: 'lan',  labelKey: 'lan',      icon: 'lan',     to: '/network/lan' },
       { id: 'wan',  labelKey: 'wan',      icon: 'wan',     to: '/network/wan' },
+      { id: 'lan',  labelKey: 'lan',      icon: 'lan',     to: '/network/lan' },
       { id: 'wifi', labelKey: 'wireless', icon: 'wifi',    to: '/network/wifi' },
     ],
   },

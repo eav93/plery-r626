@@ -1,6 +1,7 @@
 <template>
   <!-- Band Steering toggle -->
   <div class="box">
+    <div class="section-title">{{ t('wireless') || 'Беспроводная сеть' }}</div>
     <div class="form-row">
       <label class="form-row__label">{{ t('band_steering') }}</label>
       <div class="form-row__value flex items-center gap-3">

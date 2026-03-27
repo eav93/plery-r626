@@ -617,7 +617,11 @@ static int json_obj_each(const char *json,
 typedef struct {
     struct uci_context *ctx;
     const char *errmsg;
+    char errmsg_buf[256];   /* buffer for dynamic error messages */
     int bad_key;
+    /* track unique modified packages for a single commit after the loop */
+    struct uci_package *pkgs[16];
+    int npkgs;
 } set_ctx_t;
 
 static int set_one_cb(const char *key, const char *val, void *vctx)
@@ -639,18 +643,31 @@ static int set_one_cb(const char *key, const char *val, void *vctx)
     val_buf[sizeof(val_buf) - 1] = '\0';
 
     struct uci_ptr ptr;
+    memset(&ptr, 0, sizeof(ptr));
     if (uci_lookup_ptr(s->ctx, &ptr, key_buf, true) != UCI_OK) {
-        s->errmsg = "Lookup failed";
+        snprintf(s->errmsg_buf, sizeof(s->errmsg_buf),
+                 "Lookup failed: key=%s err=%d", key, s->ctx->err);
+        s->errmsg = s->errmsg_buf;
         return -1;
     }
     ptr.value = val_buf;
     if (uci_set(s->ctx, &ptr) != UCI_OK) {
-        s->errmsg = "Set failed";
+        snprintf(s->errmsg_buf, sizeof(s->errmsg_buf),
+                 "Set failed: key=%s err=%d flags=0x%x s=%s o=%s",
+                 key, s->ctx->err, ptr.flags,
+                 ptr.s ? ptr.s->e.name : "null",
+                 ptr.o ? ptr.o->e.name : "null");
+        s->errmsg = s->errmsg_buf;
         return -1;
     }
-    if (uci_commit(s->ctx, &ptr.p, false) != UCI_OK) {
-        s->errmsg = "Commit failed";
-        return -1;
+
+    /* remember this package for commit after the full loop */
+    if (ptr.p) {
+        int found = 0;
+        for (int i = 0; i < s->npkgs; i++)
+            if (s->pkgs[i] == ptr.p) { found = 1; break; }
+        if (!found && s->npkgs < 16)
+            s->pkgs[s->npkgs++] = ptr.p;
     }
     return 0;
 }
@@ -667,9 +684,20 @@ static int handle_uci_set(int client_fd, const http_request_t *req)
     struct uci_context *ctx = uci_alloc_context();
     if (!ctx) { free(body); http_send_error(client_fd, 500, "Internal Server Error"); return 1; }
 
-    set_ctx_t s = { ctx, NULL, 0 };
+    set_ctx_t s = { ctx, NULL, {0}, 0, {NULL}, 0 };
     json_obj_each(body, set_one_cb, &s);
     free(body);
+
+    /* commit all modified packages once, after all uci_set calls */
+    if (!s.errmsg) {
+        for (int i = 0; i < s.npkgs; i++) {
+            if (uci_commit(ctx, &s.pkgs[i], false) != UCI_OK) {
+                s.errmsg = "Commit failed";
+                break;
+            }
+        }
+    }
+
     uci_free_context(ctx);
 
     if (s.errmsg) {

@@ -31,37 +31,29 @@
       <div class="box">
         <div class="section-title">{{ t('totalup') }}</div>
         <div class="flex items-center">
-          <span
-              class="flex items-center justify-center w-[60px] h-[60px] rounded-full text-white shrink-0 bg-[#9b59b6]"><AppIcon
-              name="faarrowup" :size="30"/></span>
-          <span class="flex-1 text-center text-xl font-bold text-[#9b59b6] leading-[60px]">{{ txStr }}</span>
+          <span class="stat-circle bg-[#9b59b6]"><AppIcon name="faarrowup" :size="30"/></span>
+          <span class="flex-1 text-center font-bold text-[#9b59b6] stat-value">{{ txStr }}</span>
         </div>
       </div>
       <div class="box">
         <div class="section-title">{{ t('totaldown') }}</div>
         <div class="flex items-center">
-          <span
-              class="flex items-center justify-center w-[60px] h-[60px] rounded-full text-white shrink-0 bg-[#2ecc71]"><AppIcon
-              name="faarrowdown" :size="30"/></span>
-          <span class="flex-1 text-center text-xl font-bold text-[#2ecc71] leading-[60px]">{{ rxStr }}</span>
+          <span class="stat-circle bg-[#2ecc71]"><AppIcon name="faarrowdown" :size="30"/></span>
+          <span class="flex-1 text-center font-bold text-[#2ecc71] stat-value">{{ rxStr }}</span>
         </div>
       </div>
       <div class="box">
         <div class="section-title">{{ t('totallink') }}</div>
         <div class="flex items-center">
-          <span
-              class="flex items-center justify-center w-[60px] h-[60px] rounded-full text-white shrink-0 bg-[#f1c40f]"><AppIcon
-              name="linknum" :size="30"/></span>
-          <span class="flex-1 text-center text-xl font-bold text-[#f1c40f] leading-[60px]">{{ conntrack }}</span>
+          <span class="stat-circle bg-[#f1c40f]"><AppIcon name="linknum" :size="30"/></span>
+          <span class="flex-1 text-center font-bold text-[#f1c40f] stat-value">{{ conntrack }}</span>
         </div>
       </div>
       <div class="box">
         <div class="section-title">{{ t('usernum') }}</div>
         <div class="flex items-center">
-          <span
-              class="flex items-center justify-center w-[60px] h-[60px] rounded-full text-white shrink-0 bg-[#e74c3c]"><AppIcon
-              name="yonghuzu" :size="30"/></span>
-          <span class="flex-1 text-center text-xl font-bold text-[#e74c3c] leading-[60px]">{{ userCount }}</span>
+          <span class="stat-circle bg-[#e74c3c]"><AppIcon name="yonghuzu" :size="30"/></span>
+          <span class="flex-1 text-center font-bold text-[#e74c3c] stat-value">{{ userCount }}</span>
         </div>
       </div>
     </div>
@@ -444,6 +436,40 @@ onUnmounted(() => {
 
 .chart-line--rx {
   stroke: #2ecc71;
+}
+
+/* ── Stat circles ────────────────────────────────────────────────────────── */
+.stat-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: white;
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+}
+
+.stat-circle :deep(svg) {
+  width: 30px;
+  height: 30px;
+}
+
+.stat-value {
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+@media (max-width: 900px) {
+  .stat-circle { width: 48px; height: 48px; }
+  .stat-circle :deep(svg) { width: 24px; height: 24px; }
+  .stat-value { font-size: 16px; }
+}
+
+@media (max-width: 600px) {
+  .stat-circle { width: 36px; height: 36px; }
+  .stat-circle :deep(svg) { width: 18px; height: 18px; }
+  .stat-value { font-size: 13px; }
 }
 
 @media (max-width: 767px) {

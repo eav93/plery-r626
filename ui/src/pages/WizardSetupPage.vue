@@ -28,122 +28,7 @@
     </div>
 
     <!-- Step: WAN -->
-    <div v-if="steps[currentStep]?.key === 'wan'" class="box">
-      <div class="section-title">{{ t('wan_set') || 'WAN' }}</div>
-
-      <!-- Proto selector -->
-      <div class="form-row">
-        <label class="form-row__label">{{ t('wan') || 'Connection' }}</label>
-        <div class="form-row__value flex flex-wrap gap-2">
-          <label
-            v-for="p in wanProtos"
-            :key="p.value"
-            class="inline-flex items-center gap-1.5 cursor-pointer select-none"
-          >
-            <input type="radio" v-model="form.wan.proto" :value="p.value" />
-            <span class="text-[13px]">{{ p.label }}</span>
-          </label>
-        </div>
-      </div>
-
-      <template v-if="form.wan.proto === 'qmi'">
-        <div class="form-row">
-          <label class="form-row__label">{{ t('apninfo') }}</label>
-          <div class="form-row__value">
-            <select v-model="form.wan.apnMode">
-              <option value="auto">{{ t('apn_auto') }}</option>
-              <option value="manual">{{ t('apn_nanual') }}</option>
-            </select>
-          </div>
-        </div>
-        <template v-if="form.wan.apnMode === 'manual'">
-          <div class="form-row">
-            <label class="form-row__label">{{ t('apnauth') }}</label>
-            <div class="form-row__value">
-              <select v-model="form.wan.apnAuth">
-                <option value="0">{{ t('auth_none') }}</option>
-                <option value="1">{{ t('auth_pap') }}</option>
-                <option value="2">{{ t('auth_chap') }}</option>
-                <option value="3">{{ t('auth_pap_chap') }}</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row">
-            <label class="form-row__label">{{ t('apn') }}</label>
-            <div class="form-row__value">
-              <input v-model="form.wan.apn" type="text" placeholder="internet" />
-            </div>
-          </div>
-          <div class="form-row">
-            <label class="form-row__label">{{ t('apn_user') }}</label>
-            <div class="form-row__value">
-              <input v-model="form.wan.apnUser" type="text" autocomplete="username" />
-            </div>
-          </div>
-          <div class="form-row">
-            <label class="form-row__label">{{ t('apn_psd') }}</label>
-            <div class="form-row__value">
-              <input v-model="form.wan.apnPassword" type="password" autocomplete="current-password" />
-            </div>
-          </div>
-        </template>
-      </template>
-
-      <p v-if="form.wan.proto === 'dhcp'"
-         class="form-row field-hint" style="padding:8px 0 4px">
-        {{ t('auto_ip_hint') }}
-      </p>
-
-      <template v-if="form.wan.proto === 'pppoe'">
-        <div class="form-row">
-          <label class="form-row__label">{{ t('pppoe_name') || 'Username' }}</label>
-          <div class="form-row__value">
-            <input v-model="form.wan.username" type="text" autocomplete="username" />
-          </div>
-        </div>
-        <div class="form-row">
-          <label class="form-row__label">{{ t('pppoe_psd') || 'Password' }}</label>
-          <div class="form-row__value">
-            <input v-model="form.wan.password" type="password" autocomplete="current-password" />
-          </div>
-        </div>
-        <div class="form-row">
-          <label class="form-row__label">MTU</label>
-          <div class="form-row__value">
-            <input v-model="form.wan.mtu" type="number" min="576" max="1500" />
-          </div>
-        </div>
-      </template>
-
-      <template v-if="form.wan.proto === 'static'">
-        <div class="form-row">
-          <label class="form-row__label">{{ t('ip_addr') || 'IP Address' }}</label>
-          <div class="form-row__value">
-            <input v-model="form.wan.ipaddr" type="text" placeholder="0.0.0.0" />
-          </div>
-        </div>
-        <div class="form-row">
-          <label class="form-row__label">{{ t('netmask') || 'Netmask' }}</label>
-          <div class="form-row__value">
-            <select v-model="form.wan.netmask">
-              <option v-for="m in netmaskOptions" :key="m" :value="m">{{ m }}</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-row">
-          <label class="form-row__label">{{ t('gateway') || 'Gateway' }}</label>
-          <div class="form-row__value">
-            <input v-model="form.wan.gateway" type="text" placeholder="0.0.0.0" />
-          </div>
-        </div>
-        <div class="form-row">
-          <label class="form-row__label">{{ t('dns') || 'DNS' }}</label>
-          <div class="form-row__value">
-            <input v-model="form.wan.dns" type="text" placeholder="8.8.8.8" />
-          </div>
-        </div>
-      </template>
-    </div>
+    <WanSettings v-show="steps[currentStep]?.key === 'wan'" ref="wanRef" />
 
     <!-- Step: LAN -->
     <div v-if="steps[currentStep]?.key === 'lan'" class="box">
@@ -176,35 +61,35 @@
       <template v-if="mode === 'router'">
         <div class="section-title" style="font-size:13px;margin-top:8px">{{ t('wan') || 'WAN' }}</div>
         <div class="form-row">
-          <label class="form-row__label">{{ t('wan') || 'Type' }}</label>
+          <label class="form-row__label">{{ t('wan_type') || 'Тип' }}</label>
           <div class="form-row__value">{{ wanProtoLabel }}</div>
         </div>
-        <template v-if="form.wan.proto === 'pppoe'">
+        <template v-if="wanRef?.form?.proto === 'pppoe'">
           <div class="form-row">
             <label class="form-row__label">{{ t('pppoe_name') || 'Username' }}</label>
-            <div class="form-row__value">{{ form.wan.username || '—' }}</div>
+            <div class="form-row__value">{{ wanRef?.form?.username || '—' }}</div>
           </div>
           <div class="form-row">
             <label class="form-row__label">MTU</label>
-            <div class="form-row__value">{{ form.wan.mtu }}</div>
+            <div class="form-row__value">{{ wanRef?.form?.mtu }}</div>
           </div>
         </template>
-        <template v-if="form.wan.proto === 'static'">
+        <template v-if="wanRef?.form?.proto === 'static'">
           <div class="form-row">
             <label class="form-row__label">{{ t('ip_addr') || 'IP' }}</label>
-            <div class="form-row__value">{{ form.wan.ipaddr || '—' }}</div>
+            <div class="form-row__value">{{ wanRef?.form?.ipaddr || '—' }}</div>
           </div>
           <div class="form-row">
-            <label class="form-row__label">{{ t('netmask') || 'Netmask' }}</label>
-            <div class="form-row__value">{{ form.wan.netmask }}</div>
+            <label class="form-row__label">{{ t('subnet_mask') || 'Netmask' }}</label>
+            <div class="form-row__value">{{ wanRef?.form?.netmask }}</div>
           </div>
           <div class="form-row">
             <label class="form-row__label">{{ t('gateway') || 'Gateway' }}</label>
-            <div class="form-row__value">{{ form.wan.gateway || '—' }}</div>
+            <div class="form-row__value">{{ wanRef?.form?.gateway || '—' }}</div>
           </div>
           <div class="form-row">
-            <label class="form-row__label">{{ t('dns') || 'DNS' }}</label>
-            <div class="form-row__value">{{ form.wan.dns || '—' }}</div>
+            <label class="form-row__label">DNS</label>
+            <div class="form-row__value">{{ wanRef?.form?.dns || '—' }}</div>
           </div>
         </template>
       </template>
@@ -270,8 +155,8 @@ import { reactive, ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useApi } from '@/composables/useApi'
-import FormField from '@/components/FormField.vue'
 import WifiSettings from '@/components/WifiSettings.vue'
+import WanSettings from '@/components/WanSettings.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -295,76 +180,37 @@ const currentStep = ref(0)
 const applying = ref(false)
 const countdown = ref(0)
 const wifiRef = ref<InstanceType<typeof WifiSettings>>()
+const wanRef  = ref<InstanceType<typeof WanSettings>>()
 
 const netmaskOptions = [
-  '255.255.255.0',
-  '255.255.254.0',
-  '255.255.252.0',
-  '255.255.248.0',
-  '255.255.240.0',
-  '255.255.0.0',
-  '255.254.0.0',
-  '255.252.0.0',
-  '255.248.0.0',
-  '255.240.0.0',
-  '255.0.0.0',
+  '255.255.255.0', '255.255.254.0', '255.255.252.0',
+  '255.255.248.0', '255.255.240.0', '255.255.0.0',
+  '255.254.0.0',   '255.252.0.0',   '255.248.0.0',
+  '255.240.0.0',   '255.0.0.0',
 ]
 
 const wanProtos = [
   { value: 'qmi',    label: '4G/LTE' },
   { value: 'pppoe',  label: 'PPPoE' },
-  { value: 'static', label: 'Static' },
+  { value: 'static', label: t('staAddress') || 'Статический' },
   { value: 'dhcp',   label: 'DHCP' },
 ]
 
 const form = reactive({
-  wan: {
-    proto: 'qmi',
-    apnMode: 'auto',
-    apn: '',
-    apnAuth: '0',
-    apnUser: '',
-    apnPassword: '',
-    username: '',
-    password: '',
-    mtu: '1492',
-    ipaddr: '',
-    netmask: '255.255.255.0',
-    gateway: '',
-    dns: '',
-  },
-  lan: {
-    ipaddr: '192.168.0.1',
-    netmask: '255.255.255.0',
-  },
+  lan: { ipaddr: '192.168.0.1', netmask: '255.255.255.0' },
 })
 
-const wanProtoLabel = computed(() =>
-  wanProtos.find(p => p.value === form.wan.proto)?.label ?? form.wan.proto
-)
+const wanProtoLabel = computed(() => {
+  const proto = wanRef.value?.form?.proto ?? ''
+  return wanProtos.find(p => p.value === proto)?.label ?? proto
+})
 
 onMounted(async () => {
   try {
-    const data = await uciGet(['network.wan', 'network.lan'])
-
-    form.wan.proto       = data['network.wan.proto']    || 'qmi'
-    form.wan.apn         = data['network.wan.apn']      || ''
-    form.wan.apnAuth     = data['network.wan.apn_auth'] || '0'
-    form.wan.apnUser     = data['network.wan.apn_user'] || ''
-    form.wan.apnPassword = data['network.wan.apn_psd']  || ''
-    form.wan.apnMode     = form.wan.apn ? 'manual' : 'auto'
-    form.wan.username    = data['network.wan.username'] || ''
-    form.wan.password = data['network.wan.password'] || ''
-    form.wan.mtu      = data['network.wan.mtu']      || '1492'
-    form.wan.ipaddr   = data['network.wan.ipaddr']   || ''
-    form.wan.netmask  = data['network.wan.netmask']  || '255.255.255.0'
-    form.wan.gateway  = data['network.wan.gateway']  || ''
-    form.wan.dns      = data['network.wan.dns']      || ''
-
+    const data = await uciGet(['network.lan.ipaddr', 'network.lan.netmask'])
     form.lan.ipaddr  = data['network.lan.ipaddr']  || '192.168.0.1'
     form.lan.netmask = data['network.lan.netmask'] || '255.255.255.0'
-
-    // WiFi is loaded by WifiSettings component itself
+    // WAN and WiFi are loaded by their own components
   } catch { /* ignore */ }
 })
 
@@ -374,25 +220,8 @@ function applySettings() {
 
   const obj: Record<string, string> = {}
 
-  if (mode.value === 'router') {
-    obj['network.wan.proto'] = form.wan.proto
-    if (form.wan.proto === 'qmi') {
-      if (form.wan.apnMode === 'manual') {
-        obj['network.wan.apn']      = form.wan.apn
-        obj['network.wan.apn_auth'] = form.wan.apnAuth
-        obj['network.wan.apn_user'] = form.wan.apnUser
-        obj['network.wan.apn_psd']  = form.wan.apnPassword
-      }
-    } else if (form.wan.proto === 'pppoe') {
-      obj['network.wan.username'] = form.wan.username
-      obj['network.wan.password'] = form.wan.password
-      obj['network.wan.mtu']      = form.wan.mtu
-    } else if (form.wan.proto === 'static') {
-      obj['network.wan.ipaddr']   = form.wan.ipaddr
-      obj['network.wan.netmask']  = form.wan.netmask
-      obj['network.wan.gateway']  = form.wan.gateway
-      obj['network.wan.dns']      = form.wan.dns
-    }
+  if (mode.value === 'router' && wanRef.value) {
+    Object.assign(obj, wanRef.value.getUci())
   }
 
   obj['network.lan.ipaddr']  = form.lan.ipaddr

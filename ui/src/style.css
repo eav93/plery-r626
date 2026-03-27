@@ -116,10 +116,11 @@ input[type="checkbox"] {
   appearance: none;
   width: 14px;
   height: 14px;
-  border: 2px solid #9eb9c2;
+  border: 1.5px solid #9eb9c2;
+  background: white;
   cursor: pointer;
   flex-shrink: 0;
-  transition: border-color .15s, background .15s;
+  transition: border-color .15s, background-color .15s;
 }
 input[type="radio"] {
   border-radius: 50%;
@@ -133,7 +134,11 @@ input[type="radio"]:checked {
 }
 input[type="checkbox"]:checked {
   border-color: #ffc510;
-  background: #ffc510 url("data:image/svg+xml,%3Csvg viewBox='0 0 10 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 4l3 3 5-6' stroke='%23fff' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/10px no-repeat;
+  background-color: #ffc510;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 10 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 4l3 3 5-6' stroke='%23fff' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: 10px;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 /* ── Inputs (element selectors — low specificity, fine unlayered) ─────────── */
@@ -166,7 +171,7 @@ input:disabled, select:disabled {
 }
 textarea { height: auto; line-height: 1.4; padding: 6px 8px; }
 
-/* ── Toggle (реализован через стилизованный checkbox) ────────────────────── */
+/* ── Toggle (slider) ─────────────────────────────────────────────────────── */
 .toggle {
   display: inline-flex;
   align-items: center;
@@ -174,6 +179,36 @@ textarea { height: auto; line-height: 1.4; padding: 6px 8px; }
   cursor: pointer;
   user-select: none;
 }
-.toggle input { /* используем глобальный стиль checkbox */ }
-.toggle__track,
-.toggle__thumb { display: none; }
+.toggle input {
+  display: none;         /* скрываем нативный checkbox */
+}
+.toggle__track {
+  display: block;
+  position: relative;
+  width: 34px;
+  height: 18px;
+  border-radius: 9px;
+  border: 1.5px solid #9eb9c2;
+  background: #fff;
+  flex-shrink: 0;
+  transition: background .2s, border-color .2s;
+}
+.toggle__thumb {
+  display: block;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #9eb9c2;
+  transition: transform .2s, background .2s;
+}
+.toggle input:checked + .toggle__track {
+  background: #ffc510;
+  border-color: #ffc510;
+}
+.toggle input:checked + .toggle__track .toggle__thumb {
+  background: #fff;
+  transform: translateX(16px);
+}
