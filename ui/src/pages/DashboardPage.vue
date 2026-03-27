@@ -10,17 +10,19 @@
       </div>
     </div>
     <!-- Состояние интерфейсов -->
-    <div v-if="portList.length" class="box flex flex-col">
+    <div class="box flex flex-col">
       <div class="section-title">{{ t('intertface') }}</div>
       <ul class="flex flex-wrap justify-center items-center gap-4 flex-1 py-2">
-        <li v-for="(p, i) in portList" :key="i"
-            :class="['flex flex-col items-center gap-1',
-              p.up ? (p.wan_enable ? 'text-[#0068ff]' : 'text-[#ff6f08]') : 'text-[#adadad]']">
-          <AppIcon name="wangkou" :size="32"/>
-          <span class="text-[11px] text-[#16191c]">{{
-              p.wan_enable ? 'WAN' : ('LAN' + (lanIdx(i) > 1 ? lanIdx(i) : ''))
-            }}</span>
-        </li>
+        <template v-if="portList.length">
+          <li v-for="(p, i) in portList" :key="i"
+              :class="['flex flex-col items-center gap-1',
+                p.up ? (p.wan_enable ? 'text-[#0068ff]' : 'text-[#ff6f08]') : 'text-[#adadad]']">
+            <AppIcon name="wangkou" :size="32"/>
+            <span class="text-[11px] text-[#16191c]">{{
+                p.wan_enable ? 'WAN' : ('LAN' + (lanIdx(i) > 1 ? lanIdx(i) : ''))
+              }}</span>
+          </li>
+        </template>
       </ul>
     </div>
 
