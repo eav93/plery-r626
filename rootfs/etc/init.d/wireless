@@ -1,0 +1,22 @@
+#!/bin/sh /etc/rc.common
+
+START=25
+STOP=89
+
+reload_service() {
+	local driver_type
+	driver_type=$(cat /tmp/sysinfo/driver_tpye 2>/dev/null)
+	if [ "$driver_type" = "mtk" ]; then
+		/sbin/reload_config wireless
+	else
+		/sbin/wifi reload
+	fi
+}
+
+start_service() {
+	reload_service
+}
+
+stop_service() {
+	/sbin/wifi down
+}
