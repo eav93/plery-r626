@@ -15,8 +15,10 @@ export function useApi() {
   async function post<T = unknown>(path: string, data?: unknown): Promise<T> {
     const r = await fetch(path, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data ?? {}),
+      ...(data !== undefined && {
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      }),
     })
     authGuard(r)
     if (!r.ok) throw new Error(`HTTP ${r.status}`)
