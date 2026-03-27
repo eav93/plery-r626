@@ -78,7 +78,7 @@ jobs:
             webserver/include/openssl
             webserver/lib/libssl.a
             webserver/lib/libcrypto.a
-          key: openssl-mips-static-1.0.2t
+          key: openssl-mips-static-1.1.1w
 
       - name: Build OpenSSL for MIPS (static)
         if: steps.openssl-cache.outputs.cache-hit != 'true'
@@ -87,7 +87,7 @@ jobs:
         run: |
           TOOLCHAIN=${{ github.workspace }}/${{ env.SDK_NAME }}/staging_dir/toolchain-mipsel_24kc_gcc-5.4.0_musl-1.1.16
           export PATH="$TOOLCHAIN/bin:$PATH"
-          git clone -q --depth=1 -b OpenSSL_1_0_2t https://github.com/openssl/openssl.git openssl-src
+          git clone -q --depth=1 -b OpenSSL_1_1_1w https://github.com/openssl/openssl.git openssl-src
           cd openssl-src
           ./Configure linux-generic32 \
             --cross-compile-prefix=mipsel-openwrt-linux-musl- \
