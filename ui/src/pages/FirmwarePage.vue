@@ -10,16 +10,14 @@
         <div class="form-row__value font-mono text-sm">{{ currentVersion || '—' }}</div>
       </div>
 
-      <div v-if="state === 'checking' || status.new_version" class="form-row">
+      <div class="form-row">
         <label class="form-row__label">{{ t('BestNewVersion') }}</label>
         <div class="form-row__value font-mono text-sm flex items-center gap-1.5">
-          <template v-if="state === 'checking'">
-            <svg class="animate-spin shrink-0 w-3.5 h-3.5 text-[#888]" viewBox="0 0 24 24" fill="none">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-            </svg>
-          </template>
-          <template v-else>
+          <svg v-if="state === 'checking'" class="animate-spin shrink-0 w-3.5 h-3.5 text-[#888]" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          <template v-else-if="status.new_version">
             <span v-if="isNewer" :title="t('newer')" class="text-[#ed6c00]">▲</span>
             <span v-else-if="isUpToDate" :title="t('AlreadyNewVersion')" class="text-[#5cb85c]">✓</span>
             <span>{{ status.new_version }}</span>
