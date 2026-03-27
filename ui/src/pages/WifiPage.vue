@@ -46,17 +46,9 @@
             <span class="toggle__track"><span class="toggle__thumb"></span></span>
           </label>
         </FormField>
-
-        <FormField :label="t('wifi_enable') || 'Радиомодуль'">
-          <label class="toggle">
-            <input type="checkbox" v-model="shared.enabled" />
-            <span class="toggle__track"><span class="toggle__thumb"></span></span>
-            <span class="ml-2 text-sm">{{ shared.enabled ? (t('enable') || 'Вкл') : (t('disable') || 'Выкл') }}</span>
-          </label>
-        </FormField>
       </div>
 
-      <!-- Per-radio: channel only -->
+      <!-- Per-radio: channel + enable -->
       <div class="radio-grid mb-4">
         <div v-for="r in radios" :key="r.id" class="box">
           <div class="section-title">{{ r.label }}</div>
@@ -66,6 +58,15 @@
               <option value="auto">{{ t('auto') || 'Авто' }}</option>
               <option v-for="ch in r.channels" :key="ch" :value="String(ch)">{{ ch }}</option>
             </select>
+          </FormField>
+
+          <FormField :label="t('wifi_enable') || 'Радио'">
+            <label class="toggle">
+              <input type="checkbox" :checked="r.form.enabled"
+                @change="(e) => { const v = (e.target as HTMLInputElement).checked; radios.forEach(x => x.form.enabled = v) }" />
+              <span class="toggle__track"><span class="toggle__thumb"></span></span>
+              <span class="ml-2 text-sm">{{ r.form.enabled ? (t('enable') || 'Вкл') : (t('disable') || 'Выкл') }}</span>
+            </label>
           </FormField>
         </div>
       </div>
@@ -172,7 +173,7 @@ const radios: Radio[] = reactive([
 ])
 
 const bandSteering = ref(false)
-const shared = reactive({ ssid: '', key: '', encryption: 'psk2', hidden: false, enabled: true })
+const shared = reactive({ ssid: '', key: '', encryption: 'psk2', hidden: false })
 const showSharedPwd = ref(false)
 const showPwd = reactive<Record<string, boolean>>({ '24g': false, '5g': false })
 
@@ -206,7 +207,6 @@ onMounted(async () => {
       shared.key        = a.form.key
       shared.encryption = a.form.encryption
       shared.hidden     = a.form.hidden
-      shared.enabled    = a.form.enabled
     }
   } catch { /* ignore */ }
 })
@@ -223,15 +223,14 @@ async function saveAll() {
       const key        = bandSteering.value ? shared.key        : r.form.key
       const encryption = bandSteering.value ? shared.encryption : r.form.encryption
       const hidden     = bandSteering.value ? shared.hidden     : r.form.hidden
-      const enabled    = bandSteering.value ? shared.enabled    : r.form.enabled
 
       uci[`${r.ifaceKey}.ssid`]       = ssid
       uci[`${r.ifaceKey}.encryption`] = encryption
       uci[`${r.ifaceKey}.key`]        = key
       uci[`${r.ifaceKey}.hidden`]     = hidden ? '1' : '0'
-      uci[`${r.ifaceKey}.disabled`]   = enabled ? '0' : '1'
+      uci[`${r.ifaceKey}.disabled`]   = r.form.enabled ? '0' : '1'
       uci[`${r.radioKey}.channel`]    = r.form.channel
-      uci[`${r.radioKey}.disabled`]   = enabled ? '0' : '1'
+      uci[`${r.radioKey}.disabled`]   = r.form.enabled ? '0' : '1'
     }
 
     await uciSet(uci)
