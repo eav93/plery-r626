@@ -191,7 +191,15 @@ const navItems: NavItem[] = [
   },
 ]
 
-const openGroups = ref<Set<string>>(new Set(['network', 'system']))
+function activeGroup(): string | null {
+  for (const item of navItems) {
+    if (item.children?.some(c => route.path.startsWith(c.to)))
+      return item.id
+  }
+  return null
+}
+
+const openGroups = ref<Set<string>>(new Set(activeGroup() ? [activeGroup()!] : []))
 function toggleGroup(id: string) {
   if (openGroups.value.has(id)) openGroups.value.delete(id)
   else openGroups.value.add(id)
