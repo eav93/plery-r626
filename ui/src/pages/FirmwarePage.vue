@@ -216,13 +216,13 @@ async function checkUpdate() {
   busy.value = true
   status.value = { state: 'idle', new_version: '', download_pct: 0 }
   try {
-    const d = await post<FwStatus & { errCode?: number }>('/api/firmware/check')
-    if (d.errCode === 0) status.value = d
+    await post('/api/firmware/check')
   } catch {
     error(t('NetworkError'))
     busy.value = false
     return
   }
+  status.value = { ...status.value, state: 'checking' }
   schedulePoll()
   busy.value = false
 }
