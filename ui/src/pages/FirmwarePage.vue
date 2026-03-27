@@ -7,7 +7,13 @@
 
       <div class="form-row">
         <label class="form-row__label">{{ t('current_ver') }}</label>
-        <div class="form-row__value font-mono text-sm">{{ currentVersion || '—' }}</div>
+        <div class="form-row__value font-mono text-sm flex items-center gap-1.5">
+          <svg v-if="state === 'checking'" class="animate-spin shrink-0 w-3.5 h-3.5 text-[#888]" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
+          <span :class="state === 'checking' ? 'text-[#888]' : ''">{{ currentVersion || '—' }}</span>
+        </div>
       </div>
 
       <div v-if="status.new_version" class="form-row">
@@ -54,10 +60,6 @@
     <div class="form-actions">
       <button v-if="state !== 'downloading'"
               class="btn btn-primary" :disabled="busy || state === 'checking'" @click="checkUpdate">
-        <svg v-if="busy || state === 'checking'" class="animate-spin inline-block mr-1 w-4 h-4" viewBox="0 0 24 24" fill="none">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-        </svg>
         {{ t('ManualCheck') }}
       </button>
       <button v-if="state === 'checked'" class="btn btn-primary" @click="startUpdate">
@@ -280,7 +282,7 @@ async function uploadFirmware() {
 
 const onlineStatusMsg = computed(() => {
   switch (state.value) {
-    case 'checking':    return t('CheckVersion')
+    case 'checking':    return ''
     case 'checked':     return ''
     case 'downloading': return t('CheckNewVersion')
     case 'error':       return status.value.err_msg || t('NetworkError')
