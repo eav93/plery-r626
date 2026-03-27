@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full md:w-1/2 mx-auto">
+  <div class="page-form">
     <div class="box">
         <div class="section-title">{{ t('change_password') }}</div>
 

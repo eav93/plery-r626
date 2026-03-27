@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full md:w-1/2 mx-auto">
+  <div class="page-form">
 
     <!-- Step progress bar -->
     <div class="box mb-4">

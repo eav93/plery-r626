@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full md:w-1/2 mx-auto">
+  <div class="page-form">
 
     <!-- Online Update -->
     <div class="box">
@@ -13,9 +13,9 @@
       <div v-if="status.new_version" class="form-row">
         <label class="form-row__label">{{ t('BestNewVersion') }}</label>
         <div class="form-row__value font-mono text-sm flex items-center gap-1.5">
-          <span>{{ status.new_version }}</span>
           <span v-if="isNewer" :title="t('newer')" class="text-[#ed6c00]">▲</span>
           <span v-else-if="isUpToDate" :title="t('AlreadyNewVersion')" class="text-[#5cb85c]">✓</span>
+          <span>{{ status.new_version }}</span>
         </div>
       </div>
 
