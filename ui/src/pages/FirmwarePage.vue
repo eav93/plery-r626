@@ -106,10 +106,6 @@
         </div>
       </div>
 
-      <div class="form-row">
-        <label class="form-row__label"></label>
-        <div class="form-row__value text-xs text-[#888]">{{ t('upgrade_tip') }}</div>
-      </div>
     </div>
 
     <div class="form-actions">
