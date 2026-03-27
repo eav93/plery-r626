@@ -52,20 +52,13 @@
 
     <!-- Online buttons -->
     <div class="form-actions">
-      <button v-if="state === 'idle' || state === 'checked' || state === 'error'"
-              class="btn btn-primary" :disabled="busy" @click="checkUpdate">
-        <svg v-if="busy" class="animate-spin inline-block mr-1 w-4 h-4" viewBox="0 0 24 24" fill="none">
+      <button v-if="state !== 'downloading'"
+              class="btn btn-primary" :disabled="busy || state === 'checking'" @click="checkUpdate">
+        <svg v-if="busy || state === 'checking'" class="animate-spin inline-block mr-1 w-4 h-4" viewBox="0 0 24 24" fill="none">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
         </svg>
         {{ t('ManualCheck') }}
-      </button>
-      <button v-if="state === 'checking'" class="btn btn-ghost" disabled>
-        <svg class="animate-spin inline-block mr-1 w-4 h-4" viewBox="0 0 24 24" fill="none">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-        </svg>
-        {{ t('CheckVersion') }}
       </button>
       <button v-if="state === 'checked'" class="btn btn-primary" @click="startUpdate">
         {{ t('update') }}
@@ -214,7 +207,7 @@ function startCountdown(sec: number) {
 
 async function checkUpdate() {
   busy.value = true
-  status.value = { state: 'idle', new_version: '', download_pct: 0 }
+  status.value = { ...status.value, state: 'idle', new_version: '', download_pct: 0, err_msg: '' }
   try {
     await post('/api/firmware/check')
   } catch {
