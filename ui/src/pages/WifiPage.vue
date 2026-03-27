@@ -2,7 +2,7 @@
   <div class="page-form">
 
     <!-- Band Steering toggle -->
-    <div class="box mb-4">
+    <div class="box">
       <div class="form-row">
         <label class="form-row__label">{{ t('band_steering') }}</label>
         <div class="form-row__value flex items-center gap-3">
@@ -19,7 +19,7 @@
 
     <!-- Band Steering ON: shared network settings + per-radio grid -->
     <template v-if="bandSteering">
-      <div class="box mb-4">
+      <div class="box">
         <div class="section-title">{{ t('wifi_network') }}</div>
 
         <FormField :label="t('ssid') || 'SSID'">

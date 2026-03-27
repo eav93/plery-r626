@@ -2,7 +2,7 @@
   <div class="page-form">
 
     <!-- Step progress bar -->
-    <div class="box mb-4">
+    <div class="box">
       <div class="flex items-stretch">
         <div
           v-for="(step, idx) in steps"

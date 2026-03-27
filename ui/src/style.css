@@ -48,7 +48,7 @@
 /* ── Components (in @layer components so Tailwind utilities still override) ── */
 @layer components {
   .box {
-    @apply relative border border-[#9eb9c2] rounded bg-white px-4 pt-6 pb-4;
+    @apply relative border border-[#9eb9c2] rounded bg-white px-4 pt-6 pb-4 mb-4;
   }
 
   /* Floating label on border */
