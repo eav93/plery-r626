@@ -62,12 +62,36 @@ jobs:
         run: tar xf ${{ env.SDK_NAME }}.tar.xz
 
       # ---- libuci (lede-17.01) ----
-      - name: Clone libuci
+      - name: Cache libuci for MIPS
+        uses: actions/cache@v5
+        id: libuci-cache
+        with:
+          path: |
+            webserver/include/uci.h
+            webserver/include/uci_config.h
+            webserver/lib/libuci.so
+          key: libuci-mips-shared-lede-17.01
+
+      - name: Build libuci for MIPS (shared)
+        if: steps.libuci-cache.outputs.cache-hit != 'true'
+        env:
+          STAGING_DIR: ${{ github.workspace }}/${{ env.SDK_NAME }}/staging_dir
         run: |
-          rm -rf libuci
-          git clone -q -b lede-17.01 --depth=1 https://github.com/openwrt/uci libuci
+          TOOLCHAIN=${{ github.workspace }}/${{ env.SDK_NAME }}/staging_dir/toolchain-mipsel_24kc_gcc-5.4.0_musl-1.1.16
+          export PATH="$TOOLCHAIN/bin:$PATH"
+          rm -rf libuci-src
+          git clone -q -b lede-17.01 --depth=1 https://github.com/openwrt/uci libuci-src
           printf '#ifndef _UCI_CONFIG_H\n#define _UCI_CONFIG_H\n#define UCI_PREFIX "/usr"\n#endif\n' \
-            > libuci/uci_config.h
+            > libuci-src/uci_config.h
+          cd libuci-src
+          mipsel-openwrt-linux-musl-gcc -Os -std=c99 -D_GNU_SOURCE -fPIC \
+            -I. -c libuci.c file.c util.c delta.c
+          mipsel-openwrt-linux-musl-gcc -shared -Wl,-soname,libuci.so \
+            -o libuci.so libuci.o file.o util.o delta.o
+          mkdir -p ../webserver/include ../webserver/lib
+          cp uci.h uci_config.h ../webserver/include/
+          cp libuci.so ../webserver/lib/
+          cd .. && rm -rf libuci-src
 
       # ---- OpenSSL static libs for cross-compile ----
       - name: Cache OpenSSL for MIPS
@@ -107,9 +131,7 @@ jobs:
         run: |
           cd webserver
           make cross \
-            SDK_DIR=${{ github.workspace }}/${{ env.SDK_NAME }} \
-            LIBUCI_DIR=${{ github.workspace }}/libuci \
-            TARGET_DIR=${{ github.workspace }}/${{ env.SDK_NAME }}/staging_dir/target-mipsel_24kc_musl-1.1.16
+            SDK_DIR=${{ github.workspace }}/${{ env.SDK_NAME }}
           cp wbsrv ../rootfs/usr/sbin/wbsrv
           file ../rootfs/usr/sbin/wbsrv
 
