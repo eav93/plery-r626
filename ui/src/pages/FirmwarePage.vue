@@ -60,7 +60,7 @@
     <!-- Online buttons -->
     <div class="form-actions">
       <button v-if="state !== 'downloading'"
-              class="btn btn-primary" :disabled="busy || state === 'checking'" @click="checkUpdate">
+              class="btn btn-primary" :disabled="busy || state === 'checking'" @click="checkUpdate(true)">
         {{ t('ManualCheck') }}
       </button>
       <button v-if="state === 'checked'" class="btn btn-primary" @click="startUpdate">
@@ -204,13 +204,14 @@ function startCountdown(sec: number) {
   }, 1000)
 }
 
-async function checkUpdate() {
+async function checkUpdate(userInitiated = false) {
+  if (busy.value || state.value === 'checking') return
   busy.value = true
   status.value = { ...status.value, state: 'idle', new_version: '', download_pct: 0, err_msg: '' }
   try {
     await post('/api/firmware/check')
   } catch {
-    error(t('NetworkError'))
+    if (userInitiated) error(t('NetworkError'))
     busy.value = false
     return
   }
