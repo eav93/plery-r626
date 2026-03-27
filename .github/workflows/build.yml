@@ -76,26 +76,28 @@ jobs:
         with:
           path: |
             webserver/include/openssl
-            webserver/lib/libssl.a
-            webserver/lib/libcrypto.a
-          key: openssl-mips-static-1.1.1w
+            webserver/lib/libssl.so.1.0.0
+            webserver/lib/libssl.so
+            webserver/lib/libcrypto.so.1.0.0
+            webserver/lib/libcrypto.so
+          key: openssl-mips-shared-1.0.2t
 
-      - name: Build OpenSSL for MIPS (static)
+      - name: Build OpenSSL for MIPS (shared)
         if: steps.openssl-cache.outputs.cache-hit != 'true'
         env:
           STAGING_DIR: ${{ github.workspace }}/${{ env.SDK_NAME }}/staging_dir
         run: |
           TOOLCHAIN=${{ github.workspace }}/${{ env.SDK_NAME }}/staging_dir/toolchain-mipsel_24kc_gcc-5.4.0_musl-1.1.16
           export PATH="$TOOLCHAIN/bin:$PATH"
-          git clone -q --depth=1 -b OpenSSL_1_1_1w https://github.com/openssl/openssl.git openssl-src
+          git clone -q --depth=1 -b OpenSSL_1_0_2t https://github.com/openssl/openssl.git openssl-src
           cd openssl-src
           ./Configure linux-generic32 \
             --cross-compile-prefix=mipsel-openwrt-linux-musl- \
-            --prefix=/usr no-shared no-asm
+            --prefix=/usr shared no-asm
           make -j$(nproc) build_libs
           mkdir -p ../webserver/include ../webserver/lib
           cp -rL include/openssl ../webserver/include/
-          cp libssl.a libcrypto.a ../webserver/lib/
+          cp -P libssl.so libssl.so.1.0.0 libcrypto.so libcrypto.so.1.0.0 ../webserver/lib/
           cd .. && rm -rf openssl-src
 
       # ---- Build wbsrv ----
