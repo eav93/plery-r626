@@ -201,8 +201,8 @@ async function fetchStatus() {
 
 function schedulePoll() {
   if (pollTimer) clearTimeout(pollTimer)
-  const interval = ACTIVE_STATES.has(state.value) ? 2000 : 10000
-  pollTimer = setTimeout(async () => { await fetchStatus(); schedulePoll() }, interval)
+  if (!ACTIVE_STATES.has(state.value)) return
+  pollTimer = setTimeout(async () => { await fetchStatus(); schedulePoll() }, 2000)
 }
 
 function startCountdown(sec: number) {
