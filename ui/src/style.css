@@ -58,7 +58,7 @@
 
   /* Page container for form pages */
   .page-form {
-    @apply max-w-[700px];
+    @apply max-w-[700px] mx-auto;
   }
 
   /* Form rows */
