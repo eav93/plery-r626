@@ -1262,9 +1262,9 @@ static int handle_action(int client_fd, const http_request_t *req)
             json_get_str(body, "service", service, sizeof(service));
             free(body);
         }
-        /* Whitelist service names to prevent injection */
+        /* Whitelist: only services that have an /etc/init.d/<name> script */
         static const char *allowed[] = {
-            "network", "wireless", "system", "firewall", "dnsmasq", NULL
+            "network", "system", "firewall", "dnsmasq", NULL
         };
         int ok_svc = 0;
         for (int i = 0; allowed[i]; i++) {
@@ -1281,6 +1281,36 @@ static int handle_action(int client_fd, const http_request_t *req)
                            "application/json", ok, sizeof(ok) - 1);
         char cmd[128];
         snprintf(cmd, sizeof(cmd), "/etc/init.d/%s reload", service);
+        run_delayed(cmd);
+        return 1;
+    }
+
+    if (strcmp(action, "reload_config") == 0) {
+        char *body = read_body(client_fd, req);
+        char package[32] = {0};
+        if (body) {
+            json_get_str(body, "package", package, sizeof(package));
+            free(body);
+        }
+        /* Whitelist UCI package names */
+        static const char *allowed_pkg[] = {
+            "wireless", "network", "system", "firewall", "dhcp", NULL
+        };
+        int ok_pkg = 0;
+        for (int i = 0; allowed_pkg[i]; i++) {
+            if (strcmp(package, allowed_pkg[i]) == 0) { ok_pkg = 1; break; }
+        }
+        if (!ok_pkg) {
+            static const char bad[] =
+                "{\"errCode\":-1,\"errMsg\":\"Invalid package\"}";
+            http_send_response(client_fd, 400, "Bad Request",
+                               "application/json", bad, sizeof(bad) - 1);
+            return 1;
+        }
+        http_send_response(client_fd, 200, "OK",
+                           "application/json", ok, sizeof(ok) - 1);
+        char cmd[128];
+        snprintf(cmd, sizeof(cmd), "/sbin/reload_config %s", package);
         run_delayed(cmd);
         return 1;
     }

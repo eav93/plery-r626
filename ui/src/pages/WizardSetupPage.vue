@@ -238,7 +238,7 @@ function applySettings() {
   uciSet(obj)
     .then(() => {
       apiAction('apply', { service: 'network' }).catch(() => {})
-      apiAction('apply', { service: 'wireless' }).catch(() => {})
+      apiAction('reload_config', { package: 'wireless' }).catch(() => {})
     })
     .catch(() => {})
 

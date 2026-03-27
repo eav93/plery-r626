@@ -28,7 +28,7 @@ async function saveAll() {
   saving.value = true
   try {
     await uciSet(wifiRef.value!.getUci())
-    await apiAction('apply', { service: 'wireless' })
+    await apiAction('reload_config', { package: 'wireless' })
     success(t('set_ok') || 'Сохранено')
   } catch { error(t('set_err') || 'Ошибка') }
   finally { saving.value = false }
