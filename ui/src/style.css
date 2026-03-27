@@ -166,7 +166,7 @@ input:disabled, select:disabled {
 }
 textarea { height: auto; line-height: 1.4; padding: 6px 8px; }
 
-/* ── Toggle switch ───────────────────────────────────────────────────────── */
+/* ── Toggle (реализован через стилизованный checkbox) ────────────────────── */
 .toggle {
   display: inline-flex;
   align-items: center;
@@ -174,23 +174,6 @@ textarea { height: auto; line-height: 1.4; padding: 6px 8px; }
   cursor: pointer;
   user-select: none;
 }
-.toggle input { display: none; }
-.toggle__track {
-  width: 36px; height: 20px;
-  border-radius: 10px;
-  background: #ccc;
-  position: relative;
-  transition: background .2s;
-  flex-shrink: 0;
-}
-.toggle input:checked + .toggle__track { background: var(--color-accent); }
-.toggle__thumb {
-  position: absolute;
-  width: 16px; height: 16px;
-  border-radius: 50%;
-  background: #fff;
-  top: 2px; left: 2px;
-  transition: left .2s;
-  box-shadow: 0 1px 3px rgba(0,0,0,.2);
-}
-.toggle input:checked ~ .toggle__track .toggle__thumb { left: 18px; }
+.toggle input { /* используем глобальный стиль checkbox */ }
+.toggle__track,
+.toggle__thumb { display: none; }
