@@ -12,10 +12,10 @@
 
       <div v-if="status.new_version" class="form-row">
         <label class="form-row__label">{{ t('BestNewVersion') }}</label>
-        <div class="form-row__value font-mono text-sm flex items-center gap-2">
+        <div class="form-row__value font-mono text-sm flex items-center gap-1.5">
           <span>{{ status.new_version }}</span>
-          <span v-if="isNewer" class="text-[#ed6c00] font-semibold text-xs">▲ {{ t('newer') }}</span>
-          <span v-else-if="isUpToDate" class="text-[#5cb85c] text-xs">✓ {{ t('AlreadyNewVersion') }}</span>
+          <span v-if="isNewer" :title="t('newer')" class="text-[#ed6c00]">▲</span>
+          <span v-else-if="isUpToDate" :title="t('AlreadyNewVersion')" class="text-[#5cb85c]">✓</span>
         </div>
       </div>
 
@@ -141,25 +141,24 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useApi } from '@/composables/useApi'
 import { useNotify } from '@/composables/useNotify'
-import { useSystemStore } from '@/stores/system'
 
 const { t } = useI18n()
 const { post } = useApi()
 const { error } = useNotify()
-const store = useSystemStore()
 
 interface FwStatus {
   state: string
   new_version: string
   download_pct: number
+  current_version?: string
   err_msg?: string
 }
 
 const status = ref<FwStatus>({
-  state: 'idle', new_version: '', download_pct: 0, err_msg: '',
+  state: 'idle', new_version: '', download_pct: 0, current_version: '', err_msg: '',
 })
 
-const currentVersion = computed(() => store.version?.version ?? '')
+const currentVersion = computed(() => status.value.current_version ?? '')
 const state = computed(() => status.value.state)
 
 const DATE_RE = /(\d{8}-\d{4,6})$/
@@ -297,7 +296,6 @@ const onlineStatusMsg = computed(() => {
 })
 
 onMounted(async () => {
-  if (!store.version) store.fetchVersion()
   await fetchStatus()
   if (state.value === 'idle') checkUpdate()
   else schedulePoll()
