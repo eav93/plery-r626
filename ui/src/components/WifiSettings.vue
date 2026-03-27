@@ -117,58 +117,79 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { reactive, ref, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useApi } from '@/composables/useApi'
 import FormField from '@/components/FormField.vue'
 
 const { t } = useI18n()
+const { uciGet } = useApi()
 
-export interface RadioData {
-  id: string
-  label: string
-  channels: number[]
-  ssid: string
-  key: string
-  encryption: string
-  hidden: boolean
-  channel: string
-  enabled: boolean
+// ── Static config ─────────────────────────────────────────────────────────────
+
+interface RadioConfig {
+  id: string; label: string; channels: number[]
+  iface: string; radio: string
+  // form state
+  ssid: string; key: string; encryption: string
+  hidden: boolean; channel: string; enabled: boolean
 }
 
-export interface WifiShared {
-  ssid: string
-  key: string
-  encryption: string
-  hidden: boolean
-}
+const radios = reactive<RadioConfig[]>([
+  {
+    id: '24g', label: '2.4 GHz',
+    channels: [1,2,3,4,5,6,7,8,9,10,11,12,13],
+    iface: 'wireless.@wifi-iface[0]', radio: 'wireless.radio0',
+    ssid: '', key: '', encryption: 'psk2', hidden: false, channel: 'auto', enabled: true,
+  },
+  {
+    id: '5g', label: '5 GHz',
+    channels: [36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140,149,153,157,161,165],
+    iface: 'wireless.@wifi-iface[8]', radio: 'wireless.radio1',
+    ssid: '', key: '', encryption: 'psk2', hidden: false, channel: 'auto', enabled: true,
+  },
+])
 
-export interface WifiSettingsValue {
-  bandSteering: boolean
-  shared: WifiShared
-  radios: RadioData[]
-}
-
-const props = defineProps<{ modelValue: WifiSettingsValue }>()
-const emit  = defineEmits<{ 'update:modelValue': [v: WifiSettingsValue] }>()
-
-// Local reactive state mirrored from modelValue
-const bandSteering = ref(props.modelValue.bandSteering)
-const shared = reactive<WifiShared>({ ...props.modelValue.shared })
-const radios = reactive<RadioData[]>(props.modelValue.radios.map(r => ({ ...r })))
+const bandSteering  = ref(false)
+const shared        = reactive({ ssid: '', key: '', encryption: 'psk2', hidden: false })
 const showSharedPwd = ref(false)
-const showPwd = reactive<Record<string, boolean>>(
-  Object.fromEntries(props.modelValue.radios.map(r => [r.id, false]))
-)
+const showPwd       = reactive<Record<string, boolean>>({ '24g': false, '5g': false })
 
-function emitUpdate() {
-  emit('update:modelValue', {
-    bandSteering: bandSteering.value,
-    shared: { ...shared },
-    radios: radios.map(r => ({ ...r })),
-  })
-}
+// ── Load from UCI ─────────────────────────────────────────────────────────────
 
-// When switching band steering OFF, pre-fill per-radio fields from shared
+onMounted(async () => {
+  try {
+    const keys = radios.flatMap(r => [
+      `${r.iface}.ssid`, `${r.iface}.key`, `${r.iface}.encryption`,
+      `${r.iface}.hidden`, `${r.iface}.disabled`,
+      `${r.radio}.channel`, `${r.radio}.disabled`,
+    ])
+    const data = await uciGet(keys)
+
+    for (const r of radios) {
+      r.ssid       = data[`${r.iface}.ssid`]       || ''
+      r.key        = data[`${r.iface}.key`]         || ''
+      r.encryption = data[`${r.iface}.encryption`]  || 'psk2'
+      r.hidden     = data[`${r.iface}.hidden`]      === '1'
+      r.channel    = data[`${r.radio}.channel`]     || 'auto'
+      r.enabled    = data[`${r.iface}.disabled`]    !== '1'
+                  && data[`${r.radio}.disabled`]    !== '1'
+    }
+
+    // Auto-detect band steering: same SSID + key on both bands
+    const [a, b] = radios
+    if (a.ssid && a.ssid === b.ssid && a.key === b.key) {
+      bandSteering.value  = true
+      shared.ssid         = a.ssid
+      shared.key          = a.key
+      shared.encryption   = a.encryption
+      shared.hidden       = a.hidden
+    }
+  } catch { /* ignore */ }
+})
+
+// ── Band steering switch: pre-fill per-radio fields from shared ───────────────
+
 watch(bandSteering, (on) => {
   if (!on) {
     for (const r of radios) {
@@ -179,11 +200,31 @@ watch(bandSteering, (on) => {
       r.hidden     = shared.hidden
     }
   }
-  emitUpdate()
 })
 
-watch(shared, emitUpdate, { deep: true })
-watch(radios, emitUpdate, { deep: true })
+// ── Public API ────────────────────────────────────────────────────────────────
+
+/** Returns a flat UCI object ready for uciSet() */
+function getUci(): Record<string, string> {
+  const uci: Record<string, string> = {}
+  for (const r of radios) {
+    const ssid       = bandSteering.value ? shared.ssid       : r.ssid
+    const key        = bandSteering.value ? shared.key        : r.key
+    const encryption = bandSteering.value ? shared.encryption : r.encryption
+    const hidden     = bandSteering.value ? shared.hidden     : r.hidden
+
+    uci[`${r.iface}.ssid`]       = ssid
+    uci[`${r.iface}.encryption`] = encryption
+    uci[`${r.iface}.key`]        = encryption === 'none' ? '' : key
+    uci[`${r.iface}.hidden`]     = hidden ? '1' : '0'
+    uci[`${r.iface}.disabled`]   = r.enabled ? '0' : '1'
+    uci[`${r.radio}.channel`]    = r.channel
+    uci[`${r.radio}.disabled`]   = r.enabled ? '0' : '1'
+  }
+  return uci
+}
+
+defineExpose({ getUci })
 </script>
 
 <style scoped>

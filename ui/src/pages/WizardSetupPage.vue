@@ -40,7 +40,7 @@
             :key="p.value"
             class="inline-flex items-center gap-1.5 cursor-pointer select-none"
           >
-            <input type="radio" v-model="form.wan.proto" :value="p.value" class="accent-[#ffc510]" />
+            <input type="radio" v-model="form.wan.proto" :value="p.value" class="wan-radio" />
             <span class="text-[13px]">{{ p.label }}</span>
           </label>
         </div>
@@ -166,7 +166,7 @@
     </div>
 
     <!-- Step: WiFi -->
-    <WifiSettings v-if="steps[currentStep]?.key === 'wifi'" v-model="wifiModel" />
+    <WifiSettings v-if="steps[currentStep]?.key === 'wifi'" ref="wifiRef" />
 
     <!-- Step: Confirm -->
     <div v-if="steps[currentStep]?.key === 'confirm'" class="box">
@@ -223,12 +223,8 @@
       <!-- WiFi summary -->
       <div class="section-title" style="font-size:13px;margin-top:8px">{{ t('wireless') || 'WiFi' }}</div>
       <div class="form-row">
-        <label class="form-row__label">{{ t('ssid_name_24g') || '2.4G SSID' }}</label>
-        <div class="form-row__value">{{ (wifiModel.bandSteering ? wifiModel.shared.ssid : wifiModel.radios[0].ssid) || '—' }}</div>
-      </div>
-      <div class="form-row">
-        <label class="form-row__label">{{ t('ssid_name_58g') || '5G SSID' }}</label>
-        <div class="form-row__value">{{ (wifiModel.bandSteering ? wifiModel.shared.ssid : wifiModel.radios[1].ssid) || '—' }}</div>
+        <label class="form-row__label">{{ t('wireless') || 'WiFi' }}</label>
+        <div class="form-row__value text-sm text-[#888]">{{ t('applying') || 'настроено' }}</div>
       </div>
     </div>
 
@@ -275,7 +271,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useApi } from '@/composables/useApi'
 import FormField from '@/components/FormField.vue'
-import WifiSettings, { type WifiSettingsValue } from '@/components/WifiSettings.vue'
+import WifiSettings from '@/components/WifiSettings.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -298,23 +294,7 @@ const steps = computed(() =>
 const currentStep = ref(0)
 const applying = ref(false)
 const countdown = ref(0)
-
-const wifiModel = reactive<WifiSettingsValue>({
-  bandSteering: false,
-  shared: { ssid: '', key: '', encryption: 'psk2', hidden: false },
-  radios: [
-    {
-      id: '24g', label: '2.4 GHz',
-      channels: [1,2,3,4,5,6,7,8,9,10,11,12,13],
-      ssid: '', key: '', encryption: 'psk2', hidden: false, channel: 'auto', enabled: true,
-    },
-    {
-      id: '5g', label: '5 GHz',
-      channels: [36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140,149,153,157,161,165],
-      ssid: '', key: '', encryption: 'psk2', hidden: false, channel: 'auto', enabled: true,
-    },
-  ],
-})
+const wifiRef = ref<InstanceType<typeof WifiSettings>>()
 
 const netmaskOptions = [
   '255.255.255.0',
@@ -365,17 +345,7 @@ const wanProtoLabel = computed(() =>
 
 onMounted(async () => {
   try {
-    const data = await uciGet([
-      'network.wan', 'network.lan',
-      'wireless.radio0.channel', 'wireless.radio0.disabled',
-      'wireless.radio1.channel', 'wireless.radio1.disabled',
-      'wireless.@wifi-iface[0].ssid', 'wireless.@wifi-iface[0].key',
-      'wireless.@wifi-iface[0].encryption', 'wireless.@wifi-iface[0].hidden',
-      'wireless.@wifi-iface[0].disabled',
-      'wireless.@wifi-iface[8].ssid', 'wireless.@wifi-iface[8].key',
-      'wireless.@wifi-iface[8].encryption', 'wireless.@wifi-iface[8].hidden',
-      'wireless.@wifi-iface[8].disabled',
-    ])
+    const data = await uciGet(['network.wan', 'network.lan'])
 
     form.wan.proto       = data['network.wan.proto']    || 'qmi'
     form.wan.apn         = data['network.wan.apn']      || ''
@@ -394,31 +364,7 @@ onMounted(async () => {
     form.lan.ipaddr  = data['network.lan.ipaddr']  || '192.168.0.1'
     form.lan.netmask = data['network.lan.netmask'] || '255.255.255.0'
 
-    const [r24, r5] = wifiModel.radios
-    r24.ssid       = data['wireless.@wifi-iface[0].ssid']       || ''
-    r24.key        = data['wireless.@wifi-iface[0].key']        || ''
-    r24.encryption = data['wireless.@wifi-iface[0].encryption'] || 'psk2'
-    r24.hidden     = data['wireless.@wifi-iface[0].hidden']     === '1'
-    r24.channel    = data['wireless.radio0.channel']            || 'auto'
-    r24.enabled    = data['wireless.@wifi-iface[0].disabled']   !== '1'
-                  && data['wireless.radio0.disabled']           !== '1'
-
-    r5.ssid        = data['wireless.@wifi-iface[8].ssid']       || ''
-    r5.key         = data['wireless.@wifi-iface[8].key']        || ''
-    r5.encryption  = data['wireless.@wifi-iface[8].encryption'] || 'psk2'
-    r5.hidden      = data['wireless.@wifi-iface[8].hidden']     === '1'
-    r5.channel     = data['wireless.radio1.channel']            || 'auto'
-    r5.enabled     = data['wireless.@wifi-iface[8].disabled']   !== '1'
-                  && data['wireless.radio1.disabled']           !== '1'
-
-    // Auto-detect band steering
-    if (r24.ssid && r24.ssid === r5.ssid && r24.key === r5.key) {
-      wifiModel.bandSteering     = true
-      wifiModel.shared.ssid      = r24.ssid
-      wifiModel.shared.key       = r24.key
-      wifiModel.shared.encryption = r24.encryption
-      wifiModel.shared.hidden    = r24.hidden
-    }
+    // WiFi is loaded by WifiSettings component itself
   } catch { /* ignore */ }
 })
 
@@ -452,24 +398,8 @@ function applySettings() {
   obj['network.lan.ipaddr']  = form.lan.ipaddr
   obj['network.lan.netmask'] = form.lan.netmask
 
-  const ifaces = [
-    { iface: 'wireless.@wifi-iface[0]', radio: 'wireless.radio0', r: wifiModel.radios[0] },
-    { iface: 'wireless.@wifi-iface[8]', radio: 'wireless.radio1', r: wifiModel.radios[1] },
-  ]
-  for (const { iface, radio, r } of ifaces) {
-    const ssid       = wifiModel.bandSteering ? wifiModel.shared.ssid       : r.ssid
-    const key        = wifiModel.bandSteering ? wifiModel.shared.key        : r.key
-    const encryption = wifiModel.bandSteering ? wifiModel.shared.encryption : r.encryption
-    const hidden     = wifiModel.bandSteering ? wifiModel.shared.hidden     : r.hidden
-
-    obj[`${iface}.ssid`]       = ssid
-    obj[`${iface}.encryption`] = encryption
-    obj[`${iface}.key`]        = encryption === 'none' ? '' : key
-    obj[`${iface}.hidden`]     = hidden ? '1' : '0'
-    obj[`${iface}.disabled`]   = r.enabled ? '0' : '1'
-    obj[`${radio}.channel`]    = r.channel
-    obj[`${radio}.disabled`]   = r.enabled ? '0' : '1'
-  }
+  // Merge wifi UCI from WifiSettings component
+  if (wifiRef.value) Object.assign(obj, wifiRef.value.getUci())
 
   obj['network.workmode'] = mode.value
 
@@ -493,4 +423,21 @@ function applySettings() {
   }, 1000)
 }
 </script>
+
+<style scoped>
+.wan-radio {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #9eb9c2;
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color .15s;
+}
+.wan-radio:checked {
+  border-color: #ffc510;
+  background: radial-gradient(circle, #ffc510 40%, transparent 45%);
+}
+</style>
 
