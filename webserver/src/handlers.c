@@ -614,73 +614,96 @@ static int json_obj_each(const char *json,
     return count;
 }
 
-typedef struct {
-    const char *errmsg;
-    char errmsg_buf[256];   /* buffer for dynamic error messages */
-    int bad_key;
-} set_ctx_t;
+/* ── uci/set ──────────────────────────────────────────────────────────────────
+ * Atomically write every key-value pair from the request JSON, then commit.
+ *
+ * libuci limitation: after uci_set on an anonymous section (@wifi-iface[N]),
+ * the same context can no longer resolve named sections (radio0, radio1) in
+ * the same package — uci_lookup_ptr returns err=2 / s=null.
+ *
+ * Fix: two-pass processing within one context:
+ *   pass 1 — named sections (no '@' in key)
+ *   pass 2 — anonymous sections (has '@' in key)
+ * All uci_set calls share one context; we commit every modified package once
+ * at the very end.  If any step fails, we free without committing — atomic.
+ */
 
-static int set_one_cb(const char *key, const char *val, void *vctx)
+#define UCI_SET_MAX_KV  64
+
+typedef struct {
+    char key[256];
+    char val[512];
+} uci_kv_t;
+
+typedef struct {
+    uci_kv_t  pairs[UCI_SET_MAX_KV];
+    int       count;
+    const char *errmsg;
+    char       errmsg_buf[256];
+    int        bad_key;
+} collect_ctx_t;
+
+static int collect_kv_cb(const char *key, const char *val, void *vctx)
 {
-    set_ctx_t *s = (set_ctx_t *)vctx;
+    collect_ctx_t *c = (collect_ctx_t *)vctx;
     if (!is_safe_uci_key(key)) {
-        s->errmsg = "Invalid UCI key";
-        s->bad_key = 1;
+        c->errmsg = "Invalid UCI key";
+        c->bad_key = 1;
         return -1;
     }
+    if (c->count >= UCI_SET_MAX_KV) {
+        c->errmsg = "Too many keys";
+        return -1;
+    }
+    strncpy(c->pairs[c->count].key, key, sizeof(c->pairs[0].key) - 1);
+    c->pairs[c->count].key[sizeof(c->pairs[0].key) - 1] = '\0';
+    strncpy(c->pairs[c->count].val, val, sizeof(c->pairs[0].val) - 1);
+    c->pairs[c->count].val[sizeof(c->pairs[0].val) - 1] = '\0';
+    c->count++;
+    return 0;
+}
 
-    char key_buf[256];
+/* Apply a single key=val using the given context.
+ * Tracks new packages in pkgs[]/npkgs for later commit.
+ * Returns 0 on success, fills errmsg and returns -1 on failure. */
+static int uci_apply_one(struct uci_context *ctx,
+                         const char *key, const char *val,
+                         struct uci_package **pkgs, int *npkgs,
+                         char *errmsg_buf, size_t errmsg_sz,
+                         const char **errmsg_out)
+{
+    char key_buf[256], val_buf[512];
     strncpy(key_buf, key, sizeof(key_buf) - 1);
     key_buf[sizeof(key_buf) - 1] = '\0';
-
-    /* val may be up to 512 bytes; uci_set needs a mutable string */
-    char val_buf[512];
     strncpy(val_buf, val, sizeof(val_buf) - 1);
     val_buf[sizeof(val_buf) - 1] = '\0';
-
-    /*
-     * Use a fresh UCI context per key to avoid cross-contamination when
-     * mixing anonymous sections (@wifi-iface[N]) with named sections
-     * (radio0, radio1). A shared context becomes unable to resolve named
-     * sections after processing anonymous ones in the same package.
-     */
-    struct uci_context *ctx = uci_alloc_context();
-    if (!ctx) {
-        s->errmsg = "UCI alloc failed";
-        return -1;
-    }
 
     struct uci_ptr ptr;
     memset(&ptr, 0, sizeof(ptr));
     if (uci_lookup_ptr(ctx, &ptr, key_buf, true) != UCI_OK) {
-        snprintf(s->errmsg_buf, sizeof(s->errmsg_buf),
+        snprintf(errmsg_buf, errmsg_sz,
                  "Lookup failed: key=%s err=%d", key, ctx->err);
-        s->errmsg = s->errmsg_buf;
-        uci_free_context(ctx);
+        *errmsg_out = errmsg_buf;
         return -1;
     }
     ptr.value = val_buf;
     if (uci_set(ctx, &ptr) != UCI_OK) {
-        snprintf(s->errmsg_buf, sizeof(s->errmsg_buf),
+        snprintf(errmsg_buf, errmsg_sz,
                  "Set failed: key=%s err=%d flags=0x%x s=%s o=%s",
                  key, ctx->err, ptr.flags,
                  ptr.s ? ptr.s->e.name : "null",
                  ptr.o ? ptr.o->e.name : "null");
-        s->errmsg = s->errmsg_buf;
-        uci_free_context(ctx);
+        *errmsg_out = errmsg_buf;
         return -1;
     }
-
-    /* commit immediately within this fresh context */
-    if (ptr.p && uci_commit(ctx, &ptr.p, false) != UCI_OK) {
-        snprintf(s->errmsg_buf, sizeof(s->errmsg_buf),
-                 "Commit failed: key=%s", key);
-        s->errmsg = s->errmsg_buf;
-        uci_free_context(ctx);
-        return -1;
+    /* track unique packages */
+    if (ptr.p) {
+        int found = 0;
+        for (int i = 0; i < *npkgs; i++)
+            if (pkgs[i] == ptr.p) { found = 1; break; }
+        if (!found && *npkgs < 16)
+            pkgs[(*npkgs)++] = ptr.p;
     }
-
-    uci_free_context(ctx);
     return 0;
 }
 
@@ -693,17 +716,58 @@ static int handle_uci_set(int client_fd, const http_request_t *req)
     char *body = read_body(client_fd, req);
     if (!body) { http_send_error(client_fd, 400, "Bad Request"); return 1; }
 
-    set_ctx_t s = { NULL, {0}, 0 };
-    json_obj_each(body, set_one_cb, &s);
+    /* Step 1: collect all key-value pairs */
+    collect_ctx_t c = { {{0}}, 0, NULL, {0}, 0 };
+    json_obj_each(body, collect_kv_cb, &c);
     free(body);
 
-    if (s.errmsg) {
-        int code = s.bad_key ? 400 : 500;
-        const char *status = s.bad_key ? "Bad Request" : "Internal Server Error";
+    if (c.errmsg) {
+        int code = c.bad_key ? 400 : 500;
         char resp[128];
         int rlen = snprintf(resp, sizeof(resp),
-                            "{\"errCode\":-1,\"errMsg\":\"%s\"}", s.errmsg);
-        http_send_response(client_fd, code, status,
+                            "{\"errCode\":-1,\"errMsg\":\"%s\"}", c.errmsg);
+        http_send_response(client_fd, code, c.bad_key ? "Bad Request" : "Internal Server Error",
+                           "application/json", resp, (size_t)rlen);
+        return 1;
+    }
+
+    /* Step 2: apply all pairs in one context — named sections first, anonymous second */
+    struct uci_context *ctx = uci_alloc_context();
+    if (!ctx) { http_send_error(client_fd, 500, "Internal Server Error"); return 1; }
+
+    const char *errmsg = NULL;
+    char errmsg_buf[256];
+    struct uci_package *pkgs[16];
+    int npkgs = 0;
+
+    /* pass 1: named sections (key without '@') */
+    for (int i = 0; i < c.count && !errmsg; i++) {
+        if (!strchr(c.pairs[i].key, '@'))
+            uci_apply_one(ctx, c.pairs[i].key, c.pairs[i].val,
+                          pkgs, &npkgs, errmsg_buf, sizeof(errmsg_buf), &errmsg);
+    }
+    /* pass 2: anonymous sections (key with '@') */
+    for (int i = 0; i < c.count && !errmsg; i++) {
+        if (strchr(c.pairs[i].key, '@'))
+            uci_apply_one(ctx, c.pairs[i].key, c.pairs[i].val,
+                          pkgs, &npkgs, errmsg_buf, sizeof(errmsg_buf), &errmsg);
+    }
+
+    /* Step 3: commit all modified packages atomically — only if no errors */
+    if (!errmsg) {
+        for (int i = 0; i < npkgs && !errmsg; i++) {
+            if (uci_commit(ctx, &pkgs[i], false) != UCI_OK)
+                errmsg = "Commit failed";
+        }
+    }
+
+    uci_free_context(ctx);  /* if error: frees without committing — rollback */
+
+    if (errmsg) {
+        char resp[320];
+        int rlen = snprintf(resp, sizeof(resp),
+                            "{\"errCode\":-1,\"errMsg\":\"%s\"}", errmsg);
+        http_send_response(client_fd, 500, "Internal Server Error",
                            "application/json", resp, (size_t)rlen);
     } else {
         static const char ok[] = "{\"result\":\"ok\"}";
