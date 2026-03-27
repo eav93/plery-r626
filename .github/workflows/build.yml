@@ -84,7 +84,7 @@ jobs:
           printf '#ifndef _UCI_CONFIG_H\n#define _UCI_CONFIG_H\n#define UCI_PREFIX "/usr"\n#endif\n' \
             > libuci-src/uci_config.h
           cd libuci-src
-          mipsel-openwrt-linux-musl-gcc -Os -std=c99 -D_GNU_SOURCE -fPIC \
+          mipsel-openwrt-linux-musl-gcc -Os -std=c99 -fPIC \
             -I. -c libuci.c file.c util.c delta.c
           mipsel-openwrt-linux-musl-gcc -shared -Wl,-soname,libuci.so \
             -o libuci.so libuci.o file.o util.o delta.o

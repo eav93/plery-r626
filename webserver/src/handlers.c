@@ -1648,24 +1648,6 @@ static char *fw_tls_request(fw_tls_t *t, const char *method,
     return off > 0 ? buf : (free(buf), NULL);
 }
 
-/* GET small response — returns malloc'd body (after \r\n\r\n). Caller frees. */
-static char *fw_tls_get_body(const char *host, const char *path)
-{
-    fw_tls_t t = fw_tls_open(host, 10, 15, NULL, 0);
-    if (t.fd < 0) return NULL;
-
-    size_t len = 0;
-    char *resp = fw_tls_request(&t, "GET", host, path, 65536, &len);
-    fw_tls_close(&t);
-    if (!resp) return NULL;
-
-    char *body = strstr(resp, "\r\n\r\n");
-    if (!body) { free(resp); return NULL; }
-    char *result = strdup(body + 4);
-    free(resp);
-    return result;
-}
-
 /* HEAD → HTTP status + optional Location header. */
 static int fw_tls_head(const char *host, const char *path,
                         char *location, size_t llen)
@@ -1743,17 +1725,6 @@ static int fw_json_str(const char *json, const char *key,
     return 1;
 }
 
-/* Extract JSON number value for key.  Returns value or -1. */
-static long long fw_json_num(const char *json, const char *key)
-{
-    char needle[64];
-    snprintf(needle, sizeof(needle), "\"%s\"", key);
-    const char *p = strstr(json, needle);
-    if (!p) return -1;
-    p += strlen(needle);
-    while (*p == ':' || *p == ' ' || *p == '\t') p++;
-    return atoll(p);
-}
 
 /* ---- FOTA task functions ---- */
 
