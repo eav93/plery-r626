@@ -179,7 +179,8 @@ const navItems: NavItem[] = [
       { id: 'wan',  labelKey: 'wan',      icon: 'wan',     to: '/network/wan' },
       { id: 'lan',  labelKey: 'lan',      icon: 'lan',     to: '/network/lan' },
       { id: 'wifi', labelKey: 'wireless', icon: 'wifi',    to: '/network/wifi' },
-      { id: 'dns',  labelKey: 'dns',      icon: 'network', to: '/network/dns' },
+      { id: 'dns',     labelKey: 'dns',           icon: 'network', to: '/network/dns' },
+      { id: 'clients', labelKey: 'currentdevice', icon: 'yonghuzu', to: '/network/clients' },
     ],
   },
   {

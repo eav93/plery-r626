@@ -220,6 +220,8 @@
   "system_version": "Version",
   "logs": "Logs ",
   "refresh": "Refresh",
+  "interface": "Interface",
+  "no_clients": "No connected devices",
   "wipe_data": "Factory Reset",
   "Import": "Import Config",
   "Export": "Export Config",

@@ -35,6 +35,11 @@ const router = createRouter({
       component: () => import('@/pages/DnsPage.vue'),
     },
     {
+      path: '/network/clients',
+      name: 'clients',
+      component: () => import('@/pages/ClientsPage.vue'),
+    },
+    {
       path: '/system/firmware',
       name: 'firmware',
       component: () => import('@/pages/FirmwarePage.vue'),
