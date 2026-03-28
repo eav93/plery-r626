@@ -30,6 +30,11 @@ const router = createRouter({
       component: () => import('@/pages/WifiPage.vue'),
     },
     {
+      path: '/network/dns',
+      name: 'dns',
+      component: () => import('@/pages/DnsPage.vue'),
+    },
+    {
       path: '/system/firmware',
       name: 'firmware',
       component: () => import('@/pages/FirmwarePage.vue'),

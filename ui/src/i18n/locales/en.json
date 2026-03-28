@@ -450,6 +450,8 @@
   "wifi_passwd": "WiFi Password",
   "none": "None (open)",
   "auto": "Auto",
+  "manual": "Manual",
+  "dns_mode": "DNS Mode",
   "wan_type": "Connection Type",
   "dhcp_auto": "IP address is obtained automatically from the provider.",
   "reboot_tip": "The device will restart. Connection will be lost for ~30 seconds.",
