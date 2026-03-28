@@ -31,24 +31,7 @@
     <WanSettings v-show="steps[currentStep]?.key === 'wan'" ref="wanRef" />
 
     <!-- Step: LAN -->
-    <div v-if="steps[currentStep]?.key === 'lan'" class="box">
-      <div class="section-title">{{ t('lan_set') || 'LAN' }}</div>
-
-      <div class="form-row">
-        <label class="form-row__label">{{ t('ip_addr') || 'IP Address' }}</label>
-        <div class="form-row__value">
-          <input v-model="form.lan.ipaddr" type="text" placeholder="192.168.0.1" />
-        </div>
-      </div>
-      <div class="form-row">
-        <label class="form-row__label">{{ t('netmask') || 'Netmask' }}</label>
-        <div class="form-row__value">
-          <select v-model="form.lan.netmask">
-            <option v-for="m in netmaskOptions" :key="m" :value="m">{{ m }}</option>
-          </select>
-        </div>
-      </div>
-    </div>
+    <LanSettings v-show="steps[currentStep]?.key === 'lan'" ref="lanRef" />
 
     <!-- Step: WiFi -->
     <WifiSettings v-if="steps[currentStep]?.key === 'wifi'" ref="wifiRef" />
@@ -98,11 +81,11 @@
       <div class="section-title" style="font-size:13px;margin-top:8px">{{ t('lan') || 'LAN' }}</div>
       <div class="form-row">
         <label class="form-row__label">{{ t('ip_addr') || 'IP' }}</label>
-        <div class="form-row__value">{{ form.lan.ipaddr }}</div>
+        <div class="form-row__value">{{ lanRef?.form?.ipaddr }}</div>
       </div>
       <div class="form-row">
         <label class="form-row__label">{{ t('netmask') || 'Netmask' }}</label>
-        <div class="form-row__value">{{ form.lan.netmask }}</div>
+        <div class="form-row__value">{{ lanRef?.form?.netmask }}</div>
       </div>
 
       <!-- WiFi summary -->
@@ -151,17 +134,18 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useApi } from '@/composables/useApi'
 import WifiSettings from '@/components/WifiSettings.vue'
 import WanSettings from '@/components/WanSettings.vue'
+import LanSettings from '@/components/LanSettings.vue'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-const { uciGet, uciSet, apiAction } = useApi()
+const { uciSet, apiAction } = useApi()
 
 const mode = computed(() => (route.params.mode as string) || 'router')
 
@@ -181,13 +165,7 @@ const applying = ref(false)
 const countdown = ref(0)
 const wifiRef = ref<InstanceType<typeof WifiSettings>>()
 const wanRef  = ref<InstanceType<typeof WanSettings>>()
-
-const netmaskOptions = [
-  '255.255.255.0', '255.255.254.0', '255.255.252.0',
-  '255.255.248.0', '255.255.240.0', '255.255.0.0',
-  '255.254.0.0',   '255.252.0.0',   '255.248.0.0',
-  '255.240.0.0',   '255.0.0.0',
-]
+const lanRef  = ref<InstanceType<typeof LanSettings>>()
 
 const wanProtos = [
   { value: 'qmi',    label: '4G/LTE' },
@@ -196,23 +174,12 @@ const wanProtos = [
   { value: 'dhcp',   label: 'DHCP' },
 ]
 
-const form = reactive({
-  lan: { ipaddr: '192.168.0.1', netmask: '255.255.255.0' },
-})
-
 const wanProtoLabel = computed(() => {
   const proto = wanRef.value?.form?.proto ?? ''
   return wanProtos.find(p => p.value === proto)?.label ?? proto
 })
 
-onMounted(async () => {
-  try {
-    const data = await uciGet(['network.lan.ipaddr', 'network.lan.netmask'])
-    form.lan.ipaddr  = data['network.lan.ipaddr']  || '192.168.0.1'
-    form.lan.netmask = data['network.lan.netmask'] || '255.255.255.0'
-    // WAN and WiFi are loaded by their own components
-  } catch { /* ignore */ }
-})
+// LAN, WAN and WiFi are loaded by their own components
 
 function applySettings() {
   if (applying.value) return
@@ -224,8 +191,7 @@ function applySettings() {
     Object.assign(obj, wanRef.value.getUci())
   }
 
-  obj['network.lan.ipaddr']  = form.lan.ipaddr
-  obj['network.lan.netmask'] = form.lan.netmask
+  if (lanRef.value) Object.assign(obj, lanRef.value.getUci())
 
   // Merge wifi UCI from WifiSettings component
   if (wifiRef.value) Object.assign(obj, wifiRef.value.getUci())
